@@ -74,7 +74,8 @@ class OldSettings(unittest.TestCase):
 
     def test_update_brings_a_v0_folder_forward(self):
         """v0.1.0 folders reach the current version: the v2 step removes the two
-        retired 48-hour-rule settings (after a backup) and touches nothing else."""
+        retired 48-hour-rule settings and the v3 step the unused remote.co feed
+        (after one backup), and nothing else changes."""
         for which in ("template", "priya"):
             s = self.folder(which)
             before = {f.name: f.read_bytes() for f in s.iterdir()}
@@ -83,12 +84,15 @@ class OldSettings(unittest.TestCase):
             with self.subTest(settings=which):
                 self.assertIsNone(warning)
                 self.assertEqual(calls, [1])
-                self.assertEqual(len(changes), 2, changes)
-                self.assertTrue(all("ASK_EXPIRY_DAYS" in c or "NO_DECISION_VERDICT" in c for c in changes))
+                self.assertEqual(len(changes), 3, changes)
+                self.assertTrue(all(any(k in c for k in ("ASK_EXPIRY_DAYS", "NO_DECISION_VERDICT", "REMOTE_CO_FEEDS"))
+                                    for c in changes))
                 after = {f.name: f.read_bytes() for f in s.iterdir()}
                 self.assertEqual({n for n in before if before[n] != after.get(n)}, {"criteria.json", "app.json"})
                 agent = json.loads((s / "criteria.json").read_text())["agent"]
                 self.assertFalse(set(kit_settings.RETIRED_V2) & set(agent))
+                feeds = json.loads((s / "criteria.json").read_text())["board_feeds"]
+                self.assertNotIn("REMOTE_CO_FEEDS", feeds)
                 self.assertEqual(kit_settings.folder_settings_version(s), kit_settings.SETTINGS_VERSION)
                 # a second run changes nothing
                 changes, warning = kit_settings.migrate(s, backup=lambda: self.fail("no backup expected"))
@@ -96,6 +100,15 @@ class OldSettings(unittest.TestCase):
 
 
 class Versions(unittest.TestCase):
+    def test_v3_removes_the_retired_scoring_rules(self):
+        files = {"criteria.json": {"board_feeds": {"WWR_FEEDS": ["x"], "REMOTE_CO_FEEDS": ["y"]},
+                                   "fit_scoring": {"INFRA_DOMAIN": "a", "PLANNING_DOMAIN": "b",
+                                                   "AI_BUSINESS_BONUS": {"points": 4}, "WORK_CAP": 30}}}
+        changes = kit_settings.MIGRATIONS[2](files)
+        self.assertEqual(len(changes), 4)
+        self.assertEqual(files["criteria.json"], {"board_feeds": {"WWR_FEEDS": ["x"]}, "fit_scoring": {"WORK_CAP": 30}})
+        self.assertEqual(kit_settings.MIGRATIONS[2](files), [])
+
     def test_template_carries_the_current_version(self):
         self.assertEqual(kit_settings.folder_settings_version(KIT / "templates" / "settings"),
                          kit_settings.SETTINGS_VERSION)
@@ -107,8 +120,9 @@ class Versions(unittest.TestCase):
         # Renaming or removing a setting breaks older folders unless a migration
         # moves it. Bump SETTINGS_VERSION, add the step, then update this baseline.
         gone = keys(OLD / "template") - keys(KIT / "templates" / "settings")
-        if kit_settings.SETTINGS_VERSION == 2:
-            self.assertEqual(gone, {f"criteria.json:agent.{k}" for k in kit_settings.RETIRED_V2},
+        if kit_settings.SETTINGS_VERSION == 3:
+            self.assertEqual(gone, {f"criteria.json:agent.{k}" for k in kit_settings.RETIRED_V2}
+                             | {"criteria.json:board_feeds.REMOTE_CO_FEEDS"},
                              "settings removed or renamed since v0.1.0 without a migration")
 
     def test_newer_settings_warn_and_write_nothing(self):

@@ -28,13 +28,7 @@
     "RETIRED_PHRASES": [],
     "ABBREVIATIONS": [
       "KPI",
-      "QBR",
-      "SLA",
-      "EHR",
-      "SKU",
-      "ETL",
-      "PM ",
-      "CSM "
+      "SLA"
     ],
     "ONCE_PER_RESUME": [],
     "SPEC_FONT": "Arial",

@@ -27,7 +27,7 @@ Customer, client, coworker, and manager names. Account data or personal informat
 
 ## Domain tiers
 
-Assign the tier before writing (Rules File, section 5). **Tier 1, same field as the employer:** no timing at all, generalize every count unless the card's Cleared line and Part C clear it for paper or the user rules otherwise for this application, no internal product names, never characterize another team. **Tier 2, adjacent field:** timing rule absolute, scale numbers fine, translate vocabulary. **Tier 3, outside the field:** timing rule absolute, scale numbers stay, plain-English translation is the main job. The timing rule never relaxes at any tier.
+Assign the tier before writing (Rules File, section 5). The tracker's Domain Tier is a starting point, not the answer: a company with no field set never gets Tier 1 from the kit, so if the posting or company is clearly in the field of the user's current job (`fit_scoring.SAME_DOMAINS` in criteria.json), use Tier 1 and say so in one line. **Tier 1, same field as the employer:** no timing at all, generalize every count unless the card's Cleared line and Part C clear it for paper or the user rules otherwise for this application, no internal product names, never characterize another team. **Tier 2, adjacent field:** timing rule absolute, scale numbers fine, translate vocabulary. **Tier 3, outside the field:** timing rule absolute, scale numbers stay, plain-English translation is the main job. The timing rule never relaxes at any tier.
 
 ## The cut test
 

@@ -55,12 +55,10 @@ listed here.
 |---|---|---|
 | Which fields interest you most, and which least? | `fit_scoring.DOMAIN_SCORES`, `fit_scoring.DOMAIN_KEYWORDS`, `fit_scoring.DOMAIN_UNKNOWN` | A company with no field set scores 0 field points (never a keyword guess) |
 | Industries outside your field (a posting that requires years or experience in one counts it as a missed requirement) | `fit_scoring.OUT_OF_DOMAIN_INDUSTRIES`, `fit_scoring.OUT_OF_DOMAIN_LABEL` | Empty list turns the rule off |
-| Which of your fields is the developer-tooling or infrastructure one, and which is the planning or workflow one? | `fit_scoring.INFRA_DOMAIN`, `fit_scoring.PLANNING_DOMAIN` | Optional, both names from `DOMAIN_SCORES`. A planning or workflow role at an infrastructure company then scores as the planning field, and a data, platform, API, or developer title there is Possible fit at most |
-| Does AI work built for business or operations users (not engineers) deserve extra points? | `fit_scoring.AI_BUSINESS_BONUS` | `{"points": 4, "cards": "E01", "label": "..."}`; absent or 0 points means off |
 | Staffing agencies or reposters to ignore as the hiring company | `agent.REJECT_POSTERS` | Names, added as they turn up |
-| Companies you'd love to work for (paste careers page links) | `ats_tools.CONFIRMED_COMPANIES`, `ats_tools.CUSTOM_SITE_COMPANIES` | The wizard detects the job board. A Workday board is read only when its entry has `"workday_ok": true` (a box in the wizard; see SOURCES.md) |
-| Companies you already rank highly | `fit_scoring.TIER_PRECEDENTS` | |
-| Which remote job feeds fit your field? | `board_feeds.WWR_FEEDS`, `board_feeds.REMOTE_CO_FEEDS` | Category feeds |
+| Which of your fields is your current or most recent job in? | `fit_scoring.SAME_DOMAINS` | One field name from `DOMAIN_SCORES`, or blank. A company tagged with it gets the most careful tailoring (Tier 1: numbers, dates, and inside details kept general). A company with no field set is never Tier 1 on a guess from posting words; Claude checks the tier when drafting |
+| Companies you'd love to work for (paste careers page links) | `ats_tools.CONFIRMED_COMPANIES`, `ats_tools.CUSTOM_SITE_COMPANIES` | The kit checks these job boards every day. The wizard detects the job board. A Workday board is read only when its entry has `"workday_ok": true` (a box in the wizard; see SOURCES.md) |
+| Remote job feed for your field | `board_feeds.WWR_FEEDS` | One We Work Remotely category feed, picked from a list |
 
 ### 6. Your evidence and your resume
 | Question | Settings | Notes |
@@ -100,7 +98,7 @@ These live in `preferences.json`. The Claude plugin reads them every session (th
 | What bugged you about AI drafts, habits to avoid, punctuation, tone | `voice.what_bugged_you`, `voice.avoid_habits`, `voice.oxford_comma`, `voice.contractions`, `voice.keep_my_wording`, `voice.tone` | Habits are suggestions, none picked by default. Picking em dashes also turns on `presend_gate.FLAG_EM_DASH`. Start Here session 1 seeds Rules File section 2 from these |
 | Fixes you've saved | `saved_fixes` | Added by Claude when the user says yes to saving a fix; the user can delete any line |
 | Feedback, drafts, decisions, obvious calls | `feedback` (`blunt`, `balanced`, `gentle`), `drafts` (`one`, `options`), `decisions` (`list`, `conversation`), `obvious_calls` (`decide_and_tell`, `ask_first`) | `drafts` applies to cover letters and written answers; a resume is always one version built from the bank |
-| File format | `file_format` (`word`, `pdf`) | PDF is made from the gated Word file, which stays in the folder |
+| File format | `file_format` (`word`) | Word only for now; not asked in setup. Word can save a copy as PDF |
 | What Claude can do | `permissions.update_tracker`, `permissions.draft_messages`, `permissions.draft_form_answers`, `permissions.save_fixes` | Each `can`, `ask`, or `never`. Always on, not settings: never invent, flag gaps, fix a correction everywhere it appears, never send, never submit |
 | What stays general on paper | `keep_general` | Start Here session 3 seeds Rules File section 5 ("Never on paper") from it |
 | Talk it through | `talk_it_through`, `talked_through` | Up to three questions about blank sections, once. Claude writes the date to `talked_through` afterwards |
@@ -112,7 +110,8 @@ These live in `preferences.json`. The Claude plugin reads them every session (th
 | `fit_scoring.FRESHNESS_BANDS` | this week +5 ... over two months -10 | Score points by posting age |
 | `fit_scoring.DOMAIN_GUESS` | true | When a posting's company has no field set, guess the field from the posting's words. Turn it off once your Companies rows carry fields: benefits text ("401(k)") can make a guess land on a finance field |
 | `fit_scoring.ONE_MISS_STRONG_MIN` | 80 | A posting missing one requirement is still Strong fit when its score before the cap is at least this |
-| `fit_scoring.SAME_DOMAINS`, `fit_scoring.ADJACENT_DOMAINS` | empty | Field names (from `DOMAIN_SCORES`) whose companies get the tightest confidentiality tier when tailoring (Tier 1, same field as your employer) or the next one (Tier 2, an adjacent field). Companies in `TIER_PRECEDENTS` are tiered by name first; everything else is Tier 3 |
+| `fit_scoring.ADJACENT_DOMAINS` | empty | Field names (from `DOMAIN_SCORES`) close to your current job's field; their companies get the middle confidentiality tier when tailoring (Tier 2). `SAME_DOMAINS` is asked in setup; everything else is Tier 3 |
+| `fit_scoring.TIER_PRECEDENTS` | empty | `{"$dict": [[1, ["company name", ...]], [2, [...]]]}`: companies given a confidentiality tier by name, checked before their field (for example your employer's direct competitors) |
 | `presend_gate.FLAG_EM_DASH` | false | Flag em dashes on a resume or letter, for users who avoid them |
 | `fit_scoring.INDUSTRY_RULE_CODES` | `["industry"]` | Hard-rule codes in `HARD_RULES` whose match becomes a "your call" instead of a Poor fit when one of your exception words is in the posting |
 | `ats_tools.PORTFOLIO_BRAND_SUFFIXES` | empty | `{"Parent name": ["Brand", ...]}` for one job board shared by several brands whose titles end in " \| Brand"; each brand is then tracked as its own company |

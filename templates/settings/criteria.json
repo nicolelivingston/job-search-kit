@@ -3,19 +3,29 @@
     "TITLE_KEYWORDS": [],
     "ROLE_REJECT_KEYWORDS": [],
     "LOCATION_REJECT_KEYWORDS": [
-      "india",
-      "bangalore",
-      "chennai",
-      "uk",
-      "united kingdom",
+      "argentina",
+      "australia",
+      "brazil",
+      "colombia",
+      "france",
       "germany",
+      "india",
+      "ireland",
+      "israel",
+      "japan",
+      "netherlands",
+      "nigeria",
+      "philippines",
+      "poland",
+      "portugal",
+      "romania",
+      "singapore",
+      "south africa",
       "spain",
       "sweden",
-      "ireland",
-      "france",
-      "netherlands",
-      "singapore",
-      "australia"
+      "uk",
+      "ukraine",
+      "united kingdom"
     ],
     "US_LOCATION_KEYWORDS": [
       "us",
@@ -53,19 +63,19 @@
       ]
     },
     "ROLE_TITLE_RE": {
-      "$re": "\\b(product manager|product owner|product lead)\\b",
+      "$re": "^$",
       "flags": [
         "I"
       ]
     },
     "ROLE_BAD_RE": {
-      "$re": "\\b(design|marketing|engineer|sales|intern|recruit)\\b",
+      "$re": "^$",
       "flags": [
         "I"
       ]
     },
     "ASK_FLAG_LABEL": "Ask Me First",
-    "ROLE_FAMILY_LABEL": "product "
+    "ROLE_FAMILY_LABEL": ""
   },
   "fit_scoring": {
     "HARD_RULES": [
@@ -161,14 +171,12 @@
           {
             "$rx": [
               "direct reports",
-              "~manag(e|ing|ement of) (a |the )?team of (product managers|pms|product leaders)",
               "people management",
               "people manager",
-              "~hire,? (coach|mentor|develop|and grow) (a team|product managers|pms)",
-              "~build and (lead|grow|scale) a team",
-              "~lead(ing)? a team of (product managers|pms)",
               "performance reviews",
-              "~manag(e|ing) (product managers|pms)\\b"
+              "~manag(e|ing|ement of) (a |the )?team of",
+              "~hire,? (coach|mentor|develop|and grow) (a|the|your) team",
+              "~build and (lead|grow|scale) (a|the|your) team"
             ]
           },
           "skip",
@@ -275,8 +283,8 @@
         ]
       }
     ],
-    "YEARS_RE": "(\\d{1,2})\\s*\\+?\\s*(?:or more\\s+)?(?:years|yrs)[^.;\\n]{0,80}?(?:product management|product manager|in product\\b)",
-    "YEARS_LABEL": "years of product management",
+    "YEARS_RE": "(\\d{1,2})\\s*\\+?\\s*(?:or more\\s+)?(?:years|yrs)[^.;\\n]{0,80}?(?:experience)",
+    "YEARS_LABEL": "years of experience",
     "TITLE_SKIP_LABEL": "Title is on your skip list",
     "WORK_ARRANGEMENT": {
       "mode": "remote"
@@ -291,9 +299,6 @@
   "board_feeds": {
     "WWR_FEEDS": [
       "https://weworkremotely.com/categories/remote-product-jobs.rss"
-    ],
-    "REMOTE_CO_FEEDS": [
-      "https://remote.co/remote-jobs/product/feed/"
     ]
   },
   "invariants": {

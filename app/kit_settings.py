@@ -91,7 +91,7 @@ def app_settings():
 # means, and add a step to MIGRATIONS that brings the previous version
 # forward. A brand-new setting needs no bump: read it with a default
 # (setting(..., default=...)) so older folders keep working unchanged.
-SETTINGS_VERSION = 2
+SETTINGS_VERSION = 3
 
 
 def _v0_to_v1(files):
@@ -116,9 +116,28 @@ def _v1_to_v2(files):
             for k in gone]
 
 
+RETIRED_V3 = {"board_feeds": ("REMOTE_CO_FEEDS",),
+              "fit_scoring": ("INFRA_DOMAIN", "PLANNING_DOMAIN", "AI_BUSINESS_BONUS")}
+
+
+def _v2_to_v3(files):
+    """Settings the kit no longer reads: the remote.co feed (the site blocks
+    automated readers, so it was never fetched) and two optional scoring rules
+    that were tied to one person's own fields."""
+    crit = files.get("criteria.json", {})
+    out = []
+    for section, names in RETIRED_V3.items():
+        sec = crit.get(section, {})
+        for k in names:
+            if k in sec:
+                sec.pop(k)
+                out.append(f"removed the setting {section}.{k}, which the kit no longer uses")
+    return out
+
+
 # from_version: step(files) -> list of plain-words changes. A step edits
 # `files` ({"criteria.json": {...}, ...}, the folder's JSON files) in memory.
-MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2}
+MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2, 2: _v2_to_v3}
 
 
 def folder_settings_version(folder=None):

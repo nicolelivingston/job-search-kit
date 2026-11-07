@@ -227,9 +227,9 @@ function custom(name) {
   if (name === "fields") { const f = A.fields; return `
     <label>Fields you care about <span class="hint">Name, how interested you are, and words that show up in postings for that field</span></label>
     <div id="doms">${f.domains.map(domRow).join("")}</div><button type="button" id="adddom">Add a field</button>
-    <label for="top">Companies you'd love to work for <span class="hint">One per line</span></label><textarea id="top">${esc(lines(f.top_companies))}</textarea>
-    <label for="good">Companies you'd be happy at</label><textarea id="good">${esc(lines(f.good_companies))}</textarea>
-    <label>Company job boards to check every day <span class="hint">Paste a careers page link and press Find board</span></label>
+    <label for="curf">Which of these fields is your current or most recent job in? <span class="hint">Type one of the field names above, or leave it blank. If it isn't there, add it as a field (interest can be low). When you apply to a company in this field, Claude keeps numbers, dates, and inside details more general, so you don't give away your employer's details.</span></label>
+    <input id="curf" type="text" list="curf-list" value="${esc(f.current_field||"")}"><datalist id="curf-list">${f.domains.map(d=>`<option value="${esc(d.name)}">`).join("")}</datalist>
+    <label>Companies you'd love to work for <span class="hint">Paste a careers page link and press Find board. The kit checks these job boards every day.</span></label>
     <div class="row"><input id="burl" type="text" placeholder="https://example.com/careers"><input id="bname" type="text" placeholder="Company name"></div>
     <p><button type="button" id="detect">Find board</button> <span id="dmsg" class="hint"></span></p>
     <div id="boards">${boardList()}</div>
@@ -289,8 +289,7 @@ function prefsHtml() { const p = A.prefs, v = p.voice, fr = p.format_rules, habi
    <label>When Claude needs you to decide</label>${pradios("p-dec", p.decisions, [["list","One numbered list of choices"],["conversation","Ask in conversation"]])}
    <label>When the answer seems obvious</label>${pradios("p-obv", p.obvious_calls, [["decide_and_tell","Decide and tell me, so I can veto"],["ask_first","Ask me first"]])}</div>
 
-  <div class="pgroup"><h3>Files</h3><p class="sub">The format for finished resumes and cover letters.</p>
-   ${pradios("p-file", p.file_format, [["word","Word (.docx)"],["pdf","PDF (made from the checked Word file)"]])}
+  <div class="pgroup"><h3>Files</h3><p class="sub">Finished resumes and cover letters are Word files (.docx). Word can save a copy as PDF when an application asks for one.</p>
    <div class="locked"><h4>Built in, so you can see your progress</h4>
     ${pcheck("pb-1","Every draft gets a version number (v1, v2, v3)",true,"disabled")}
     ${pcheck("pb-2","Tracks time and versions for each application, from first draft to sent, so you can see your process get faster",true,"disabled")}
@@ -320,7 +319,7 @@ function collectPrefs() { const p = A.prefs, v = p.voice, val = n => ($(`input[n
   v.tone = val("p-tone") ?? v.tone;
   p.saved_fixes = plines($("#p-fixes").value);
   p.feedback = val("p-fb") || p.feedback; p.drafts = val("p-drafts") || p.drafts; p.decisions = val("p-dec") || p.decisions;
-  p.obvious_calls = val("p-obv") || p.obvious_calls; p.file_format = val("p-file") || p.file_format;
+  p.obvious_calls = val("p-obv") || p.obvious_calls;
   $$("[data-perm].on").forEach(b => p.permissions[b.dataset.perm] = b.dataset.level);
   p.keep_general = plines($("#p-private").value);
   p.talk_it_through = $("#p-talk").checked; }
@@ -355,7 +354,7 @@ function collect() {
     r.contract_ok=$("input[name=ct]:checked").value==="yes"; r.travel_max_pct=Number($("#travel").value||0); r.excluded_industries=unlines($("#ind").value);
     r.excluded_companies=unlines($("#cos").value); r.exception_words=unlines($("#exc").value); r.benefits_rule=$("#ben").checked; }
   if (s.custom==="fields") { const f=A.fields; f.domains=[...document.querySelectorAll(".dom")].map(r=>({name:$(".dn",r).value,interest:$(".di",r).value,keywords:unlines($(".dk",r).value),points:r.dataset.points?Number(r.dataset.points):null,was:r.dataset.was||null})).filter(d=>d.name.trim());
-    f.top_companies=unlines($("#top").value); f.good_companies=unlines($("#good").value); f.feed=$("#feed").value; }
+    f.current_field=$("#curf").value.trim(); f.feed=$("#feed").value; }
   if (s.custom==="prefs") collectPrefs();
 }
 
