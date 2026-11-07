@@ -22,6 +22,11 @@ Safety, in order:
 5. If the repository has an UPDATES_PAUSED file on its main branch, nothing
    installs (the maintainer's switch to stop every update at once). If that
    check can't be made, nothing installs either.
+6. Betas never install automatically. A beta (a tag with a dash, like
+   v0.2.0-beta.1) is published as a GitHub pre-release, and GitHub's
+   "latest release" never returns a pre-release, so kits don't see it. A
+   tester installs a beta by hand from the releases page; the real release
+   with the same number (v0.2.0) then counts as newer and replaces it.
 The previous version can always be reinstalled from the releases page (SUPPORT.md).
 """
 import hashlib
@@ -88,8 +93,17 @@ def paused(opener=urllib.request.urlopen):
         return True
 
 
+def is_beta(v):
+    """True for a pre-release version such as v0.2.0-beta.1 (anything after a dash)."""
+    return "-" in v.lstrip("v")
+
+
 def needs_update(current, latest):
-    return parse(latest) > parse(current)
+    """True when `latest` is newer. A beta sorts just before its release, so a
+    kit on 0.2.0-beta.1 updates to 0.2.0, and a kit on 0.2.0 never goes back."""
+    def key(v):
+        return parse(v) + (0 if is_beta(v) else 1,)
+    return key(latest) > key(current)
 
 
 def expected_hash(sums_text, name):

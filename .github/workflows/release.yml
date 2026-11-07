@@ -1,5 +1,5 @@
 # Builds the Windows installer on GitHub's Windows machines whenever a
-# release tag (v1.2.3) is pushed, checks it, and attaches it to the GitHub
+# release tag (v1.2.3, or a beta like v1.2.3-beta.1) is pushed, checks it, and attaches it to the GitHub
 # release with the packaged plugin and SHA256SUMS.txt. The kit's updater
 # verifies the checksum before running anything.
 #
@@ -97,32 +97,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with: { name: dist, path: dist }
-      - name: Install silently and check
+      - name: Install silently and check (same script the pull request check runs)
         shell: pwsh
-        run: |
-          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
-          $want = (Get-Content dist\SHA256SUMS.txt | Where-Object { $_ -like "*$($exe.Name)" }).Split(" ")[0]
-          if ((Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower() -ne $want) { throw "checksum mismatch" }
-          Start-Process $exe.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
-          $app = "$env:LOCALAPPDATA\JobSearchKit"
-          foreach ($f in "python\python.exe","app\wizard.py","app\first_run.py","plugin\.claude-plugin\plugin.json","templates\settings\criteria.json") {
-            if (-not (Test-Path "$app\$f")) { throw "missing $f" } }
-          $menu = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Job Search Kit"
-          foreach ($l in "Open my job tracker","Change my settings","Send an error report","Check for updates") {
-            if (-not (Test-Path "$menu\$l.lnk")) { throw "missing Start menu item $l" } }
-          # first run: choose a local-only folder (as the wizard's first step does), then a dry agent run
-          $env:KIT_CONFIG_DIR = "$env:TEMP\kitcfg"
-          & "$app\python\python.exe" -c "import sys; sys.path.insert(0, r'$app\app'); import first_run; print(first_run.choose('local'))"
-          $env:KIT_SETTINGS_DIR = "$env:USERPROFILE\Job Search\settings"
-          Copy-Item "$app\templates\settings\*" $env:KIT_SETTINGS_DIR -Force
-          $env:AGENT_DRY_RUN = "1"
-          & "$app\python\python.exe" "$app\app\agent\job_search_agent.py" --quick
-          if ($LASTEXITCODE -ne 0) { throw "agent run failed" }
-          & "$app\python\python.exe" "$app\app\error_report.py" --save-only
-          Start-Process "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
-          if (-not (Test-Path "$env:USERPROFILE\Job Search\settings\criteria.json")) { throw "uninstall removed the user's folder" }
+        run: ./installer/smoke_test_windows.ps1 -Dist dist
 
   publish:
     # The "release" environment holds this job until the maintainer approves it
@@ -147,3 +127,7 @@ jobs:
             dist/SHA256SUMS.txt
             dist/job-search-kit-sbom.cdx.json
           generate_release_notes: true
+          # A tag with a dash (v0.2.0-beta.1) is a beta: published as a
+          # pre-release, which kits' automatic updates never see. Only a plain
+          # tag (v0.2.0) reaches users.
+          prerelease: ${{ contains(github.ref_name, '-') }}

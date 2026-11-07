@@ -18,6 +18,11 @@ Bugs are cheaper to catch with a script than by poking around. Four pieces:
    thousands of real postings through scoring and filtering and prints a hash.
    It proves a refactor changed nothing.
 
+Before a change reaches a user, it also passes the pull request checks
+(the tests as the made-up test people in `examples/`, plus a Windows
+install on a fresh machine) and a beta release. See `RELEASING.md`,
+"Test before it reaches anyone".
+
 ## The invariants (FAIL unless marked WARN)
 - one open row per company and normalized title
 - hard-rule Poor fit and Passed rows are closed; a soft Poor fit (label "Poor fit (...)": no pay, two or more missing requirements, weak fit) stays open by design
