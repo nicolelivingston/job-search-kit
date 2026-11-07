@@ -55,12 +55,10 @@ listed here.
 |---|---|---|
 | Which fields interest you most, and which least? | `fit_scoring.DOMAIN_SCORES`, `fit_scoring.DOMAIN_KEYWORDS`, `fit_scoring.DOMAIN_UNKNOWN` | A company with no field set scores 0 field points (never a keyword guess) |
 | Industries outside your field (a posting that requires years or experience in one counts it as a missed requirement) | `fit_scoring.OUT_OF_DOMAIN_INDUSTRIES`, `fit_scoring.OUT_OF_DOMAIN_LABEL` | Empty list turns the rule off |
-| Which of your fields is the developer-tooling or infrastructure one, and which is the planning or workflow one? | `fit_scoring.INFRA_DOMAIN`, `fit_scoring.PLANNING_DOMAIN` | Optional, both names from `DOMAIN_SCORES`. A planning or workflow role at an infrastructure company then scores as the planning field, and a data, platform, API, or developer title there is Possible fit at most |
-| Does AI work built for business or operations users (not engineers) deserve extra points? | `fit_scoring.AI_BUSINESS_BONUS` | `{"points": 4, "cards": "E01", "label": "..."}`; absent or 0 points means off |
 | Staffing agencies or reposters to ignore as the hiring company | `agent.REJECT_POSTERS` | Names, added as they turn up |
 | Companies you'd love to work for (paste careers page links) | `ats_tools.CONFIRMED_COMPANIES`, `ats_tools.CUSTOM_SITE_COMPANIES` | The wizard detects the job board. A Workday board is read only when its entry has `"workday_ok": true` (a box in the wizard; see SOURCES.md) |
 | Companies you already rank highly | `fit_scoring.TIER_PRECEDENTS` | |
-| Which remote job feeds fit your field? | `board_feeds.WWR_FEEDS`, `board_feeds.REMOTE_CO_FEEDS` | Category feeds |
+| Remote job feed for your field | `board_feeds.WWR_FEEDS` | One We Work Remotely category feed, picked from a list |
 
 ### 6. Your evidence and your resume
 | Question | Settings | Notes |
@@ -100,7 +98,7 @@ These live in `preferences.json`. The Claude plugin reads them every session (th
 | What bugged you about AI drafts, habits to avoid, punctuation, tone | `voice.what_bugged_you`, `voice.avoid_habits`, `voice.oxford_comma`, `voice.contractions`, `voice.keep_my_wording`, `voice.tone` | Habits are suggestions, none picked by default. Picking em dashes also turns on `presend_gate.FLAG_EM_DASH`. Start Here session 1 seeds Rules File section 2 from these |
 | Fixes you've saved | `saved_fixes` | Added by Claude when the user says yes to saving a fix; the user can delete any line |
 | Feedback, drafts, decisions, obvious calls | `feedback` (`blunt`, `balanced`, `gentle`), `drafts` (`one`, `options`), `decisions` (`list`, `conversation`), `obvious_calls` (`decide_and_tell`, `ask_first`) | `drafts` applies to cover letters and written answers; a resume is always one version built from the bank |
-| File format | `file_format` (`word`, `pdf`) | PDF is made from the gated Word file, which stays in the folder |
+| File format | `file_format` (`word`) | Word only for now; not asked in setup. Word can save a copy as PDF |
 | What Claude can do | `permissions.update_tracker`, `permissions.draft_messages`, `permissions.draft_form_answers`, `permissions.save_fixes` | Each `can`, `ask`, or `never`. Always on, not settings: never invent, flag gaps, fix a correction everywhere it appears, never send, never submit |
 | What stays general on paper | `keep_general` | Start Here session 3 seeds Rules File section 5 ("Never on paper") from it |
 | Talk it through | `talk_it_through`, `talked_through` | Up to three questions about blank sections, once. Claude writes the date to `talked_through` afterwards |

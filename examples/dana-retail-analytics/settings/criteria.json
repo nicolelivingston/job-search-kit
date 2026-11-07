@@ -395,8 +395,7 @@
   "board_feeds": {
     "WWR_FEEDS": [
       "https://weworkremotely.com/categories/remote-data-jobs.rss"
-    ],
-    "REMOTE_CO_FEEDS": []
+    ]
   },
   "invariants": {
     "TRACKING_STARTS": {

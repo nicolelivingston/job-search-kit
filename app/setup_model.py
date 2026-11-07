@@ -23,7 +23,7 @@ FILES = ("criteria.json", "companies.json", "resume.json", "app.json", "paths.js
 PREF_CHOICES = {"resume_pages": ("auto", "one", "two"), "bullet_length": ("short", "medium", "detailed"),
                 "feedback": ("blunt", "balanced", "gentle"), "drafts": ("one", "options"),
                 "decisions": ("list", "conversation"), "obvious_calls": ("decide_and_tell", "ask_first"),
-                "file_format": ("word", "pdf")}
+                "file_format": ("word",)}   # PDF may come back in a later version
 TONES = ("", "plain", "warm", "formal", "match")
 HABITS = ("em_dash", "not_x_its_y", "lists_of_three", "buzzwords", "hope_this_finds_you", "repeat_ending",
           "gushing", "resume_cliches", "heavy_bold", "emojis", "rhetorical_questions", "stacked_hedges")
@@ -35,13 +35,13 @@ POSTURE = {"remote": {"Structurally remote (no HQ)": 9, "Remote-first with offic
 INTEREST = {"high": 20, "medium": 12, "low": 4, "no": 0}
 NO_CAP = 100
 FEEDS = {
-    "product": ["https://weworkremotely.com/categories/remote-product-jobs.rss", "https://remote.co/remote-jobs/product/feed/"],
-    "customer support": ["https://weworkremotely.com/categories/remote-customer-support-jobs.rss", ""],
-    "data": ["https://weworkremotely.com/categories/remote-data-jobs.rss", ""],
-    "design": ["https://weworkremotely.com/categories/remote-design-jobs.rss", ""],
-    "marketing": ["https://weworkremotely.com/categories/remote-sales-and-marketing-jobs.rss", ""],
-    "programming": ["https://weworkremotely.com/categories/remote-programming-jobs.rss", ""],
-    "management and finance": ["https://weworkremotely.com/categories/remote-management-and-finance-jobs.rss", ""],
+    "product": "https://weworkremotely.com/categories/remote-product-jobs.rss",
+    "customer support": "https://weworkremotely.com/categories/remote-customer-support-jobs.rss",
+    "data": "https://weworkremotely.com/categories/remote-data-jobs.rss",
+    "design": "https://weworkremotely.com/categories/remote-design-jobs.rss",
+    "marketing": "https://weworkremotely.com/categories/remote-sales-and-marketing-jobs.rss",
+    "programming": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+    "management and finance": "https://weworkremotely.com/categories/remote-management-and-finance-jobs.rss",
 }
 
 
@@ -89,7 +89,7 @@ def read_answers(settings_dir):
         interest = min(INTEREST, key=lambda k: abs(INTEREST[k] - pts))
         domains.append({"name": name, "interest": interest, "keywords": kw.get(name, []), "points": pts, "was": interest})
     tiers = dict(fs["TIER_PRECEDENTS"].get("$dict", []))
-    feed = next((k for k, v in FEEDS.items() if c["board_feeds"]["WWR_FEEDS"][:1] == v[:1]), "product")
+    feed = next((k for k, v in FEEDS.items() if c["board_feeds"]["WWR_FEEDS"][:1] == [v]), "product")
     years_m = re.search(r"\(\?:((?:[^()]|\([^)]*\))*)\)\)?$", fs.get("YEARS_RE", ""))
     return {
         "work": {
@@ -252,8 +252,7 @@ def apply_answers(settings, a):
                              for d in doms if any(k.strip() for k in d["keywords"])]
     fs["TIER_PRECEDENTS"] = {"$dict": [[1, [x.strip().lower() for x in fi["top_companies"] if x.strip()]],
                                        [2, [x.strip().lower() for x in fi["good_companies"] if x.strip()]]]}
-    feeds = FEEDS.get(fi.get("feed", "product"), FEEDS["product"])
-    c["board_feeds"] = {"WWR_FEEDS": [feeds[0]], "REMOTE_CO_FEEDS": [f for f in feeds[1:] if f]}
+    c["board_feeds"] = {"WWR_FEEDS": [FEEDS.get(fi.get("feed", "product"), FEEDS["product"])]}
     co["ats_tools"]["CONFIRMED_COMPANIES"] = fi["boards"]
     co["ats_tools"]["CUSTOM_SITE_COMPANIES"] = fi["custom_sites"]
 

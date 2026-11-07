@@ -236,13 +236,5 @@ class StaffingAndDomain(unittest.TestCase):
         finally:
             fs.DOMAIN_GUESS = old
 
-    def test_planning_rule_is_off_without_the_domain_settings(self):
-        self.assertTrue(fs.role_is_planning("Staff Product Manager, Planning", ""))
-        self.assertFalse(fs.role_is_planning("Staff Product Manager, Infrastructure", "planning planning"))
-        if not fs.DEV_TOOLING:
-            pts, label = fs.domain_score("Product Manager, Planning", "", ["Some Domain"])
-            self.assertNotIn("role is planning", str(label))
-
-
 if __name__ == "__main__":
     unittest.main(verbosity=1)

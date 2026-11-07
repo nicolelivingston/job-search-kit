@@ -449,9 +449,6 @@
   "board_feeds": {
     "WWR_FEEDS": [
       "https://weworkremotely.com/categories/remote-product-jobs.rss"
-    ],
-    "REMOTE_CO_FEEDS": [
-      "https://remote.co/remote-jobs/product/feed/"
     ]
   },
   "invariants": {

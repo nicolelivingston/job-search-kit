@@ -289,8 +289,7 @@ function prefsHtml() { const p = A.prefs, v = p.voice, fr = p.format_rules, habi
    <label>When Claude needs you to decide</label>${pradios("p-dec", p.decisions, [["list","One numbered list of choices"],["conversation","Ask in conversation"]])}
    <label>When the answer seems obvious</label>${pradios("p-obv", p.obvious_calls, [["decide_and_tell","Decide and tell me, so I can veto"],["ask_first","Ask me first"]])}</div>
 
-  <div class="pgroup"><h3>Files</h3><p class="sub">The format for finished resumes and cover letters.</p>
-   ${pradios("p-file", p.file_format, [["word","Word (.docx)"],["pdf","PDF (made from the checked Word file)"]])}
+  <div class="pgroup"><h3>Files</h3><p class="sub">Finished resumes and cover letters are Word files (.docx). Word can save a copy as PDF when an application asks for one.</p>
    <div class="locked"><h4>Built in, so you can see your progress</h4>
     ${pcheck("pb-1","Every draft gets a version number (v1, v2, v3)",true,"disabled")}
     ${pcheck("pb-2","Tracks time and versions for each application, from first draft to sent, so you can see your process get faster",true,"disabled")}
@@ -320,7 +319,7 @@ function collectPrefs() { const p = A.prefs, v = p.voice, val = n => ($(`input[n
   v.tone = val("p-tone") ?? v.tone;
   p.saved_fixes = plines($("#p-fixes").value);
   p.feedback = val("p-fb") || p.feedback; p.drafts = val("p-drafts") || p.drafts; p.decisions = val("p-dec") || p.decisions;
-  p.obvious_calls = val("p-obv") || p.obvious_calls; p.file_format = val("p-file") || p.file_format;
+  p.obvious_calls = val("p-obv") || p.obvious_calls;
   $$("[data-perm].on").forEach(b => p.permissions[b.dataset.perm] = b.dataset.level);
   p.keep_general = plines($("#p-private").value);
   p.talk_it_through = $("#p-talk").checked; }

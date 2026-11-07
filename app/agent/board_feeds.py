@@ -36,7 +36,7 @@ HEADERS = {"User-Agent": _ks_ua()}
 
 # Hosts whose postings come from a recency-windowed feed. A row whose Job
 # Posting URL is on one of these is never marked stale by the agent.
-FEED_HOSTS = ("weworkremotely.com", "himalayas.app", "workingnomads.com", "remote.co")
+FEED_HOSTS = ("weworkremotely.com", "himalayas.app", "workingnomads.com")
 
 
 def _iso(dt):
@@ -240,36 +240,13 @@ def fetch_working_nomads():
 
 
 # ---------------------------------------------------------------------------
-# remote.co (RSS, best effort)
-# ---------------------------------------------------------------------------
-
-REMOTE_CO_FEEDS = _S("board_feeds.REMOTE_CO_FEEDS")
-
-
-def fetch_remote_co():
-    jobs = []
-    for url in REMOTE_CO_FEEDS:
-        try:
-            resp = request_with_retry(requests.get, url, headers=HEADERS, timeout=60)
-            resp.raise_for_status()
-            if "<rss" not in resp.text[:2000] and "<feed" not in resp.text[:2000]:
-                raise ValueError("not an RSS feed (HTML page returned)")
-            jobs.extend(_parse_rss(resp.text, "Other", "remoteco"))
-        except (requests.RequestException, ET.ParseError, ValueError) as e:
-            print(f"[warn] remote.co feed failed ({url}): {e}", file=sys.stderr)
-    return jobs
-
-
-# ---------------------------------------------------------------------------
 
 def fetch_board_feeds():
     """All feed boards, in one list. Order matters to the agent: these come
     after the company boards, so when the same posting arrives from both,
     the company's own ATS URL wins the Notion row."""
     jobs = []
-    # remote.co dropped 2026-10-21: it times out and resets the connection
-    # (bot protection), which cost two minutes of retries per run for nothing.
-    # fetch_remote_co stays available for a manual try.
+    # remote.co is not used: it blocks automated readers (bot protection).
     for name, fn in (("We Work Remotely", fetch_weworkremotely), ("Himalayas", fetch_himalayas),
                      ("Working Nomads", fetch_working_nomads)):
         batch = fn()

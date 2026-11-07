@@ -62,15 +62,7 @@ Version notes
         The agent writes a fit label; the user writes their own decision.
         Only hard-rule Poor fits (and the user's Passed) are closed; a Poor
         fit for no pay, 2+ missing minimums, or weak fit stays open.
-  v3.4  Domain is judged by the role: a planning or workflow role at a
-        company tagged with the infrastructure domain scores as the planning
-        domain, unless the title is infrastructure work (settings
-        INFRA_DOMAIN and PLANNING_DOMAIN; found on a planning posting that
-        scored 59 on its company tag while its full text scored 84).
-  v3.5  Optional bonus, AI for business users (AI_BUSINESS_BONUS): AI or
-        agent work whose users are operations, business, or other
-        non-engineering teams. Not given when the users are engineers or
-        developers. Off unless the user turns it on.
+  v3.4, v3.5  (Not in the kit.)
   v3.6  Verdict names: the agent writes Strong fit / Possible fit / Poor fit;
         the user writes Applying / Passed. Old names carry over once
         (OLD_VERDICTS).
@@ -763,36 +755,6 @@ def coverage_note(cov):
         head += f", capped at {MIN_CAP_ONE} (Possible fit)"
     return head + ": " + quoted + "."
 
-# AI FOR BUSINESS USERS  (v3.5)
-# An optional bonus for AI or agent work built for people who aren't
-# engineers (a user whose edge is the business-side view of trust and
-# approval turns it on in setup). Given only when the posting names
-# non-engineering users and doesn't name engineers or developers as the
-# users. Off (0 points) unless fit_scoring.AI_BUSINESS_BONUS says otherwise.
-AI_WORK_RX = _rx("~\\bai\\b", "agentic", "agents", "ai agents", "llm", "llms", "generative ai",
-                 "copilot", "automation with ai")
-BUSINESS_USERS_RX = _rx("operations teams", "operations team", "ops teams", "business users",
-                        "non-technical users", "nontechnical users", "back office", "back-office",
-                        "finance teams", "accounting teams", "support agents", "service teams",
-                        "case workers", "underwriters", "analysts",
-                        "human approval", "human-in-the-loop", "human in the loop", "approvals",
-                        "knowledge workers", "frontline")
-ENGINEER_USERS_RX = _rx("~engineers?\\s+(?:use|to\\s+(?:query|debug|investigate|build))",
-                        "for developers", "developer experience", "developer tools", "engineering teams use",
-                        "production systems", "devops teams", "sre", "site reliability",
-                        "~\\bengineers\\b[^.]{0,40}\\b(?:investigat|debug|on-call|paged)")
-_AI_BONUS = _S("fit_scoring.AI_BUSINESS_BONUS", default={}) or {}
-AI_BUSINESS_LABEL = _AI_BONUS.get("label") or "AI for business and operations users"
-AI_BUSINESS_CARDS = _AI_BONUS.get("cards") or ""
-AI_BUSINESS_PTS = int(_AI_BONUS.get("points") or 0)
-
-
-def ai_for_business_users(title, text):
-    blob = f"{title} {text}"
-    return bool(AI_WORK_RX.search(blob) and BUSINESS_USERS_RX.search(blob)
-                and not ENGINEER_USERS_RX.search(blob))
-
-
 # ---------------------------------------------------------------------------
 # DOMAIN  0-20   (the fields that interest the user most)
 # ---------------------------------------------------------------------------
@@ -813,42 +775,9 @@ ADJACENT_DOMAINS = set(_S("fit_scoring.ADJACENT_DOMAINS", default=[]))
 DRAG_DOMAINS = set(_S("fit_scoring.DRAG_DOMAINS", default=[]))
 
 
-# v3.4: domain is judged by the role. A planning or workflow role at a
-# company tagged with the infrastructure domain scores as the planning domain;
-# an infrastructure title there keeps the company's low domain score. The two domain labels are
-# the user's own DOMAIN_SCORES keys (criteria.json: fit_scoring.INFRA_DOMAIN and
-# fit_scoring.PLANNING_DOMAIN); leave them blank and the rule is off.
-PLANNING_ROLE_RX = _rx("planning", "work items", "project management", "portfolio planning",
-                       "workflow", "workflows", "roadmapping", "collaboration", "productivity")
-PLANNING_TITLE_RX = _rx("planning", "plan", "workflow", "workflows", "project management",
-                        "work management", "collaboration", "productivity", "portfolio")
-INFRA_TITLE_RX = _rx("infrastructure", "compute", "database", "databases", "observability",
-                     "kubernetes", "ci/cd", "ci", "cd", "source code", "runtime", "networking",
-                     "storage", "sdk", "api", "apis", "devsecops", "security scanning",
-                     "vulnerability", "data platform", "data infrastructure")
-DEV_TOOLING = _S("fit_scoring.INFRA_DOMAIN", default="") or ""
-PLANNING_DOMAIN = _S("fit_scoring.PLANNING_DOMAIN", default="") or ""
-
-
-def role_is_planning(title, text):
-    """A planning or workflow role: the title says so, or the posting leans on
-    planning vocabulary (three or more distinct hits), and the title isn't
-    infrastructure work."""
-    if INFRA_TITLE_RX.search(title or ""):
-        return False
-    if PLANNING_TITLE_RX.search(title or ""):
-        return True
-    hits = {m.group(0).lower() for m in PLANNING_ROLE_RX.finditer(text or "")}
-    return len(hits) >= 3
-
-
 def domain_score(title, text, company_domains=None):
     """Returns (points, domain label used)."""
-    pts, label = _domain_score_base(title, text, company_domains)
-    if DEV_TOOLING and PLANNING_DOMAIN in DOMAIN_SCORES and label and DEV_TOOLING in str(label) \
-            and pts < DOMAIN_SCORES[PLANNING_DOMAIN] and role_is_planning(title, text):
-        return DOMAIN_SCORES[PLANNING_DOMAIN], f"{PLANNING_DOMAIN} (role is planning or workflow; company tagged {DEV_TOOLING})"
-    return pts, label
+    return _domain_score_base(title, text, company_domains)
 
 
 DOMAIN_NONE_LABEL = "domain unknown (no Domain set on the Companies row)"
@@ -1039,14 +968,6 @@ def staffing_signal(text, salary_text=""):
     return True
 
 
-# v3.7: at a company tagged with the user's infrastructure domain
-# (fit_scoring.INFRA_DOMAIN), a title naming databases, data, platform,
-# infrastructure, API, or developer is Possible fit at most.
-DEV_TOOLING_CAP_TITLE_RX = _rx("database", "databases", "data", "platform", "platforms",
-                               "infrastructure", "api", "apis", "developer", "developers")
-DEV_TOOLING_CAP = MIN_CAP_ONE
-
-
 def score_posting(title, text, salary_min=None, company=None, company_name="",
                   evergreen=False, today=None, remote_hint=False, age_days=None,
                   salary_text=""):
@@ -1076,9 +997,6 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
         if rx.search(blob):
             work_pts += pts
             matched.append((label, cards))
-    if AI_BUSINESS_PTS and ai_for_business_users(title, text):
-        work_pts += AI_BUSINESS_PTS
-        matched.append((AI_BUSINESS_LABEL, AI_BUSINESS_CARDS))
     work_pts = min(work_pts, WORK_CAP)
 
     # Confirmed-gap penalties
@@ -1139,11 +1057,6 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
         caps_hit.append("staffing-agency signal")
         min_note = (min_note + " " if min_note else "") + (
             f"No benefits named and one flat salary figure (staffing-agency signal), capped at {STAFFING_CAP}.")
-    if DEV_TOOLING and DEV_TOOLING in (company.get("domains") or []) and DEV_TOOLING_CAP_TITLE_RX.search(title or ""):
-        score = min(score, DEV_TOOLING_CAP)
-        caps_hit.append("data or platform title at a dev-tooling company")
-        min_note = (min_note + " " if min_note else "") + (
-            f"Title names data, platform, infrastructure, API, or developer at a {DEV_TOOLING} company, capped at {DEV_TOOLING_CAP}.")
 
     # v2.7: no posted base pay drops a posting to the
     # lowest tier. The salary extractor is a heuristic, so a dollar amount

@@ -113,7 +113,7 @@ class SetupModel(unittest.TestCase):
             p = sm.read_answers(dst)["prefs"]
             self.assertEqual(p["tools"], ["Excel", "Jira"], "tools are trimmed and de-duplicated")
             self.assertEqual(p["voice"]["avoid_habits"], ["em_dash", "emojis"])
-            self.assertEqual((p["voice"]["tone"], p["feedback"], p["file_format"]), ("", "balanced", "pdf"), "unknown choices keep the saved value")
+            self.assertEqual((p["voice"]["tone"], p["feedback"], p["file_format"]), ("", "balanced", "word"), "unknown choices keep the saved value (Word is the only format for now)")
             self.assertEqual(p["permissions"], {"update_tracker": "never", "draft_messages": "can",
                                                 "draft_form_answers": "can", "save_fixes": "ask"})
             self.assertFalse(p["format_rules"]["explain_jargon"])

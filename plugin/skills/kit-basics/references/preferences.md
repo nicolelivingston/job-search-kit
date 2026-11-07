@@ -24,7 +24,7 @@ The plugin writes only two keys here: `talked_through` and `saved_fixes`. Everyt
 | `drafts` | `options`: cover letters and written application answers come as two or three short options for the opening and any paragraph with a real choice in it; the user picks. A resume is always one version built from the bank. |
 | `decisions` | `list`: decisions in one numbered list with the choices spelled out. `conversation`: ask one at a time. |
 | `obvious_calls` | `decide_and_tell`: make the obvious call, say what it was in one line, offer a veto. `ask_first`: ask before making it. Either way, anything that can't be undone or that sends something is asked first. |
-| `file_format` | `pdf`: after the gate passes, convert the gated Word file with the same LibreOffice the builder uses (`soffice --headless --convert-to pdf --outdir "<application folder>" "<file.docx>"`) and deliver the PDF. The Word file stays in the folder; versions and the gate work on it. No LibreOffice: deliver the Word file and say the PDF couldn't be made. |
+| `file_format` | Always `word` for now: deliver the gated Word file. If an application wants a PDF, tell the user Word can save a copy as PDF (File, Save As). |
 | `permissions.*` | `can`: do it as the skills say. `ask`: ask each time before doing it. `never`: don't; say in one line what the user would do instead (for the tracker, list the fields and values so they can enter them). |
 | `keep_general` | Session 3 seeds Rules File section 5 ("Never on paper") from it. On paper these stay general; the Prep File may be specific. |
 
