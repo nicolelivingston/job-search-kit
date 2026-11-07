@@ -15,7 +15,21 @@ from pathlib import Path
 
 KIT = Path(__file__).resolve().parent.parent
 TEMPLATE = KIT / "templates" / "settings"
-FILES = ("criteria.json", "companies.json", "resume.json", "app.json", "paths.json")
+FILES = ("criteria.json", "companies.json", "resume.json", "app.json", "paths.json", "preferences.json")
+
+# "How Claude works for you" (setup step 8). The Claude plugin reads preferences.json;
+# two answers also reach the gate: the em dash habit (presend_gate.FLAG_EM_DASH) and a
+# fixed page count (presend_gate.PAGE_LIMIT). See SETTINGS.md.
+PREF_CHOICES = {"resume_pages": ("auto", "one", "two"), "bullet_length": ("short", "medium", "detailed"),
+                "feedback": ("blunt", "balanced", "gentle"), "drafts": ("one", "options"),
+                "decisions": ("list", "conversation"), "obvious_calls": ("decide_and_tell", "ask_first"),
+                "file_format": ("word", "pdf")}
+TONES = ("", "plain", "warm", "formal", "match")
+HABITS = ("em_dash", "not_x_its_y", "lists_of_three", "buzzwords", "hope_this_finds_you", "repeat_ending",
+          "gushing", "resume_cliches", "heavy_bold", "emojis", "rhetorical_questions", "stacked_hedges")
+PERMISSIONS = ("update_tracker", "draft_messages", "draft_form_answers", "save_fixes")
+LEVELS = ("can", "ask", "never")
+PAGES = {"one": 1, "two": 2}
 POSTURE = {"remote": {"Structurally remote (no HQ)": 9, "Remote-first with offices": 6, "Unknown": 4},
            "other": {"Structurally remote (no HQ)": 7, "Remote-first with offices": 7, "Hybrid / RTO risk": 6, "Unknown": 4}}
 INTEREST = {"high": 20, "medium": 12, "low": 4, "no": 0}
@@ -110,7 +124,63 @@ def read_answers(settings_dir):
                    "once_per_resume": g["ONCE_PER_RESUME"], "name": "", "headline": ""},
         "run": {"full": app.get("schedule", {}).get("full", "08:00"), "quick": app.get("schedule", {}).get("quick", []),
                 "tracker": app.get("tracker", "local"), "auto_update": app.get("auto_update", True) is not False},
+        "prefs": _read_prefs(s["preferences.json"], g),
     }
+
+
+def _template_prefs():
+    return json.loads((TEMPLATE / "preferences.json").read_text(encoding="utf-8"))
+
+
+def _words(v, limit=200):
+    out, seen = [], set()
+    for x in v if isinstance(v, list) else []:
+        t = str(x).strip()[:300]
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            out.append(t)
+    return out[:limit]
+
+
+def _clean_prefs(p, base):
+    """The wizard's answers, checked against the allowed choices; anything unknown keeps
+    its saved (or default) value, and keys the wizard doesn't own are kept as they were."""
+    d = _template_prefs()
+    out = copy.deepcopy(base)
+    p = p if isinstance(p, dict) else {}
+    out["tools"] = _words(p.get("tools", base.get("tools")))
+    fr_in, fr_old = p.get("format_rules") or {}, base.get("format_rules") or {}
+    out["format_rules"] = {k: bool(fr_in.get(k, fr_old.get(k, dv))) for k, dv in d["format_rules"].items()}
+    out["own_rules"] = _words(p.get("own_rules", base.get("own_rules")))
+    for k, allowed in PREF_CHOICES.items():
+        v = p.get(k, base.get(k))
+        out[k] = v if v in allowed else (base.get(k) if base.get(k) in allowed else d[k])
+    vi, vo = p.get("voice") or {}, base.get("voice") or {}
+    tone = vi.get("tone", vo.get("tone", ""))
+    habits = set(vi.get("avoid_habits", vo.get("avoid_habits")) or [])
+    out["voice"] = {"what_bugged_you": str(vi.get("what_bugged_you", vo.get("what_bugged_you", "")) or "").strip()[:2000],
+                    "avoid_habits": [h for h in HABITS if h in habits],
+                    "oxford_comma": bool(vi.get("oxford_comma", vo.get("oxford_comma", False))),
+                    "contractions": bool(vi.get("contractions", vo.get("contractions", False))),
+                    "keep_my_wording": bool(vi.get("keep_my_wording", vo.get("keep_my_wording", False))),
+                    "tone": tone if tone in TONES else ""}
+    pi, po = p.get("permissions") or {}, base.get("permissions") or {}
+    out["permissions"] = {}
+    for k in PERMISSIONS:
+        v = pi.get(k, po.get(k))
+        out["permissions"][k] = v if v in LEVELS else d["permissions"][k]
+    out["keep_general"] = _words(p.get("keep_general", base.get("keep_general")))
+    out["saved_fixes"] = _words(p.get("saved_fixes", base.get("saved_fixes")), limit=500)
+    out["talk_it_through"] = bool(p.get("talk_it_through", base.get("talk_it_through", True)))
+    out.setdefault("talked_through", d["talked_through"])   # written by the plugin, never by the wizard
+    return out
+
+
+def _read_prefs(saved, gate):
+    p = _clean_prefs(saved, {**_template_prefs(), **(saved or {})})
+    if gate.get("FLAG_EM_DASH") and "em_dash" not in p["voice"]["avoid_habits"]:
+        p["voice"]["avoid_habits"] = [h for h in HABITS if h in set(p["voice"]["avoid_habits"]) | {"em_dash"}]
+    return p
 
 
 def apply_answers(settings, a):
@@ -205,6 +275,13 @@ def apply_answers(settings, a):
     if "auto_update" in run:
         app["auto_update"] = bool(run["auto_update"])
     app["tracker"] = run["tracker"]
+
+    if "prefs" in a:   # setup step 8; an older page that doesn't send it leaves the file alone
+        old = {**_template_prefs(), **(s.get("preferences.json") or {})}
+        p = s["preferences.json"] = _clean_prefs(a["prefs"], old)
+        g["FLAG_EM_DASH"] = "em_dash" in p["voice"]["avoid_habits"]
+        if p["resume_pages"] in PAGES:
+            g["PAGE_LIMIT"] = PAGES[p["resume_pages"]]   # "auto" leaves it to Start Here session 3
     return s
 
 

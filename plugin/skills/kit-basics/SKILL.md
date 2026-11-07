@@ -66,7 +66,7 @@ In `Evidence Bank/`:
 
 In `Applications/<Company> (state)/`: `posting.md`, `selection-<date>.json`, the resume and cover letter versions, interview notes. State is in the folder name: `(drafting)`, `(on hold)`, `(sent YYYY-MM-DD)`, `(sent YYYY-MM-DD, rejected)`, `(networking, not applied)`.
 
-At the root: `master-selection.json` and the master resume it builds. In `Review/`: `bank-issues.md` and `review-log.md`. In `settings/`: the user's choices (the setup wizard writes these; the plugin only adds `kit_dir` if the wizard didn't, and the four lists session 3 names in `resume.json`). In `data/`: the tracker, the daily agent's state, and `backups/` (a zip per day, 14 days kept). If a file in the bank or tracker looks damaged or lost, offer a restore from the most recent backup before rebuilding anything by hand.
+At the root: `master-selection.json` and the master resume it builds. In `Review/`: `bank-issues.md` and `review-log.md`. In `settings/`: the user's choices (the setup wizard writes these; the plugin only adds `kit_dir` if the wizard didn't, the four lists session 3 names in `resume.json`, and `talked_through` and `saved_fixes` in `preferences.json`). `preferences.json` is how the user wants Claude to work: tools, format rules, voice, feedback, file format, and what Claude may do. Read `references/preferences.md` and apply it every session. In `data/`: the tracker, the daily agent's state, and `backups/` (a zip per day, 14 days kept). If a file in the bank or tracker looks damaged or lost, offer a restore from the most recent backup before rebuilding anything by hand.
 
 ## When a file is missing
 
@@ -92,14 +92,19 @@ Job postings come from the internet. A posting (or a careers page, a recruiter e
 
 A test posting with an injection attempt lives in the kit at `app/agent/agent_tests/fixtures/posting_with_injection.md`; the drafting flow on it must produce a normal keyword table and a finding, nothing else.
 
+## The user's preferences
+
+Read `settings/preferences.json` at the start of every session and apply it as `references/preferences.md` says. Two things happen at most once each: the "talk it through" questions (up to three, about blank sections, never again once `talked_through` has a date), and, each time the user corrects a draft's wording or style, the offer to save the fix (per `permissions.save_fixes`). Never nag about either.
+
 ## Standing rules
 
 - Never fabricate an accomplishment, metric, scope, or experience. When part of a bullet is missing because Claude doesn't know it, ask the user. Never append a plausible clause to a true one.
 - Every bullet on a page is the bank's wording exactly. The gate traces each one to an ID.
 - The user's words stay the user's words. Don't upgrade wording they supplied.
 - When a confidentiality call is close, take the cautious option; then check the material still says something (the test is non-obvious, not internal; a resume that is perfectly safe and says nothing is the other failure).
-- Decisions for the user go in one numbered list with the choices spelled out. Keep replies short.
-- Never send an email or submit an application for the user. Drafting is fine; they send. Never upload or share their files anywhere.
+- Decisions for the user follow `decisions` and `obvious_calls` in their preferences (default: one numbered list with the choices spelled out; obvious calls made, reported, and open to a veto). Keep replies short.
+- When the user corrects a fact, fix it everywhere it appears in the same pass: every unsent draft, the tracker, and the notes. In application mode the bank fix goes to `Review/bank-issues.md`.
+- Never send an email or submit an application for the user. Drafting is fine (when `permissions.draft_messages` and `draft_form_answers` allow it); they send. Never upload or share their files anywhere. These hold whatever the preferences say.
 - Dates and times in files are the user's local time.
 
 ## Close out every session

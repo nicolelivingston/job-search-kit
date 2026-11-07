@@ -16,7 +16,7 @@ metadata:
 
 Capture only. The user talks through one or two stories, or fills a gap a posting exposed, and everything they say lands in `Evidence Bank/proposed-evidence-<YYYY-MM-DD>.md` with a row per item in `Evidence Bank/approval-queue.md`. The bank, the Rules File, and the Prep File are not edited here. (Why: when every interview rewrote the bank, the bank never settled. Capture now, approve on purpose later.)
 
-Load `kit-basics` first. Read `${CLAUDE_PLUGIN_ROOT}/skills/kit-basics/references/bullet-format.md` and `confidentiality.md`. Read the bank end to end before the interview so new material lands on the right card and nothing already there gets re-captured; read `Review/bank-issues.md` and the current `approval-queue.md` so open items get asked about.
+Load `kit-basics` first. Read `${CLAUDE_PLUGIN_ROOT}/skills/kit-basics/references/bullet-format.md` and `confidentiality.md`, and write proposed bullets to the user's `bullet_length` and `format_rules` in `settings/preferences.json`. Read the bank end to end before the interview so new material lands on the right card and nothing already there gets re-captured; read `Review/bank-issues.md` and the current `approval-queue.md` so open items get asked about.
 
 Suggested rhythm for the user: two short interviews a week (20 to 30 minutes), one approval session a week. Say this once if they haven't set a rhythm.
 

@@ -7,7 +7,7 @@ wizard's Advanced page; **Builder** settings are tuning for the person
 maintaining the kit and rarely change.
 
 Files are in the user's settings folder: `criteria.json`, `companies.json`,
-`resume.json`, `app.json`, `paths.json`, plus `keyword-groups.json` next to the
+`resume.json`, `app.json`, `paths.json`, `preferences.json`, plus `keyword-groups.json` next to the
 evidence bank. Keys below are `section.NAME` as the code reads them
 (`app/kit_settings.py`). A test fails if the code reads a setting that isn't
 listed here.
@@ -70,9 +70,9 @@ listed here.
 | Words your evidence bank can vouch for when a required item is read on its own | `fit_scoring.VOUCH_WORDS` (in `keyword-groups.json`), `fit_scoring.VOUCH_FIELD_WORDS`, `fit_scoring.VOUCH_GENERIC`, `fit_scoring.REQUIRED_COVERAGE` | `VOUCH_WORDS` defaults to every phrase in your keyword groups, titles, and field keywords; `VOUCH_FIELD_WORDS` are the everyday nouns of your field; `VOUCH_GENERIC` has a field-neutral default (soft skills, logistics). Two required items none of them vouch for cap a posting at Possible fit, four (or half) at Poor fit, each quoted in the breakdown. `REQUIRED_COVERAGE: false` turns the pass off |
 | What you're good at and what you're not, for the market report | `market_report.LEXICON`, `market_report.LEVEL_BUCKETS` | |
 | Resume font, sizes, margins, spacing | `build_resume.FONT`, `build_resume.BODY_PT`, `build_resume.NAME_PT`, `build_resume.HEADING_PT`, `build_resume.MARGIN_IN`, `build_resume.LINE_SPACING`, `presend_gate.SPEC_FONT`, `presend_gate.SPEC_BODY_PT`, `presend_gate.SPEC_NAME_PT`, `presend_gate.SPEC_HEADING_PT` | One answer writes both |
-| Words and abbreviations to keep off your resume; wording you've retired | `presend_gate.VOCAB_TERMS`, `presend_gate.ABBREVIATIONS`, `presend_gate.RETIRED_PHRASES`, `presend_gate.TIMING_TERMS`, `presend_gate.SANCTIONED_RETIRE`, `presend_gate.CREDENTIAL_OK` | Longer retired phrases can live in the Retired Claims Log instead |
+| Words and abbreviations to keep off your resume; wording you've retired (the words list is asked in step 8 as "Words to never use") | `presend_gate.VOCAB_TERMS`, `presend_gate.ABBREVIATIONS`, `presend_gate.RETIRED_PHRASES`, `presend_gate.TIMING_TERMS`, `presend_gate.SANCTIONED_RETIRE`, `presend_gate.CREDENTIAL_OK` | Longer retired phrases can live in the Retired Claims Log instead |
 | Figures that may appear only once per resume | `presend_gate.ONCE_PER_RESUME` | |
-| Tailored resume page limit, and how full its last page may be | `presend_gate.PAGE_LIMIT`, `presend_gate.LAST_PAGE_FILL` | Start Here session 3 (Rules File section 6) writes the page limit; the fill limit stays 0.75 |
+| Tailored resume page limit, and how full its last page may be | `presend_gate.PAGE_LIMIT`, `presend_gate.LAST_PAGE_FILL` | Step 8's resume length writes the page limit when it's 1 or 2 pages; with "Let Claude decide by experience", Start Here session 3 (Rules File section 6) writes it. The fill limit stays 0.75 |
 
 ### 7. How it runs
 | Question | Settings | Notes |
@@ -87,6 +87,23 @@ listed here.
 | (Written by the kit) settings format version | `app.settings_version` | Missing means a folder made by v0.1.0. After an update the kit brings older settings forward on its next run (taking a backup first) and never changes a folder saved by a newer kit |
 | Where your evidence bank and data live | `paths.bank_dir`, `paths.bank_file`, `paths.data_dir`, `paths.keyword_groups` | The installer sets these |
 | (Written by the wizard) where the kit's code lives | `paths.kit_dir` | Read by the Claude plugin, not the code, so it can run the builder, gate, and tracker |
+
+### 8. How Claude works for you
+These live in `preferences.json`. The Claude plugin reads them every session (the code reads only the two noted). Where the user's Rules File says something more specific, the Rules File wins.
+
+| Question | Settings | Notes |
+|---|---|---|
+| Tools you use | `tools` | Start Here session 4 builds the bank's `A.tools` from this list; each application picks the ones that match the posting. A tool added later goes to the next evidence session |
+| Resume and letter format rules | `format_rules.*` (`action_verbs`, `no_pronouns`, `spell_out_abbreviations`, `show_results`, `posting_words`, `posting_order`, `explain_jargon`, `letter_one_page`, `letter_named_person`, `letter_tie_to_posting`, `letter_light_on_i`), `own_rules` | All on by default (common university career-office guidance, plus tailoring). The builder always orders experience newest first and uses one format for both documents |
+| Resume length | `resume_pages` (`auto`, `one`, `two`) | `one` or `two` also writes `presend_gate.PAGE_LIMIT` |
+| Bullet length | `bullet_length` (`short`, `medium`, `detailed`) | Used when bullets are written into the bank (evidence mode) |
+| What bugged you about AI drafts, habits to avoid, punctuation, tone | `voice.what_bugged_you`, `voice.avoid_habits`, `voice.oxford_comma`, `voice.contractions`, `voice.keep_my_wording`, `voice.tone` | Habits are suggestions, none picked by default. Picking em dashes also turns on `presend_gate.FLAG_EM_DASH`. Start Here session 1 seeds Rules File section 2 from these |
+| Fixes you've saved | `saved_fixes` | Added by Claude when the user says yes to saving a fix; the user can delete any line |
+| Feedback, drafts, decisions, obvious calls | `feedback` (`blunt`, `balanced`, `gentle`), `drafts` (`one`, `options`), `decisions` (`list`, `conversation`), `obvious_calls` (`decide_and_tell`, `ask_first`) | `drafts` applies to cover letters and written answers; a resume is always one version built from the bank |
+| File format | `file_format` (`word`, `pdf`) | PDF is made from the gated Word file, which stays in the folder |
+| What Claude can do | `permissions.update_tracker`, `permissions.draft_messages`, `permissions.draft_form_answers`, `permissions.save_fixes` | Each `can`, `ask`, or `never`. Always on, not settings: never invent, flag gaps, fix a correction everywhere it appears, never send, never submit |
+| What stays general on paper | `keep_general` | Start Here session 3 seeds Rules File section 5 ("Never on paper") from it |
+| Talk it through | `talk_it_through`, `talked_through` | Up to three questions about blank sections, once. Claude writes the date to `talked_through` afterwards |
 
 ## Advanced
 | Setting | Default | What it does |

@@ -2,7 +2,7 @@
 
 ## Voice
 
-The user's voice lives in their Rules File, section 2, built from their own writing in the Start Here sessions. Apply it everywhere: resume bullets, letters, application answers, and replies to the user. General defaults until their section says otherwise:
+The user's voice lives in their Rules File, section 2, built from their own writing in the Start Here sessions and their setup step 8 choices (`settings/preferences.json`: habits to avoid, punctuation, tone, saved fixes). Apply it everywhere: resume bullets, letters, application answers, and replies to the user. General defaults until their section or preferences say otherwise (each format rule here can be turned off in `format_rules`):
 
 - Plain and concrete. No buzzwords.
 - When the user supplies wording, keep it exactly. Don't upgrade it.

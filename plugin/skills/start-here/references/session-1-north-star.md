@@ -23,12 +23,14 @@ Draft the one-paragraph pitch from their words only. Read it back. Edit until th
 
 ## Part 3. Voice (10 minutes)
 
+Start from `settings/preferences.json`: read back what they chose in setup step 8 (habits to avoid, Oxford comma, contractions, keep my wording, tone, and what bugged them about AI drafts) in one or two sentences and ask if it still holds. Then:
+
 8. Ask for two or three things they wrote themselves (an email they were happy with, a note to their team, a message to a friend). They can paste them in. If they have none to hand, read their voice from how they've talked in this session and write an Open line for punctuation. Read for: sentence length, punctuation habits, words they use and words they'd never use, whether they use contractions, how they join clauses.
 9. Say what you noticed in three to five plain phrases and ask if that's right ("long sentences, lots of dashes, you'd never say 'synergy'").
 10. "Any words or phrases you can't stand on a resume?" These go in Rules File section 2 as "not my voice".
 11a. Note any habit they name or you hear that drafts should correct ("I round my numbers down"). It goes in section 2's habits line, and every later session asks "who did it?" when it shows up.
 
-Write Rules File section 2 from this: the three-to-five-word description, punctuation they prefer or avoid, phrases that aren't their voice, habits to correct. Keep the template's default lines below theirs.
+Write Rules File section 2 from this and their step 8 choices: the three-to-five-word description, punctuation they prefer or avoid, phrases that aren't their voice, habits to correct. Keep the template's default lines below theirs.
 
 ## Part 4. Gaps (5 minutes)
 

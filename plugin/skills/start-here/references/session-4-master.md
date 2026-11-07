@@ -18,7 +18,7 @@ Fill these lines in `Evidence Bank/Evidence Bank.md`, Part A, keeping the exact 
 - `A.scope.t1`: one scope line for the current role ("Own ... for ..."), written for a same-field reader. Don't repeat the headline's theme words. Add `A.scope.t23` if the plain-English version for outside readers differs.
 - `A.role.t1`: the current job as `Employer | Title | Location | Mon YYYY - Present` (location optional). One `A.role.t2`, `A.role.t3` per earlier job that gets bullets, and one `A.earlier.1`, `A.earlier.2` per older job shown as a single line (`Employer | Title | YYYY - YYYY`). Titles and dates exactly as their records show. (These lines print on the page; the daily agent's years check uses the settings `YEARS_CLAIMABLE` and `YEARS_RE`, which session 1 confirms.)
 - `A.education`, `A.credentials`: as issued, exactly. Ask for the institution and degree as they'd want it printed; credentials by their official names. No credentials: delete the `A.credentials` line (the resume then has no Credentials section).
-- `A.tools`: the tools they use, comma separated. Ask which ones they value. A tool goes on only if they've used it in work they could describe in an interview; a course or a trial isn't enough. A tailored page shows these or a subset, never a tool that isn't here.
+- `A.tools`: the tools they use, comma separated, starting from `tools` in `settings/preferences.json` (what they listed in setup). Ask which ones they value. A tool goes on only if they've used it in work they could describe in an interview; a course or a trial isn't enough. A tailored page shows these or a subset, never a tool that isn't here.
 
 Rebuild the index.
 
