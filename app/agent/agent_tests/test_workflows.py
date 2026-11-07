@@ -93,12 +93,15 @@ class Workflows(unittest.TestCase):
         self.assertIn("job-search-kit-sbom.cdx.json", publish)
 
     def test_scanner_packages_are_hash_pinned(self):
-        lines = [l for l in (ROOT / "installer" / "requirements-security.txt").read_text().splitlines()
-                 if l and not l.startswith("#")]
-        pins = [l for l in lines if "==" in l]
-        hashes = [l for l in lines if "--hash=sha256:" in l]
+        # One entry per package: the pin line plus its continuation lines. A package may
+        # carry more than one hash (a wheel and a source file, as Dependabot writes them).
+        text = (ROOT / "installer" / "requirements-security.txt").read_text().replace("\\\n", " ")
+        entries = [l for l in text.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+        pins = [e for e in entries if "==" in e]
         self.assertTrue(pins)
-        self.assertEqual(len(pins), len(hashes))
+        self.assertEqual(len(pins), len(entries), "every line is a pinned package")
+        unhashed = [e.split()[0] for e in pins if "--hash=sha256:" not in e]
+        self.assertEqual(unhashed, [], "every pinned package needs at least one hash")
 
     def test_installer_opens_nothing_on_a_silent_install(self):
         # Silent installs are the CI clean-install and every quiet update.
