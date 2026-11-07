@@ -131,5 +131,31 @@ class SetupModel(unittest.TestCase):
             self.assertEqual(sm.read_answers(dst)["prefs"], p, "an answer set without preferences leaves them alone")
 
 
+class CurrentField(unittest.TestCase):
+    """Setup's "which field is your current job in?" writes SAME_DOMAINS (the
+    most careful tailoring tier) only for a field the user listed, and leaves
+    companies tiered by name (TIER_PRECEDENTS, Advanced) alone."""
+
+    def test_current_field_sets_the_same_field_tier(self):
+        import tempfile
+        dst = Path(tempfile.mkdtemp())
+        a = sm.read_answers(dst)
+        a["fields"]["domains"] = [{"name": "Healthcare", "interest": "high", "keywords": ["clinic"], "points": None, "was": None},
+                                  {"name": "Retail", "interest": "low", "keywords": [], "points": None, "was": None}]
+        a["fields"]["current_field"] = " healthcare "
+        sm.write_answers(dst, a)
+        crit = json.loads((dst / "criteria.json").read_text())
+        crit["fit_scoring"]["TIER_PRECEDENTS"] = {"$dict": [[1, ["acme"]]]}
+        (dst / "criteria.json").write_text(json.dumps(crit))
+        self.assertEqual(crit["fit_scoring"]["SAME_DOMAINS"], ["Healthcare"])
+        self.assertEqual(sm.read_answers(dst)["fields"]["current_field"], "Healthcare")
+
+        a = sm.read_answers(dst)
+        a["fields"]["current_field"] = "Not a listed field"
+        sm.write_answers(dst, a)
+        fs = json.loads((dst / "criteria.json").read_text())["fit_scoring"]
+        self.assertEqual(fs["SAME_DOMAINS"], [], "only a field the user listed counts")
+        self.assertEqual(fs["TIER_PRECEDENTS"], {"$dict": [[1, ["acme"]]]}, "setup leaves companies tiered by name alone")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

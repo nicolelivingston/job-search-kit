@@ -88,7 +88,6 @@ def read_answers(settings_dir):
     for name, pts in fs["DOMAIN_SCORES"].items():
         interest = min(INTEREST, key=lambda k: abs(INTEREST[k] - pts))
         domains.append({"name": name, "interest": interest, "keywords": kw.get(name, []), "points": pts, "was": interest})
-    tiers = dict(fs["TIER_PRECEDENTS"].get("$dict", []))
     feed = next((k for k, v in FEEDS.items() if c["board_feeds"]["WWR_FEEDS"][:1] == [v]), "product")
     years_m = re.search(r"\(\?:((?:[^()]|\([^)]*\))*)\)\)?$", fs.get("YEARS_RE", ""))
     return {
@@ -116,7 +115,7 @@ def read_answers(settings_dir):
             "exception_words": ag["INDUSTRY_EXCEPTION_KEYWORDS"], "benefits_rule": bool(fs.get("BENEFITS_RULES", True)),
         },
         "pay": {"floor": fs["PAY_HARD_FLOOR"], "target": fs["PAY_TARGET"], "rank_no_pay_lower": fs["NO_PAY_CAP"] < NO_CAP},
-        "fields": {"domains": domains, "top_companies": tiers.get(1, []), "good_companies": tiers.get(2, []), "feed": feed,
+        "fields": {"domains": domains, "current_field": next(iter(fs.get("SAME_DOMAINS") or []), ""), "feed": feed,
                    "boards": co["ats_tools"]["CONFIRMED_COMPANIES"], "custom_sites": co["ats_tools"]["CUSTOM_SITE_COMPANIES"]},
         "resume": {"font": b["FONT"], "body_pt": b["BODY_PT"], "name_pt": b["NAME_PT"], "heading_pt": b["HEADING_PT"],
                    "margin_in": b["MARGIN_IN"], "line_spacing": b["LINE_SPACING"],
@@ -250,8 +249,11 @@ def apply_answers(settings, a):
                                                else INTEREST[d["interest"]]) for d in doms}
     fs["DOMAIN_KEYWORDS"] = [{"$tuple": [d["name"].strip(), _rx([k.strip().lower() for k in d["keywords"] if k.strip()])]}
                              for d in doms if any(k.strip() for k in d["keywords"])]
-    fs["TIER_PRECEDENTS"] = {"$dict": [[1, [x.strip().lower() for x in fi["top_companies"] if x.strip()]],
-                                       [2, [x.strip().lower() for x in fi["good_companies"] if x.strip()]]]}
+    # Same field as the user's current job: tailoring for a company tagged with it is the
+    # most careful (confidentiality Tier 1). Only a field the user listed counts.
+    # TIER_PRECEDENTS (companies tiered by name) is Advanced and not touched here.
+    cur = str(fi.get("current_field") or "").strip().lower()
+    fs["SAME_DOMAINS"] = [d["name"].strip() for d in doms if d["name"].strip().lower() == cur][:1]
     c["board_feeds"] = {"WWR_FEEDS": [FEEDS.get(fi.get("feed", "product"), FEEDS["product"])]}
     co["ats_tools"]["CONFIRMED_COMPANIES"] = fi["boards"]
     co["ats_tools"]["CUSTOM_SITE_COMPANIES"] = fi["custom_sites"]
