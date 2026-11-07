@@ -1,0 +1,50 @@
+{
+  "off_title": "Account Executive, Healthcare",
+  "locations": [
+    [
+      "Remote (US)",
+      true
+    ],
+    [
+      "Columbus, OH",
+      false
+    ]
+  ],
+  "postings": [
+    {
+      "folder": "01 SQL trap",
+      "title": "Senior Product Manager, Patient Scheduling",
+      "company": "BrightPath Health (example)",
+      "salary_min": 175000,
+      "skip": false,
+      "missing_contains": [
+        "SQL proficiency"
+      ]
+    },
+    {
+      "folder": "02 hybrid trap",
+      "title": "Senior Product Manager, Care Navigation",
+      "company": "CareNest (example)",
+      "salary_min": 170000,
+      "skip": true,
+      "reason_contains": "fully-remote"
+    },
+    {
+      "folder": "03 good fit",
+      "title": "Product Manager, Clinic Operations",
+      "company": "ClinicFlow (example)",
+      "salary_min": 150000,
+      "skip": false,
+      "missing": [],
+      "evidence_contains": "E01"
+    },
+    {
+      "folder": "04 direct reports trap",
+      "title": "Senior Product Manager, Scheduling Platform",
+      "company": "BrightPath Health (example)",
+      "salary_min": 180000,
+      "skip": true,
+      "reason_contains": "people-manager"
+    }
+  ]
+}

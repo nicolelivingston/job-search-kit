@@ -1,0 +1,10 @@
+# Dependabot keeps the pinned GitHub Actions and the Windows wheel pins current
+# with pull requests; nothing updates on its own.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly" }
+  - package-ecosystem: "pip"
+    directory: "/installer"
+    schedule: { interval: "weekly" }

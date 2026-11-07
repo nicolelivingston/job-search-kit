@@ -1,0 +1,12 @@
+{
+  "ats_tools": {
+    "CONFIRMED_COMPANIES": [
+      {
+        "name": "ClinicFlow (example)",
+        "platform": "greenhouse",
+        "slug": "clinicflow-example"
+      }
+    ],
+    "CUSTOM_SITE_COMPANIES": []
+  }
+}

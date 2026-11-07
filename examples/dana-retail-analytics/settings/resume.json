@@ -1,0 +1,89 @@
+{
+  "presend_gate": {
+    "TIMING_TERMS": [
+      "will be",
+      "plans to",
+      "next quarter",
+      "roadmap",
+      "timeline",
+      "cutover",
+      "go-live date"
+    ],
+    "SANCTIONED_RETIRE": {
+      "$re": "^$",
+      "flags": [
+        "I"
+      ]
+    },
+    "VOCAB_TERMS": [
+      "synergy",
+      "rockstar"
+    ],
+    "CREDENTIAL_OK": {
+      "$re": "^$",
+      "flags": [
+        "I"
+      ]
+    },
+    "RETIRED_PHRASES": [
+      "increased revenue by $2M"
+    ],
+    "ABBREVIATIONS": [
+      "KPI",
+      "QBR",
+      "SLA",
+      "EHR",
+      "SKU",
+      "ETL",
+      "PM ",
+      "CSM "
+    ],
+    "ONCE_PER_RESUME": [
+      "200 stores"
+    ],
+    "SPEC_FONT": "Arial",
+    "SPEC_BODY_PT": 11,
+    "SPEC_NAME_PT": 20,
+    "SPEC_HEADING_PT": 12,
+    "PAGE_LIMIT": 2,
+    "LAST_PAGE_FILL": 0.75,
+    "REPEAT_SKIP_RE": "^(DANA OKAFOR|Denver, CO \\(Remote\\)|Senior\\ Data\\ Analyst \\||Executive Profile|Profile|Core Expertise|Professional Experience|Earlier Experience|Education|Credentials|Tools and Technology|[A-Z][a-z]{2} \\d{4} - |\\d{4} - |Dear |Thank you)",
+    "REPEAT_STOPWORDS": [
+      "about",
+      "across",
+      "after",
+      "because",
+      "before",
+      "between",
+      "could",
+      "during",
+      "every",
+      "first",
+      "their",
+      "there",
+      "these",
+      "those",
+      "through",
+      "under",
+      "which",
+      "while",
+      "would",
+      "without",
+      "within",
+      "team",
+      "teams",
+      "customer",
+      "customers",
+      "product",
+      "products"
+    ]
+  },
+  "build_resume": {
+    "FONT": "Arial",
+    "BODY_PT": 11,
+    "NAME_PT": 20,
+    "HEADING_PT": 12,
+    "MARGIN_IN": 0.7,
+    "LINE_SPACING": 1.05
+  }
+}

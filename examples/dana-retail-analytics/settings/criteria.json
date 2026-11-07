@@ -1,0 +1,434 @@
+{
+  "agent": {
+    "TITLE_KEYWORDS": [
+      "data analyst",
+      "analytics manager",
+      "analytics lead",
+      "business intelligence"
+    ],
+    "ROLE_REJECT_KEYWORDS": [
+      "engineer",
+      "intern",
+      "sales",
+      "scientist"
+    ],
+    "LOCATION_REJECT_KEYWORDS": [
+      "india",
+      "bangalore",
+      "chennai",
+      "uk",
+      "united kingdom",
+      "germany",
+      "spain",
+      "sweden",
+      "ireland",
+      "france",
+      "netherlands",
+      "singapore",
+      "australia"
+    ],
+    "US_LOCATION_KEYWORDS": [
+      "us",
+      "usa",
+      "united states",
+      "americas",
+      "amer"
+    ],
+    "NON_US_REGION_KEYWORDS": [
+      "emea",
+      "apac",
+      "latam",
+      "iberia",
+      "europe",
+      "apj",
+      "anz",
+      "asia"
+    ],
+    "DOMAIN_REJECT_KEYWORDS": [],
+    "EXCLUDE_KEYWORDS": [
+      "firearms",
+      "ammunition"
+    ],
+    "INDUSTRY_EXCEPTION_KEYWORDS": [],
+    "LEVEL_TIERS": [
+      {
+        "$tuple": [
+          3,
+          [
+            "analytics manager",
+            "head of analytics"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          2,
+          [
+            "senior data analyst",
+            "analytics lead"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          1,
+          [
+            "data analyst"
+          ]
+        ]
+      }
+    ],
+    "REMOTE_KEYWORDS": [
+      "remote",
+      "anywhere",
+      "work from home",
+      "distributed"
+    ],
+    "SALARY_FLOOR": 100000,
+    "FRESH_DAYS": 14,
+    "OPEN_STATUSES": {
+      "$tuple": [
+        "Interested",
+        "Drafting Resume"
+      ]
+    },
+    "ROLE_TITLE_RE": {
+      "$re": "\\b(data analyst|analytics manager|analytics lead|business intelligence)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ROLE_BAD_RE": {
+      "$re": "\\b(engineer|intern|scientist)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ASK_FLAG_LABEL": "Ask Me First",
+    "ROLE_FAMILY_LABEL": "analytics "
+  },
+  "fit_scoring": {
+    "HARD_RULES": [
+      {
+        "$tuple": [
+          "remote-hybrid",
+          {
+            "$rx": [
+              "hybrid",
+              "in-office",
+              "in office",
+              "on-site",
+              "onsite",
+              "~\\b(\\d|one|two|three|four|five)\\+?\\s*days?\\s*(per|a|/|each)\\s*week\\b",
+              "office days",
+              "return to office",
+              "relocation required",
+              "must relocate",
+              "willing to relocate",
+              "relocation assistance",
+              "co-located",
+              "colocated"
+            ]
+          },
+          "skip",
+          "Fails fully-remote rule"
+        ]
+      },
+      {
+        "$tuple": [
+          "remote-catch",
+          {
+            "$rx": [
+              "remote-friendly",
+              "remote friendly",
+              "occasional onsite",
+              "occasional in-person",
+              "occasionally in person",
+              "as needed onsite",
+              "commuting distance",
+              "commutable",
+              "~within \\d+ miles",
+              "~must (be )?(located|based|reside|live) (in|within|near)",
+              "~(located|based) (in|near) (the )?(greater )?[A-Z][a-z]+(,| area| metro)"
+            ]
+          },
+          "ask",
+          "Remote with a catch; check wording"
+        ]
+      },
+      {
+        "$tuple": [
+          "contract",
+          {
+            "$rx": [
+              "contract-to-hire",
+              "contract to hire",
+              "contract role",
+              "contract position",
+              "1099",
+              "c2c",
+              "corp-to-corp",
+              "temporary position",
+              "fixed-term",
+              "~\\b\\d+[- ]month contract\\b"
+            ]
+          },
+          "skip",
+          "Contract or temporary"
+        ]
+      }
+    ],
+    "EXCLUDED_INDUSTRY_RE": {
+      "$rx": [
+        "firearms",
+        "ammunition"
+      ]
+    },
+    "EXCLUDED_COMPANIES": {
+      "$rx": [
+        "examplearms"
+      ]
+    },
+    "TITLE_SKIP": {
+      "$rx": [
+        "vp",
+        "vice president",
+        "data engineer"
+      ]
+    },
+    "TITLE_ASK": {
+      "$rx": [
+        "machine learning",
+        "data science"
+      ]
+    },
+    "TRAVEL_SKIP_PCT": 30,
+    "INDUSTRY_EXCEPTION_RE": {
+      "$rx": [
+        "~^$"
+      ]
+    },
+    "PAY_HARD_FLOOR": 100000,
+    "PAY_TARGET": 130000,
+    "POSTING_REMOTE_RE": {
+      "$rx": [
+        "fully remote",
+        "100% remote",
+        "remote-first",
+        "remote first",
+        "work from anywhere",
+        "~\\bremote\\s*[-(,]\\s*(us|usa|u\\.s\\.|united states)\\b",
+        "~\\b(us|usa|u\\.s\\.|united states)\\s*[-(,]?\\s*remote\\b",
+        "~#li-remote",
+        "location: remote",
+        "this role is remote",
+        "this position is remote",
+        "remote position",
+        "remote role"
+      ]
+    },
+    "WORK_CAP": 30,
+    "GAP_CAP": 24,
+    "YEARS_CLAIMABLE": 5,
+    "MIN_CAP_ONE": 69,
+    "MIN_CAP_TWO": 49,
+    "NO_PAY_CAP": 49,
+    "DOMAIN_SCORES": {
+      "Retail & E-commerce": 20,
+      "Consumer": 14,
+      "Logistics": 12,
+      "Healthcare": 8
+    },
+    "DOMAIN_UNKNOWN": 8,
+    "DOMAIN_KEYWORDS": [
+      {
+        "$tuple": [
+          "Retail & E-commerce",
+          {
+            "$rx": [
+              "retail",
+              "e-commerce",
+              "ecommerce",
+              "merchandising",
+              "shoppers",
+              "basket"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Logistics",
+          {
+            "$rx": [
+              "supply chain",
+              "fulfillment",
+              "inventory"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Consumer",
+          {
+            "$rx": [
+              "consumer",
+              "subscribers"
+            ]
+          }
+        ]
+      }
+    ],
+    "TIER_PRECEDENTS": {
+      "$dict": [
+        [
+          1,
+          [
+            "shopwise"
+          ]
+        ],
+        [
+          2,
+          [
+            "cartly"
+          ]
+        ]
+      ]
+    },
+    "LEVEL_RULES": [
+      {
+        "$tuple": [
+          15,
+          {
+            "$rx": [
+              "analytics manager",
+              "senior data analyst",
+              "analytics lead"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          5,
+          {
+            "$rx": [
+              "data analyst"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          0,
+          {
+            "$rx": [
+              "junior",
+              "intern"
+            ]
+          }
+        ]
+      }
+    ],
+    "UNRESEARCHED_COMPANY_PTS": 5,
+    "FRESHNESS_BANDS": [
+      {
+        "$tuple": [
+          7,
+          5,
+          "posted this week"
+        ]
+      },
+      {
+        "$tuple": [
+          14,
+          3,
+          "posted in the last 2 weeks"
+        ]
+      },
+      {
+        "$tuple": [
+          30,
+          0,
+          ""
+        ]
+      },
+      {
+        "$tuple": [
+          60,
+          -5,
+          "open 1 to 2 months"
+        ]
+      },
+      {
+        "$tuple": [
+          null,
+          -10,
+          "open over 2 months"
+        ]
+      }
+    ],
+    "YEARS_RE": "(\\d{1,2})\\s*\\+?\\s*(?:or more\\s+)?(?:years|yrs)[^.;\\n]{0,80}?(?:analytics|data analysis|business intelligence)",
+    "YEARS_LABEL": "years of analytics",
+    "TITLE_SKIP_LABEL": "Title is on your skip list",
+    "WORK_ARRANGEMENT": {
+      "mode": "remote_or_hybrid",
+      "home": "Denver, CO",
+      "commute_areas": [
+        "denver",
+        "boulder",
+        "aurora"
+      ],
+      "max_office_days": 2,
+      "onsite_ok": false,
+      "relocation_ok": false
+    },
+    "BENEFITS_RULES": true,
+    "POSTURE_POINTS": {
+      "Structurally remote (no HQ)": 7,
+      "Remote-first with offices": 7,
+      "Hybrid / RTO risk": 6,
+      "Unknown": 4
+    }
+  },
+  "board_feeds": {
+    "WWR_FEEDS": [
+      "https://weworkremotely.com/categories/remote-data-jobs.rss"
+    ],
+    "REMOTE_CO_FEEDS": []
+  },
+  "invariants": {
+    "TRACKING_STARTS": {
+      "$date": [
+        2026,
+        1,
+        1
+      ]
+    }
+  },
+  "market_report": {
+    "LEXICON": [
+      [
+        "Dashboards",
+        "dashboard|tableau",
+        "HAVE"
+      ],
+      [
+        "Machine learning",
+        "machine learning",
+        "GAP"
+      ]
+    ],
+    "LEVEL_BUCKETS": [
+      [
+        "Senior",
+        "senior"
+      ],
+      [
+        "Unleveled",
+        ""
+      ]
+    ]
+  }
+}

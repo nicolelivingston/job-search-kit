@@ -1,0 +1,80 @@
+{
+  "fit_scoring": {
+    "WORK_FAMILIES": [
+      {
+        "$tuple": [
+          "Onboarding programs",
+          "E01",
+          10,
+          {
+            "$rx": [
+              "onboarding",
+              "implementation",
+              "time to value",
+              "kickoff"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Renewals and retention",
+          "E02",
+          10,
+          {
+            "$rx": [
+              "renewal",
+              "renewals",
+              "retention",
+              "churn",
+              "expansion"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Scaled customer programs",
+          "E03",
+          6,
+          {
+            "$rx": [
+              "webinars",
+              "playbooks",
+              "scaled",
+              "digital touch"
+            ]
+          }
+        ]
+      }
+    ],
+    "GAP_FAMILIES": [
+      {
+        "$tuple": [
+          "Salesforce administration",
+          6,
+          {
+            "$rx": [
+              "salesforce admin",
+              "salesforce administrator"
+            ]
+          }
+        ]
+      }
+    ],
+    "MINIMUM_FAMILIES": [
+      {
+        "$tuple": [
+          "Salesforce admin certification",
+          {
+            "$rx": [
+              "salesforce administrator certification",
+              "salesforce admin certification",
+              "certified salesforce administrator"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

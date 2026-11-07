@@ -1,0 +1,149 @@
+# Builds the Windows installer on GitHub's Windows machines whenever a
+# release tag (v1.2.3) is pushed, checks it, and attaches it to the GitHub
+# release with the packaged plugin and SHA256SUMS.txt. The kit's updater
+# verifies the checksum before running anything.
+#
+# Every action is pinned to a commit SHA (the tag it came from is in the
+# comment), so a moved tag upstream can't change what runs here.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-ci.txt'
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils
+      - name: Kit tests against a synthetic test person (includes the leak test)
+        run: |
+          cd app/agent
+          KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python agent_tests/run_all.py
+      - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-security.txt'
+      - name: No known vulnerabilities in the installer's packages, and its bill of materials
+        run: |
+          bandit -q -r app -x app/agent/agent_tests -ll
+          pip-audit --disable-pip --no-deps -r installer/requirements-windows.txt -f cyclonedx-json -o job-search-kit-sbom.cdx.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with: { name: sbom, path: job-search-kit-sbom.cdx.json }
+
+  windows-installer:
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      VT_API_KEY: ${{ secrets.VT_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the installer (pinned Python and packages, checksums)
+        shell: pwsh
+        run: ./installer/build_windows.ps1 -Version "${{ github.ref_name }}"
+      - name: Scan with Microsoft Defender
+        shell: pwsh
+        run: |
+          $mp = "$env:ProgramFiles\Windows Defender\MpCmdRun.exe"
+          & $mp -SignatureUpdate | Out-Null
+          & $mp -Scan -ScanType 3 -File "$PWD\dist" -DisableRemediation
+          if ($LASTEXITCODE -ne 0) { throw "Defender reported a problem (exit $LASTEXITCODE)" }
+      - name: Scan with VirusTotal (when a VT_API_KEY secret is set)
+        if: env.VT_API_KEY != ''
+        shell: pwsh
+        run: |
+          # Files over 32 MB (the installer is) need a one-time upload URL.
+          # The free API allows 4 requests a minute, so polls are 20 s apart.
+          # Any missing answer fails the step: a scan that didn't happen
+          # must never read as a clean scan.
+          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
+          $hdr = @{ "x-apikey" = $env:VT_API_KEY }
+          $upload = (Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Headers $hdr).data
+          if (-not $upload) { throw "VirusTotal gave no upload URL (check the VT_API_KEY secret)" }
+          $r = curl.exe -s -X POST $upload -H "x-apikey: $env:VT_API_KEY" -F "file=@$($exe.FullName)" | ConvertFrom-Json
+          $id = $r.data.id
+          if (-not $id) { throw "VirusTotal upload failed: $($r.error.message)" }
+          $a = $null
+          for ($i = 0; $i -lt 45; $i++) {
+            Start-Sleep 20
+            $a = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/analyses/$id" -Headers $hdr
+            if ($a.data.attributes.status -eq "completed") { break }
+          }
+          if ($a.data.attributes.status -ne "completed") { throw "VirusTotal didn't finish within 15 minutes" }
+          $s = $a.data.attributes.stats
+          Write-Host "VirusTotal: malicious=$($s.malicious) suspicious=$($s.suspicious) undetected=$($s.undetected)"
+          $flagged = @($a.data.attributes.results.PSObject.Properties | Where-Object { $_.Value.category -eq "malicious" } | ForEach-Object { $_.Name })
+          if ($flagged) { Write-Host "Flagged by: $($flagged -join ', ')" }
+          # Microsoft's verdict is what Windows users get, so it alone stops the
+          # release. Other engines' machine-learning guesses often hit new,
+          # unsigned installers, so it takes three of them to stop it.
+          if ($flagged -contains "Microsoft") { throw "Microsoft flagged the installer; submit it as a false positive before releasing" }
+          if ($flagged.Count -ge 3) { throw "VirusTotal: $($flagged.Count) engines flagged the installer" }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+
+  clean-install:
+    # A fresh Windows machine every run: install silently, check the Start menu
+    # items and the folder step, run the agent once, uninstall.
+    needs: windows-installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with: { name: dist, path: dist }
+      - name: Install silently and check
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
+          $want = (Get-Content dist\SHA256SUMS.txt | Where-Object { $_ -like "*$($exe.Name)" }).Split(" ")[0]
+          if ((Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower() -ne $want) { throw "checksum mismatch" }
+          Start-Process $exe.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
+          $app = "$env:LOCALAPPDATA\JobSearchKit"
+          foreach ($f in "python\python.exe","app\wizard.py","app\first_run.py","plugin\.claude-plugin\plugin.json","templates\settings\criteria.json") {
+            if (-not (Test-Path "$app\$f")) { throw "missing $f" } }
+          $menu = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Job Search Kit"
+          foreach ($l in "Open my job tracker","Change my settings","Send an error report","Check for updates") {
+            if (-not (Test-Path "$menu\$l.lnk")) { throw "missing Start menu item $l" } }
+          # first run: choose a local-only folder (as the wizard's first step does), then a dry agent run
+          $env:KIT_CONFIG_DIR = "$env:TEMP\kitcfg"
+          & "$app\python\python.exe" -c "import sys; sys.path.insert(0, r'$app\app'); import first_run; print(first_run.choose('local'))"
+          $env:KIT_SETTINGS_DIR = "$env:USERPROFILE\Job Search\settings"
+          Copy-Item "$app\templates\settings\*" $env:KIT_SETTINGS_DIR -Force
+          $env:AGENT_DRY_RUN = "1"
+          & "$app\python\python.exe" "$app\app\agent\job_search_agent.py" --quick
+          if ($LASTEXITCODE -ne 0) { throw "agent run failed" }
+          & "$app\python\python.exe" "$app\app\error_report.py" --save-only
+          Start-Process "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
+          if (-not (Test-Path "$env:USERPROFILE\Job Search\settings\criteria.json")) { throw "uninstall removed the user's folder" }
+
+  publish:
+    # The "release" environment holds this job until the maintainer approves it
+    # on GitHub (Settings, Environments, release, Required reviewers).
+    needs: clean-install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with: { name: dist, path: dist }
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with: { name: sbom, path: dist }
+      - name: Attach to the release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: |
+            dist/JobSearchKit-Setup-*.exe
+            dist/job-search-kit.plugin
+            dist/SHA256SUMS.txt
+            dist/job-search-kit-sbom.cdx.json
+          generate_release_notes: true

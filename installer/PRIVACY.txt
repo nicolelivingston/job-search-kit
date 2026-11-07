@@ -1,0 +1,17 @@
+Job Search Kit: what stays here and what goes out
+
+Stays on this computer
+Your settings, evidence bank, resumes, cover letters, applications, contacts, and tracker are plain files in a folder you choose. The job checks, the scoring, and the pre-send gate run here. The kit connects to no email account and no other account of yours.
+
+Goes out
+- Requests to the job boards you pick. They see a request from this computer and the kit's name, nothing about you.
+- Once a day, a check of this project's GitHub releases page for updates. GitHub sees your computer's internet address, nothing else. You can turn this off in the setup wizard under How it runs, and use Check for updates in the Start menu instead.
+- When you use the Claude plugin, whatever you put in front of Claude. That goes to Anthropic under your own Claude plan's terms.
+- An error report, only if you press Send in your own mail app. It holds a scrubbed run log, never your settings, postings, resumes, or tracker.
+
+Nothing else is sent anywhere, and there is no telemetry. Uninstalling leaves your folder alone.
+
+This is a free beta
+The kit is provided as is, with no guarantee that its scores or drafts are right. You review and confirm everything before you send it, and you are responsible for what you send. The kit never sends anything for you.
+
+Source code and full privacy notes: https://github.com/nicolelivingston/job-search-kit

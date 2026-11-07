@@ -1,0 +1,92 @@
+# Saves the 14-day traffic numbers (views, clones, referring sites, popular
+# pages) once a day so the history outlasts GitHub's 14-day window. Data goes
+# to a separate traffic-log branch, so main stays clean. Needs a TRAFFIC_TOKEN
+# secret (fine-grained token, this repo only, Administration: Read-only).
+# Actions are pinned to commit SHAs.
+name: Traffic log
+
+on:
+  schedule:
+    - cron: "17 11 * * *"   # daily, about 6am US Central
+  workflow_dispatch:         # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Switch to traffic-log branch
+        run: |
+          if git ls-remote --exit-code --heads origin traffic-log; then
+            git fetch origin traffic-log
+            git switch traffic-log
+          else
+            git switch --orphan traffic-log
+          fi
+
+      - name: Pull traffic from GitHub
+        env:
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import csv, datetime, json, os, urllib.request
+
+          repo, tok = os.environ["REPO"], os.environ["GH_TOKEN"]
+
+          def get(path):
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/traffic/{path}",
+                  headers={
+                      "Authorization": f"Bearer {tok}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              return json.load(urllib.request.urlopen(req))
+
+          os.makedirs("traffic", exist_ok=True)
+
+          # Daily views and clones: one row per day, updated in place
+          for name in ("views", "clones"):
+              path = f"traffic/{name}.csv"
+              rows = {}
+              if os.path.exists(path):
+                  with open(path) as f:
+                      rows = {r["date"]: r for r in csv.DictReader(f)}
+              for it in get(name)[name]:
+                  d = it["timestamp"][:10]
+                  rows[d] = {"date": d, "count": it["count"], "uniques": it["uniques"]}
+              with open(path, "w", newline="") as f:
+                  w = csv.DictWriter(f, fieldnames=["date", "count", "uniques"])
+                  w.writeheader()
+                  for d in sorted(rows):
+                      w.writerow(rows[d])
+
+          # Referring sites and popular pages: 14-day totals, snapshot each day
+          today = datetime.date.today().isoformat()
+          for name, key in (("referrers", "referrer"), ("paths", "path")):
+              path = f"traffic/{name}.csv"
+              new = not os.path.exists(path)
+              with open(path, "a", newline="") as f:
+                  w = csv.writer(f)
+                  if new:
+                      w.writerow(["snapshot_date", key, "count", "uniques"])
+                  for it in get(f"popular/{name}"):
+                      w.writerow([today, it[key], it["count"], it["uniques"]])
+          PY
+
+      - name: Save to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add traffic
+          git diff --cached --quiet || git commit -m "Traffic snapshot $(date -u +%F)"
+          git push origin traffic-log

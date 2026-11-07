@@ -1,0 +1,59 @@
+# Runs on every push and pull request: the full test suite against a
+# synthetic test person, which includes the leak test (no personal data in
+# the public kit). Actions are pinned to commit SHAs.
+name: Checks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-ci.txt'
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils
+      - name: Tests and leak check
+        run: |
+          cd app/agent
+          KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python agent_tests/run_all.py
+
+  security:
+    # Code scan (bandit), known vulnerabilities in every pinned package
+    # (pip-audit), a software bill of materials for the installer's packages,
+    # and a secret scan of the whole history (gitleaks, pinned by version and
+    # checksum). Any finding fails the run.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-security.txt'
+      - name: Code scan (medium and high findings fail)
+        run: bandit -q -r app -x app/agent/agent_tests -ll
+      - name: Known vulnerabilities in pinned packages
+        run: |
+          pip-audit --disable-pip --no-deps -r installer/requirements-windows.txt
+          pip-audit --disable-pip --no-deps -r installer/requirements-ci.txt
+          pip-audit --disable-pip --no-deps -r installer/requirements-security.txt
+      - name: Software bill of materials (CycloneDX) for the installer's packages
+        run: pip-audit --disable-pip --no-deps -r installer/requirements-windows.txt -f cyclonedx-json -o sbom.cdx.json
+      - name: Secret scan of every commit
+        run: |
+          V=8.30.1
+          curl -sSLo gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v$V/gitleaks_${V}_linux_x64.tar.gz"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum -c -
+          tar xzf gitleaks.tgz gitleaks
+          ./gitleaks git --redact --no-banner --log-opts="--all" .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with: { name: sbom, path: sbom.cdx.json }

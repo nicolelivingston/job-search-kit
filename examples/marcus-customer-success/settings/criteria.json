@@ -1,0 +1,462 @@
+{
+  "agent": {
+    "TITLE_KEYWORDS": [
+      "customer success manager",
+      "customer success lead",
+      "client success manager"
+    ],
+    "ROLE_REJECT_KEYWORDS": [
+      "engineer",
+      "designer",
+      "intern",
+      "account executive",
+      "sales development"
+    ],
+    "LOCATION_REJECT_KEYWORDS": [
+      "india",
+      "bangalore",
+      "chennai",
+      "uk",
+      "united kingdom",
+      "germany",
+      "spain",
+      "sweden",
+      "ireland",
+      "france",
+      "netherlands",
+      "singapore",
+      "australia"
+    ],
+    "US_LOCATION_KEYWORDS": [
+      "us",
+      "usa",
+      "united states",
+      "americas",
+      "amer"
+    ],
+    "NON_US_REGION_KEYWORDS": [
+      "emea",
+      "apac",
+      "latam",
+      "iberia",
+      "europe",
+      "apj",
+      "anz",
+      "asia"
+    ],
+    "DOMAIN_REJECT_KEYWORDS": [
+      "tobacco"
+    ],
+    "EXCLUDE_KEYWORDS": [
+      "tobacco",
+      "vaping"
+    ],
+    "INDUSTRY_EXCEPTION_KEYWORDS": [],
+    "LEVEL_TIERS": [
+      {
+        "$tuple": [
+          3,
+          [
+            "director of customer success"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          2,
+          [
+            "senior customer success manager",
+            "customer success lead"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          1,
+          [
+            "customer success manager"
+          ]
+        ]
+      }
+    ],
+    "REMOTE_KEYWORDS": [
+      "remote",
+      "anywhere",
+      "work from home",
+      "distributed"
+    ],
+    "SALARY_FLOOR": 90000,
+    "FRESH_DAYS": 14,
+    "OPEN_STATUSES": {
+      "$tuple": [
+        "Interested",
+        "Drafting Resume"
+      ]
+    },
+    "ROLE_TITLE_RE": {
+      "$re": "\\b(customer success|client success)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ROLE_BAD_RE": {
+      "$re": "\\b(engineer|intern|sales development)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ASK_FLAG_LABEL": "Ask Me First",
+    "ROLE_FAMILY_LABEL": "customer success "
+  },
+  "fit_scoring": {
+    "HARD_RULES": [
+      {
+        "$tuple": [
+          "remote-hybrid",
+          {
+            "$rx": [
+              "hybrid",
+              "in-office",
+              "in office",
+              "on-site",
+              "onsite",
+              "~\\b(\\d|one|two|three|four|five)\\+?\\s*days?\\s*(per|a|/|each)\\s*week\\b",
+              "office days",
+              "return to office",
+              "relocation required",
+              "must relocate",
+              "willing to relocate",
+              "relocation assistance",
+              "co-located",
+              "colocated"
+            ]
+          },
+          "skip",
+          "Fails fully-remote rule"
+        ]
+      },
+      {
+        "$tuple": [
+          "remote-catch",
+          {
+            "$rx": [
+              "remote-friendly",
+              "remote friendly",
+              "occasional onsite",
+              "occasional in-person",
+              "occasionally in person",
+              "as needed onsite",
+              "commuting distance",
+              "commutable",
+              "~within \\d+ miles",
+              "~must (be )?(located|based|reside|live) (in|within|near)",
+              "~(located|based) (in|near) (the )?(greater )?[A-Z][a-z]+(,| area| metro)"
+            ]
+          },
+          "ask",
+          "Remote with a catch; check wording"
+        ]
+      },
+      {
+        "$tuple": [
+          "on-call",
+          {
+            "$rx": [
+              "on-call",
+              "on call rotation",
+              "24/7",
+              "24x7",
+              "after-hours support",
+              "pager",
+              "incident response rotation"
+            ]
+          },
+          "skip",
+          "On-call or 24/7 duty named"
+        ]
+      },
+      {
+        "$tuple": [
+          "contract",
+          {
+            "$rx": [
+              "contract-to-hire",
+              "contract to hire",
+              "contract role",
+              "contract position",
+              "1099",
+              "c2c",
+              "corp-to-corp",
+              "temporary position",
+              "fixed-term",
+              "~\\b\\d+[- ]month contract\\b"
+            ]
+          },
+          "skip",
+          "Contract or temporary"
+        ]
+      }
+    ],
+    "EXCLUDED_INDUSTRY_RE": {
+      "$rx": [
+        "tobacco",
+        "vaping",
+        "e-cigarette"
+      ]
+    },
+    "EXCLUDED_COMPANIES": {
+      "$rx": [
+        "examplebet"
+      ]
+    },
+    "TITLE_SKIP": {
+      "$rx": [
+        "vp",
+        "vice president",
+        "account executive"
+      ]
+    },
+    "TITLE_ASK": {
+      "$rx": [
+        "support engineer",
+        "technical account manager"
+      ]
+    },
+    "TRAVEL_SKIP_PCT": 30,
+    "INDUSTRY_EXCEPTION_RE": {
+      "$rx": [
+        "~^$"
+      ]
+    },
+    "PAY_HARD_FLOOR": 90000,
+    "PAY_TARGET": 115000,
+    "POSTING_REMOTE_RE": {
+      "$rx": [
+        "fully remote",
+        "100% remote",
+        "remote-first",
+        "remote first",
+        "work from anywhere",
+        "~\\bremote\\s*[-(,]\\s*(us|usa|u\\.s\\.|united states)\\b",
+        "~\\b(us|usa|u\\.s\\.|united states)\\s*[-(,]?\\s*remote\\b",
+        "~#li-remote",
+        "location: remote",
+        "this role is remote",
+        "this position is remote",
+        "remote position",
+        "remote role"
+      ]
+    },
+    "WORK_CAP": 30,
+    "GAP_CAP": 24,
+    "YEARS_CLAIMABLE": 7,
+    "MIN_CAP_ONE": 69,
+    "MIN_CAP_TWO": 49,
+    "NO_PAY_CAP": 49,
+    "DOMAIN_SCORES": {
+      "B2B SaaS": 20,
+      "HR Tech": 12,
+      "Logistics": 12,
+      "Consumer": 4
+    },
+    "DOMAIN_UNKNOWN": 8,
+    "DOMAIN_KEYWORDS": [
+      {
+        "$tuple": [
+          "B2B SaaS",
+          {
+            "$rx": [
+              "saas",
+              "b2b",
+              "onboarding",
+              "renewals",
+              "workflow software"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "HR Tech",
+          {
+            "$rx": [
+              "payroll",
+              "hris"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Logistics",
+          {
+            "$rx": [
+              "shipping",
+              "freight"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Consumer",
+          {
+            "$rx": [
+              "consumer app",
+              "shoppers"
+            ]
+          }
+        ]
+      }
+    ],
+    "TIER_PRECEDENTS": {
+      "$dict": [
+        [
+          1,
+          [
+            "onboardly"
+          ]
+        ],
+        [
+          2,
+          [
+            "ledgerline"
+          ]
+        ]
+      ]
+    },
+    "LEVEL_RULES": [
+      {
+        "$tuple": [
+          15,
+          {
+            "$rx": [
+              "senior customer success manager",
+              "customer success lead"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          8,
+          {
+            "$rx": [
+              "customer success manager"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          0,
+          {
+            "$rx": [
+              "associate",
+              "intern"
+            ]
+          }
+        ]
+      }
+    ],
+    "UNRESEARCHED_COMPANY_PTS": 5,
+    "FRESHNESS_BANDS": [
+      {
+        "$tuple": [
+          7,
+          5,
+          "posted this week"
+        ]
+      },
+      {
+        "$tuple": [
+          14,
+          3,
+          "posted in the last 2 weeks"
+        ]
+      },
+      {
+        "$tuple": [
+          30,
+          0,
+          ""
+        ]
+      },
+      {
+        "$tuple": [
+          60,
+          -5,
+          "open 1 to 2 months"
+        ]
+      },
+      {
+        "$tuple": [
+          null,
+          -10,
+          "open over 2 months"
+        ]
+      }
+    ],
+    "YEARS_RE": "(\\d{1,2})\\s*\\+?\\s*(?:or more\\s+)?(?:years|yrs)[^.;\\n]{0,80}?(?:customer success|account management|client success)",
+    "YEARS_LABEL": "years of customer success",
+    "TITLE_SKIP_LABEL": "Title is on your skip list",
+    "WORK_ARRANGEMENT": {
+      "mode": "any",
+      "home": "Raleigh, NC",
+      "commute_areas": [
+        "raleigh",
+        "durham",
+        "cary"
+      ],
+      "max_office_days": null,
+      "onsite_ok": true,
+      "relocation_ok": false
+    },
+    "BENEFITS_RULES": true,
+    "POSTURE_POINTS": {
+      "Structurally remote (no HQ)": 7,
+      "Remote-first with offices": 7,
+      "Hybrid / RTO risk": 6,
+      "Unknown": 4
+    }
+  },
+  "board_feeds": {
+    "WWR_FEEDS": [
+      "https://weworkremotely.com/categories/remote-customer-support-jobs.rss"
+    ],
+    "REMOTE_CO_FEEDS": []
+  },
+  "invariants": {
+    "TRACKING_STARTS": {
+      "$date": [
+        2026,
+        1,
+        1
+      ]
+    }
+  },
+  "market_report": {
+    "LEXICON": [
+      [
+        "Onboarding",
+        "onboarding",
+        "HAVE"
+      ],
+      [
+        "Salesforce admin",
+        "salesforce admin",
+        "GAP"
+      ]
+    ],
+    "LEVEL_BUCKETS": [
+      [
+        "Senior",
+        "senior"
+      ],
+      [
+        "Unleveled",
+        ""
+      ]
+    ]
+  }
+}

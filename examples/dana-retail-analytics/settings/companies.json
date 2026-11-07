@@ -1,0 +1,12 @@
+{
+  "ats_tools": {
+    "CONFIRMED_COMPANIES": [
+      {
+        "name": "ShopWise (example)",
+        "platform": "ashby",
+        "slug": "shopwise-example"
+      }
+    ],
+    "CUSTOM_SITE_COMPANIES": []
+  }
+}

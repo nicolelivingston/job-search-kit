@@ -1,0 +1,82 @@
+{
+  "fit_scoring": {
+    "WORK_FAMILIES": [
+      {
+        "$tuple": [
+          "Retail dashboards and reporting",
+          "E01",
+          10,
+          {
+            "$rx": [
+              "dashboard",
+              "dashboards",
+              "reporting",
+              "tableau",
+              "kpis"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Experimentation and pricing",
+          "E02",
+          8,
+          {
+            "$rx": [
+              "a/b test",
+              "experiment",
+              "pricing",
+              "promotion",
+              "promotions"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Mentoring analysts",
+          "E03",
+          6,
+          {
+            "$rx": [
+              "mentor",
+              "mentoring",
+              "coaching",
+              "manage a team",
+              "lead a team"
+            ]
+          }
+        ]
+      }
+    ],
+    "GAP_FAMILIES": [
+      {
+        "$tuple": [
+          "Machine learning models",
+          6,
+          {
+            "$rx": [
+              "machine learning",
+              "predictive model",
+              "python modeling"
+            ]
+          }
+        ]
+      }
+    ],
+    "MINIMUM_FAMILIES": [
+      {
+        "$tuple": [
+          "Machine learning in production",
+          {
+            "$rx": [
+              "machine learning models in production",
+              "deploy machine learning"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

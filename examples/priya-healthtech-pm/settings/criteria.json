@@ -1,0 +1,490 @@
+{
+  "agent": {
+    "TITLE_KEYWORDS": [
+      "product manager",
+      "product owner",
+      "product lead"
+    ],
+    "ROLE_REJECT_KEYWORDS": [
+      "designer",
+      "engineer",
+      "sales",
+      "marketing",
+      "intern",
+      "recruiter"
+    ],
+    "LOCATION_REJECT_KEYWORDS": [
+      "india",
+      "bangalore",
+      "chennai",
+      "uk",
+      "united kingdom",
+      "germany",
+      "spain",
+      "sweden",
+      "ireland",
+      "france",
+      "netherlands",
+      "singapore",
+      "australia"
+    ],
+    "US_LOCATION_KEYWORDS": [
+      "us",
+      "usa",
+      "united states",
+      "americas",
+      "amer"
+    ],
+    "NON_US_REGION_KEYWORDS": [
+      "emea",
+      "apac",
+      "latam",
+      "iberia",
+      "europe",
+      "apj",
+      "anz",
+      "asia"
+    ],
+    "DOMAIN_REJECT_KEYWORDS": [
+      "adtech",
+      "crypto"
+    ],
+    "EXCLUDE_KEYWORDS": [
+      "tobacco",
+      "firearms"
+    ],
+    "INDUSTRY_EXCEPTION_KEYWORDS": [],
+    "LEVEL_TIERS": [
+      {
+        "$tuple": [
+          3,
+          [
+            "principal product manager",
+            "group product manager"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          2,
+          [
+            "senior product manager",
+            "lead product manager"
+          ]
+        ]
+      },
+      {
+        "$tuple": [
+          1,
+          [
+            "product manager"
+          ]
+        ]
+      }
+    ],
+    "REMOTE_KEYWORDS": [
+      "remote",
+      "anywhere",
+      "work from home",
+      "distributed"
+    ],
+    "SALARY_FLOOR": 130000,
+    "FRESH_DAYS": 14,
+    "OPEN_STATUSES": {
+      "$tuple": [
+        "Interested",
+        "Drafting Resume"
+      ]
+    },
+    "ROLE_TITLE_RE": {
+      "$re": "\\b(product manager|product owner|product lead)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ROLE_BAD_RE": {
+      "$re": "\\b(design|marketing|engineer|sales|intern|recruit)\\b",
+      "flags": [
+        "I"
+      ]
+    },
+    "ASK_FLAG_LABEL": "Ask Me First",
+    "ROLE_FAMILY_LABEL": "product "
+  },
+  "fit_scoring": {
+    "HARD_RULES": [
+      {
+        "$tuple": [
+          "remote-hybrid",
+          {
+            "$rx": [
+              "hybrid",
+              "in-office",
+              "in office",
+              "on-site",
+              "onsite",
+              "~\\b(\\d|one|two|three|four|five)\\+?\\s*days?\\s*(per|a|/|each)\\s*week\\b",
+              "office days",
+              "return to office",
+              "relocation required",
+              "must relocate",
+              "willing to relocate",
+              "relocation assistance",
+              "co-located",
+              "colocated"
+            ]
+          },
+          "skip",
+          "Fails fully-remote rule"
+        ]
+      },
+      {
+        "$tuple": [
+          "remote-catch",
+          {
+            "$rx": [
+              "remote-friendly",
+              "remote friendly",
+              "occasional onsite",
+              "occasional in-person",
+              "occasionally in person",
+              "as needed onsite",
+              "commuting distance",
+              "commutable",
+              "~within \\d+ miles",
+              "~must (be )?(located|based|reside|live) (in|within|near)",
+              "~(located|based) (in|near) (the )?(greater )?[A-Z][a-z]+(,| area| metro)"
+            ]
+          },
+          "ask",
+          "Remote with a catch; check wording"
+        ]
+      },
+      {
+        "$tuple": [
+          "on-call",
+          {
+            "$rx": [
+              "on-call",
+              "on call rotation",
+              "24/7",
+              "24x7",
+              "after-hours support",
+              "pager",
+              "incident response rotation"
+            ]
+          },
+          "skip",
+          "On-call or 24/7 duty named"
+        ]
+      },
+      {
+        "$tuple": [
+          "contract",
+          {
+            "$rx": [
+              "contract-to-hire",
+              "contract to hire",
+              "contract role",
+              "contract position",
+              "1099",
+              "c2c",
+              "corp-to-corp",
+              "temporary position",
+              "fixed-term",
+              "~\\b\\d+[- ]month contract\\b"
+            ]
+          },
+          "skip",
+          "Contract or temporary"
+        ]
+      },
+      {
+        "$tuple": [
+          "people-manager",
+          {
+            "$rx": [
+              "direct reports",
+              "~manag(e|ing|ement of) (a |the )?team of (product managers|pms|product leaders)",
+              "people management",
+              "people manager",
+              "~hire,? (coach|mentor|develop|and grow) (a team|product managers|pms)",
+              "~build and (lead|grow|scale) a team",
+              "~lead(ing)? a team of (product managers|pms)",
+              "performance reviews",
+              "~manag(e|ing) (product managers|pms)\\b"
+            ]
+          },
+          "skip",
+          "People-manager role (direct reports)"
+        ]
+      }
+    ],
+    "EXCLUDED_INDUSTRY_RE": {
+      "$rx": [
+        "tobacco",
+        "cigarette",
+        "vape",
+        "firearm"
+      ]
+    },
+    "EXCLUDED_COMPANIES": {
+      "$rx": [
+        "altria",
+        "juul"
+      ]
+    },
+    "TITLE_SKIP": {
+      "$rx": [
+        "vp",
+        "vice president",
+        "chief product",
+        "growth marketing",
+        "sales"
+      ]
+    },
+    "TITLE_ASK": {
+      "$rx": [
+        "platform",
+        "api",
+        "infrastructure"
+      ]
+    },
+    "TRAVEL_SKIP_PCT": 30,
+    "INDUSTRY_EXCEPTION_RE": {
+      "$rx": [
+        "~^$"
+      ]
+    },
+    "PAY_HARD_FLOOR": 130000,
+    "PAY_TARGET": 160000,
+    "POSTING_REMOTE_RE": {
+      "$rx": [
+        "fully remote",
+        "100% remote",
+        "remote-first",
+        "remote first",
+        "work from anywhere",
+        "~\\bremote\\s*[-(,]\\s*(us|usa|u\\.s\\.|united states)\\b",
+        "~\\b(us|usa|u\\.s\\.|united states)\\s*[-(,]?\\s*remote\\b",
+        "~#li-remote",
+        "location: remote",
+        "this role is remote",
+        "this position is remote",
+        "remote position",
+        "remote role"
+      ]
+    },
+    "WORK_CAP": 30,
+    "GAP_CAP": 24,
+    "YEARS_CLAIMABLE": 6,
+    "MIN_CAP_ONE": 69,
+    "MIN_CAP_TWO": 49,
+    "NO_PAY_CAP": 49,
+    "DOMAIN_SCORES": {
+      "Healthcare Ops": 20,
+      "Health Insurance": 14,
+      "Wellness": 10,
+      "Logistics": 6,
+      "Gaming": 0
+    },
+    "DOMAIN_UNKNOWN": 8,
+    "DOMAIN_KEYWORDS": [
+      {
+        "$tuple": [
+          "Healthcare Ops",
+          {
+            "$rx": [
+              "scheduling",
+              "clinic",
+              "clinics",
+              "patient",
+              "patients",
+              "provider",
+              "ehr",
+              "care team"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Health Insurance",
+          {
+            "$rx": [
+              "payer",
+              "claims",
+              "member benefits"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Wellness",
+          {
+            "$rx": [
+              "wellness",
+              "fitness",
+              "meditation"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Gaming",
+          {
+            "$rx": [
+              "video game",
+              "game studio"
+            ]
+          }
+        ]
+      }
+    ],
+    "TIER_PRECEDENTS": {
+      "$dict": [
+        [
+          1,
+          [
+            "clinicflow",
+            "brightpath health"
+          ]
+        ],
+        [
+          2,
+          [
+            "carenest"
+          ]
+        ]
+      ]
+    },
+    "LEVEL_RULES": [
+      {
+        "$tuple": [
+          15,
+          {
+            "$rx": [
+              "senior product manager",
+              "lead product manager",
+              "principal product manager"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          5,
+          {
+            "$rx": [
+              "product manager ii"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          0,
+          {
+            "$rx": [
+              "associate product manager",
+              "intern"
+            ]
+          }
+        ]
+      }
+    ],
+    "UNRESEARCHED_COMPANY_PTS": 5,
+    "FRESHNESS_BANDS": [
+      {
+        "$tuple": [
+          7,
+          5,
+          "posted this week"
+        ]
+      },
+      {
+        "$tuple": [
+          14,
+          3,
+          "posted in the last 2 weeks"
+        ]
+      },
+      {
+        "$tuple": [
+          30,
+          0,
+          ""
+        ]
+      },
+      {
+        "$tuple": [
+          60,
+          -5,
+          "open 1 to 2 months"
+        ]
+      },
+      {
+        "$tuple": [
+          null,
+          -10,
+          "open over 2 months"
+        ]
+      }
+    ],
+    "YEARS_RE": "(\\d{1,2})\\s*\\+?\\s*(?:or more\\s+)?(?:years|yrs)[^.;\\n]{0,80}?(?:product management|product manager|in product\\b)",
+    "YEARS_LABEL": "years of product management",
+    "TITLE_SKIP_LABEL": "Title is on your skip list",
+    "WORK_ARRANGEMENT": {
+      "mode": "remote"
+    },
+    "BENEFITS_RULES": true,
+    "POSTURE_POINTS": {
+      "Structurally remote (no HQ)": 9,
+      "Remote-first with offices": 6,
+      "Unknown": 4
+    }
+  },
+  "board_feeds": {
+    "WWR_FEEDS": [
+      "https://weworkremotely.com/categories/remote-product-jobs.rss"
+    ],
+    "REMOTE_CO_FEEDS": [
+      "https://remote.co/remote-jobs/product/feed/"
+    ]
+  },
+  "invariants": {
+    "TRACKING_STARTS": {
+      "$date": [
+        2026,
+        1,
+        1
+      ]
+    }
+  },
+  "market_report": {
+    "LEXICON": [
+      [
+        "Scheduling",
+        "scheduling|appointments",
+        "HAVE"
+      ],
+      [
+        "SQL",
+        "\\bSQL\\b",
+        "GAP"
+      ]
+    ],
+    "LEVEL_BUCKETS": [
+      [
+        "Senior",
+        "senior"
+      ],
+      [
+        "Unleveled",
+        ""
+      ]
+    ]
+  }
+}

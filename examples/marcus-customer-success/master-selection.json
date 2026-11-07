@@ -1,0 +1,42 @@
+{
+  "output": "Marcus_Bell_Master_Resume.docx",
+  "allow_proposed": false,
+  "name": "MARCUS BELL",
+  "headline": "A.headline",
+  "contact": "Raleigh, NC (Remote) | 555-0102 | marcus.bell@example.com | linkedin.com/in/example-marcus",
+  "master": true,
+  "banner": null,
+  "profile": "A.profile",
+  "core_expertise": [
+    "Discovery & Research",
+    "Workflow Design",
+    "Cross-Functional Leadership",
+    "Data-Informed Decisions",
+    "Stakeholder Management",
+    "Process Improvement"
+  ],
+  "roles": [
+    {
+      "id": "A.role.t1",
+      "scope": "A.scope.t1",
+      "groups": [
+        {
+          "label": "Selected work:",
+          "bullets": [
+            "E01.1",
+            "E02.1",
+            "E03.1"
+          ]
+        }
+      ]
+    }
+  ],
+  "earlier": [
+    {
+      "id": "A.earlier.1"
+    }
+  ],
+  "education": "A.education",
+  "credentials": "A.credentials",
+  "tools": "A.tools"
+}

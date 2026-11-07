@@ -1,0 +1,69 @@
+{
+  "off_title": "Data Engineer",
+  "locations": [
+    [
+      "Remote (US)",
+      true
+    ],
+    [
+      "Denver, CO",
+      true
+    ],
+    [
+      "Chicago, IL",
+      false
+    ]
+  ],
+  "postings": [
+    {
+      "folder": "01 years and management",
+      "title": "Analytics Manager, E-commerce",
+      "company": "Cartly (example)",
+      "salary_min": 135000,
+      "skip": false,
+      "missing_contains": [
+        "7+ years of analytics"
+      ]
+    },
+    {
+      "folder": "02 contract trap",
+      "title": "Senior Data Analyst",
+      "company": "ShopWise (example)",
+      "salary_min": 120000,
+      "skip": true,
+      "reason_contains": "Contract"
+    },
+    {
+      "folder": "03 good fit",
+      "title": "Senior Data Analyst, Retail",
+      "company": "ShopWise (example)",
+      "salary_min": 115000,
+      "skip": false,
+      "missing": [],
+      "evidence_contains": "E01"
+    },
+    {
+      "folder": "04 hybrid in area",
+      "title": "Senior Data Analyst, Merchandising",
+      "company": "Cartly (example)",
+      "salary_min": 118000,
+      "skip": false
+    },
+    {
+      "folder": "05 too many office days",
+      "title": "Senior Data Analyst, Stores",
+      "company": "Cartly (example)",
+      "salary_min": 118000,
+      "skip": true,
+      "reason_contains": "over your limit"
+    },
+    {
+      "folder": "06 hybrid elsewhere",
+      "title": "Senior Data Analyst, Pricing",
+      "company": "Cartly (example)",
+      "salary_min": 118000,
+      "skip": true,
+      "reason_contains": "outside your commute area"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "ats_tools": {
+    "CONFIRMED_COMPANIES": [
+      {
+        "name": "Onboardly (example)",
+        "platform": "lever",
+        "slug": "onboardly-example"
+      }
+    ],
+    "CUSTOM_SITE_COMPANIES": []
+  }
+}

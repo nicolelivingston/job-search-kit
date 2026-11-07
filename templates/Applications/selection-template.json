@@ -1,0 +1,96 @@
+{
+  "output": "<First>_<Last>_Resume_<Company>_<Role>_<YYYY-MM-DD>_v1.docx",
+  "allow_proposed": false,
+  "tier": null,
+  "notes": {
+    "posting": "URL and the date pulled",
+    "tier": "the reason for the tier set in the top-level \"tier\" field (1, 2, or 3)",
+    "minimums": "each countable minimum, pass or fail",
+    "persona_answers": "your answers to the two persona questions",
+    "keyword_mirror": "posting term | your term | where on the page; swaps you approved",
+    "contact": "who you reached out to before applying, or none found",
+    "bridge_source": "which bank card the bridge sentence rests on, and the posting words it mirrors",
+    "posting_map": [
+      {
+        "rank": 1,
+        "ask": "<the posting's first and most emphasized theme, in its words, short>",
+        "answer": "<group label on the page, or 'letter pN', or 'honest gap'>",
+        "ids": [
+          "E01.1"
+        ]
+      },
+      {
+        "rank": 2,
+        "ask": "<second theme>",
+        "answer": "<group label>",
+        "ids": [
+          "E02.1",
+          "E03.2"
+        ]
+      },
+      {
+        "rank": 3,
+        "ask": "<third theme>",
+        "answer": "<group label>",
+        "ids": [
+          "E04.1"
+        ]
+      }
+    ],
+    "_posting_map_rule": "3 to 5 themes in the posting's own order of emphasis; the group order on the page follows it; the first group carries your strongest unique-match story and answers one of the top two themes; labels in your words, never the posting's heading verbatim; a required theme with no evidence is an honest gap, not a thin group.",
+    "tools": "leave \"tools\" as \"A.tools\" for the whole line, or write {\"text\": \"a subset of your A.tools line\"}",
+    "credentials": "delete the \"credentials\" key if you have none, so no Credentials heading prints"
+  },
+  "letter_sources": {
+    "_rule": "One entry per body paragraph of the cover letter, in order: the bank card ID(s) it rests on, or your dated statement in your words (session date). The gate flags a letter whose selection file lists fewer sources than the letter has paragraphs. A paragraph with no source is cut, not softened.",
+    "p1": "<card IDs or 'You, YYYY-MM-DD: your words'>",
+    "p2": "<...>",
+    "p3": "<...>"
+  },
+  "name": "<YOUR NAME>",
+  "headline": "A.headline",
+  "contact": "<City, ST (Remote)> | <phone> | <email> | <linkedin.com/in/you>",
+  "banner": null,
+  "profile_heading": "Executive Profile",
+  "profile": {
+    "id": "A.profile",
+    "bridge": "One sentence in the posting's words, resting on a named bank card. Delete the bridge key to use the profile as is."
+  },
+  "core_expertise": [
+    "<Skill area 1>",
+    "<Skill area 2>",
+    "<Skill area 3>",
+    "<Skill area 4>",
+    "<Skill area 5>",
+    "<Skill area 6>"
+  ],
+  "roles": [
+    {
+      "id": "A.role.t1",
+      "scope": "A.scope.t1",
+      "groups": [
+        {
+          "label": "<Group label, no figures>:",
+          "bullets": [
+            "E01.1",
+            "E01.2"
+          ]
+        }
+      ]
+    }
+  ],
+  "earlier": [
+    {
+      "id": "A.earlier.1"
+    }
+  ],
+  "education": "A.education",
+  "credentials": "A.credentials",
+  "tools": "A.tools",
+  "timeline": {
+    "_rule": "Claude keeps the clock: timestamps for drafting_started, vN_delivered for every version, correction_vN for each correction message, and submitted. At 'submitted', compute hours spent and cycle time and write both to the tracker.",
+    "drafting_started": null,
+    "v1_delivered": null,
+    "submitted": null
+  }
+}

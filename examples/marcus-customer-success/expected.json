@@ -1,0 +1,61 @@
+{
+  "off_title": "Account Executive",
+  "locations": [
+    [
+      "Remote (US)",
+      true
+    ],
+    [
+      "Raleigh, NC",
+      true
+    ],
+    [
+      "Austin, TX",
+      false
+    ]
+  ],
+  "postings": [
+    {
+      "folder": "01 certification trap",
+      "title": "Senior Customer Success Manager",
+      "company": "LedgerLine (example)",
+      "salary_min": 110000,
+      "skip": false,
+      "missing_contains": [
+        "Salesforce admin certification"
+      ]
+    },
+    {
+      "folder": "02 on-call trap",
+      "title": "Customer Success Manager, Enterprise",
+      "company": "Onboardly (example)",
+      "salary_min": 100000,
+      "skip": true,
+      "reason_contains": "on-call"
+    },
+    {
+      "folder": "03 good fit",
+      "title": "Customer Success Manager",
+      "company": "Onboardly (example)",
+      "salary_min": 98000,
+      "skip": false,
+      "missing": [],
+      "evidence_contains": "E01"
+    },
+    {
+      "folder": "04 onsite in area",
+      "title": "Customer Success Manager, Onboarding",
+      "company": "LedgerLine (example)",
+      "salary_min": 96000,
+      "skip": false
+    },
+    {
+      "folder": "05 onsite elsewhere",
+      "title": "Customer Success Manager",
+      "company": "LedgerLine (example)",
+      "salary_min": 96000,
+      "skip": true,
+      "reason_contains": "outside your commute area"
+    }
+  ]
+}

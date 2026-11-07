@@ -1,0 +1,83 @@
+{
+  "fit_scoring": {
+    "WORK_FAMILIES": [
+      {
+        "$tuple": [
+          "Scheduling and capacity",
+          "E01 E02",
+          10,
+          {
+            "$rx": [
+              "scheduling",
+              "appointments",
+              "capacity",
+              "no-show",
+              "no-shows",
+              "booking"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Clinic workflow",
+          "E02 E03",
+          8,
+          {
+            "$rx": [
+              "clinic",
+              "front desk",
+              "intake",
+              "workflow",
+              "care team"
+            ]
+          }
+        ]
+      },
+      {
+        "$tuple": [
+          "Discovery and research",
+          "E03",
+          6,
+          {
+            "$rx": [
+              "user research",
+              "discovery",
+              "interviews",
+              "usability"
+            ]
+          }
+        ]
+      }
+    ],
+    "GAP_FAMILIES": [
+      {
+        "$tuple": [
+          "SQL and self-serve analytics",
+          6,
+          {
+            "$rx": [
+              "sql",
+              "looker",
+              "dbt"
+            ]
+          }
+        ]
+      }
+    ],
+    "MINIMUM_FAMILIES": [
+      {
+        "$tuple": [
+          "SQL proficiency",
+          {
+            "$rx": [
+              "sql",
+              "proficient in sql",
+              "write sql"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

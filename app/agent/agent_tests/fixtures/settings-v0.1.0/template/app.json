@@ -1,0 +1,13 @@
+{
+  "tracker": "local",
+  "schedule": {
+    "full": "08:00",
+    "quick": [
+      "11:00",
+      "14:00",
+      "17:00",
+      "20:00"
+    ]
+  },
+  "support_email": ""
+}

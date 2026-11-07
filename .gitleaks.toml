@@ -1,0 +1,17 @@
+# Secret scan settings (the Checks workflow runs gitleaks over every commit).
+# The defaults stay on; these are known non-secrets, each allowed only in the
+# files where it belongs, so a real secret anywhere else still fails the scan.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Release signing PUBLIC key pinned in app/updater.py (public by design)"
+condition = "AND"
+regexes = ['''68f4f6ee3addc368f0e420a3b27ad559eed59370d284e774ecebe28767ee5265''']
+paths = ['''^app/updater\.py$''', '''^\.gitleaks\.toml$''']
+
+[[allowlists]]
+description = "Made-up test tokens the error report tests scrub"
+condition = "AND"
+regexes = ['''ntn_1234567890abcdefXYZ''', '''secret_abcdefghij(klmnop)?''']
+paths = ['''^app/agent/agent_tests/test_[a-z_]+\.py$''', '''^\.gitleaks\.toml$''']

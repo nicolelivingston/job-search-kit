@@ -1,0 +1,9 @@
+{
+  "tracker": "local",
+  "schedule": {
+    "full": "08:00",
+    "quick": [
+      "13:00"
+    ]
+  }
+}

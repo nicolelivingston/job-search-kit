@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Search Kit</title>
+<style>
+:root{--bg:#f5f4f1;--surface:#ffffff;--surface2:#faf9f6;--group:#f3f1ec;--col:#ecebe6;--note:#f7f5f0;--chip:#f1efea;--text:#1f2328;--text2:#3a3f46;--text3:#4a4f57;--muted:#5b616b;--line:#e4e1da;--line2:#d6d2c9;--line3:#efece6;--accent:#2f5d8a;--accent-soft:#e9eff6;--accent-text:#1f4467;--sel:#eef3f9;--on-accent:#ffffff;--good:#1e5631;--bad:#8a1c14;--fit-bg-s:75%;--fit-bg-l:86%;--fit-fg-s:70%;--fit-fg-l:22%;--p-gray-bg:#eeeeee;--p-gray-fg:#3f444b;--p-blue-bg:#dfeaf7;--p-blue-fg:#1f4467;--p-teal-bg:#d8f0ec;--p-teal-fg:#0f5148;--p-green-bg:#e0f0e3;--p-green-fg:#1e5631;--p-yellow-bg:#fbf1c7;--p-yellow-fg:#5c4a00;--p-orange-bg:#fde3cc;--p-orange-fg:#7a3a00;--p-red-bg:#fadcd9;--p-red-fg:#8a1c14;--p-purple-bg:#ebe2f7;--p-purple-fg:#4b2a7a;--p-pink-bg:#f9dfeb;--p-pink-fg:#7d1d4d;--warn:#7a3a00;color-scheme:light}
+:root[data-theme=dark]{--bg:#141517;--surface:#1d1f22;--surface2:#23262a;--group:#262a2e;--col:#191b1e;--note:#262a2e;--chip:#2c3035;--text:#e8e6e1;--text2:#c9c6bf;--text3:#b5b2ab;--muted:#a19e97;--line:#33373c;--line2:#43484e;--line3:#2a2e33;--accent:#3d6fa3;--accent-soft:#22324a;--accent-text:#9cc3ec;--sel:#1f2b3a;--on-accent:#ffffff;--good:#8fd19e;--bad:#f2a39b;--fit-bg-s:45%;--fit-bg-l:26%;--fit-fg-s:70%;--fit-fg-l:82%;--p-gray-bg:#33373c;--p-gray-fg:#d7d5d0;--p-blue-bg:#1f3550;--p-blue-fg:#a9cbef;--p-teal-bg:#143c37;--p-teal-fg:#8fdacb;--p-green-bg:#1b3a24;--p-green-fg:#9fd8ab;--p-yellow-bg:#3d3412;--p-yellow-fg:#ecd98a;--p-orange-bg:#45290f;--p-orange-fg:#f3b98a;--p-red-bg:#4a1d1a;--p-red-fg:#f2a7a0;--p-purple-bg:#34264a;--p-purple-fg:#cdb6f0;--p-pink-bg:#47203a;--p-pink-fg:#f0aed0;--warn:#f3b98a;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-theme=auto]{--bg:#141517;--surface:#1d1f22;--surface2:#23262a;--group:#262a2e;--col:#191b1e;--note:#262a2e;--chip:#2c3035;--text:#e8e6e1;--text2:#c9c6bf;--text3:#b5b2ab;--muted:#a19e97;--line:#33373c;--line2:#43484e;--line3:#2a2e33;--accent:#3d6fa3;--accent-soft:#22324a;--accent-text:#9cc3ec;--sel:#1f2b3a;--on-accent:#ffffff;--good:#8fd19e;--bad:#f2a39b;--fit-bg-s:45%;--fit-bg-l:26%;--fit-fg-s:70%;--fit-fg-l:82%;--p-gray-bg:#33373c;--p-gray-fg:#d7d5d0;--p-blue-bg:#1f3550;--p-blue-fg:#a9cbef;--p-teal-bg:#143c37;--p-teal-fg:#8fdacb;--p-green-bg:#1b3a24;--p-green-fg:#9fd8ab;--p-yellow-bg:#3d3412;--p-yellow-fg:#ecd98a;--p-orange-bg:#45290f;--p-orange-fg:#f3b98a;--p-red-bg:#4a1d1a;--p-red-fg:#f2a7a0;--p-purple-bg:#34264a;--p-purple-fg:#cdb6f0;--p-pink-bg:#47203a;--p-pink-fg:#f0aed0;--warn:#f3b98a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Inter,sans-serif}
+a{color:var(--accent-text)}a:hover{color:var(--accent)}
+button,input,select,textarea{color:inherit;font:inherit}
+.sr{position:absolute;left:-9999px}
+[hidden]{display:none!important}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;margin:0}
+.beta{font-size:11px;font-weight:600;border:1px solid var(--line2);border-radius:999px;padding:1px 8px}
+nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+nav a{padding:8px 14px;border-radius:8px;text-decoration:none;color:var(--text)}
+nav a.on{font-weight:600;background:var(--accent-soft);color:var(--accent-text)}
+nav select{width:auto;min-height:0;height:36px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);font-size:13px;cursor:pointer}
+main{max-width:1440px;margin:0 auto;padding:20px 24px 48px}
+main.narrow{max-width:980px}
+h1{margin:0 0 6px;font-size:24px}h2{font-size:18px;margin:0 0 6px}h3{font-size:14px;margin:18px 0 8px}
+.sub{color:var(--muted);margin:0 0 14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:14px 0 4px}.hint{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=number],input[type=time],input[type=date],input[type=search],select,textarea{width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface)}
+textarea{min-height:76px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.two label{margin-top:0}
+.choice{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.choice label{display:flex;gap:8px;align-items:center;font-weight:400;margin:0;min-height:40px;padding:6px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;background:var(--surface)}
+.choice label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.choice input,input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;margin:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:400}.check input{margin-top:2px;flex:0 0 auto}
+button{height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);cursor:pointer}
+button.primary,a.primary{border:0;background:var(--accent);color:var(--on-accent);font-weight:600}
+a.btn{display:inline-flex;align-items:center;height:38px;padding:0 14px;border:1px solid var(--line2);border-radius:8px;text-decoration:none;color:var(--text)}
+a.btn.primary{border:0;color:var(--on-accent)}
+button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);font-weight:600}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.steps button{height:32px;padding:0 10px;font-size:13px}
+.bar{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+.note{padding:10px 12px;border-radius:8px;background:var(--note);margin:12px 0}.banner{border-left:4px solid var(--warn)}
+.ok{color:var(--good)}.err{color:var(--bad)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line3);vertical-align:top}
+th{font-size:12px;color:var(--text3);font-weight:600}.scroll{overflow-x:auto}
+.dom{display:grid;grid-template-columns:1.2fr .8fr 2fr auto;gap:8px;margin-bottom:8px;align-items:center}
+/* toolbar */
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.tools>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tools input[type=search]{width:260px}
+.seg{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0;height:36px}
+/* grid tables */
+.grid{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+.grid .gr{display:grid;align-items:center;border-bottom:1px solid var(--line3);background:var(--surface)}
+.grid .gh{background:var(--surface2);border-bottom:1px solid var(--line)}
+.grid .gh button{width:100%;min-height:36px;display:flex;gap:6px;align-items:center;background:none;border:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);text-align:left;padding:0 8px}
+.grid .gr.gh>div{padding:4px 6px;overflow-wrap:normal}
+.grid .gr>div{padding:10px 14px;min-width:0;overflow-wrap:anywhere}
+.grid .gr.sel{background:var(--sel)}
+.grid .group{border-bottom:1px solid var(--line);background:var(--group)}
+.grid .group button{display:flex;gap:10px;align-items:center;width:100%;min-height:40px;padding:0 14px;border:0;background:none;font-weight:600;text-align:left}
+.grid .group .m{color:var(--muted);font-weight:400;font-size:12px}
+.grid .cols-apps{grid-template-columns:270px 240px 150px 76px 100px 100px 86px 160px 110px 60px;min-width:1352px}
+.grid .cols-cos{grid-template-columns:240px 150px 140px 170px 110px 130px 150px 160px 130px 110px 180px 200px 170px 100px 130px 120px 110px 220px 240px 240px;min-width:3370px;align-items:start;font-size:13px;line-height:1.45}
+.grid .cols-cos>div:first-child{position:sticky;left:0;z-index:1;background:inherit;border-right:1px solid var(--line3);display:flex;gap:6px;align-items:center}
+.grid .gh.cols-cos>div:first-child{z-index:2}
+.grid .gr>div.edit{padding:4px 6px}
+.ib{flex:0 0 auto;width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
+.eb{width:40px;height:36px;padding:0;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+.role{font-weight:600}.muted{color:var(--muted)}.green{color:var(--good)}.red{color:var(--bad)}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.fit{display:inline-block;min-width:34px;text-align:center;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.newtag{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:600}
+.p-gray{background:var(--p-gray-bg);color:var(--p-gray-fg)}.p-blue{background:var(--p-blue-bg);color:var(--p-blue-fg)}.p-teal{background:var(--p-teal-bg);color:var(--p-teal-fg)}
+.p-green{background:var(--p-green-bg);color:var(--p-green-fg)}.p-yellow{background:var(--p-yellow-bg);color:var(--p-yellow-fg)}.p-orange{background:var(--p-orange-bg);color:var(--p-orange-fg)}
+.p-red{background:var(--p-red-bg);color:var(--p-red-fg)}.p-purple{background:var(--p-purple-bg);color:var(--p-purple-fg)}.p-pink{background:var(--p-pink-bg);color:var(--p-pink-fg)}
+/* board */
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+.board .col{flex:0 0 220px;background:var(--col);border-radius:12px;padding:10px}
+.board .ch{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 10px}
+.board .cards{display:flex;flex-direction:column;gap:8px}
+.board .cards button{display:block;width:100%;height:auto;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.board .cards b{display:block;margin-bottom:4px}.board .cards span.co{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}
+/* drawer */
+.backdrop{position:fixed;inset:0;z-index:20;border:0;padding:0;border-radius:0;height:auto;background:rgba(10,10,12,.18);cursor:default}
+.drawer{position:fixed;z-index:21;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(20,20,20,.08);overflow-y:auto;padding:20px}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.x{width:36px;height:36px;padding:0;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center}
+.drawer label{font-size:12px;margin:14px 0 4px}
+.facts{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px 12px;font-size:13px;line-height:1.45}.facts dt{color:var(--muted);font-weight:600}.facts dd{margin:0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.applist a{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--text);margin-bottom:8px}
+.swrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line3)}
+.sw{width:28px;height:28px;padding:0;border-radius:999px;border:2px solid var(--surface)}
+.wd{display:flex;gap:10px;align-items:flex-start;margin:4px 0 12px;padding:10px;background:var(--note);border-radius:8px;font-size:13px;font-weight:400;line-height:1.45}
+/* help */
+dl.defs{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px 18px;margin:0}dl.defs dt{font-weight:600}dl.defs dd{margin:0}
+.help ul{margin:0;padding-left:20px}
+@media (max-width:700px){header{padding:12px 16px}main{padding:16px}.two,dl.defs,.facts{grid-template-columns:1fr}.dom{grid-template-columns:1fr}.tools input[type=search]{width:100%}}
+</style>
+</head>
+<body>
+<header><p class="brand">Job Search Kit<span class="beta">Beta</span></p>
+<nav aria-label="Main"><a href="#tracker" id="n-tracker">Applications</a><a href="#companies" id="n-companies">Companies</a><a href="#profile" id="n-profile">My search profile</a><a href="#contacts" id="n-contacts">Contacts</a><a href="#privacy" id="n-privacy">Privacy</a><a href="#help" id="n-help">Help</a><a href="#suggest" id="n-suggest">Suggest an idea</a>
+<label for="theme" class="sr">Color theme</label><select id="theme"><option value="auto">Theme: match system</option><option value="light">Theme: light</option><option value="dark">Theme: dark</option></select></nav></header>
+<main>
+<section id="setup" hidden></section>
+<section id="tracker" hidden></section>
+<section id="companies" hidden></section>
+<section id="profile" hidden></section>
+<section id="contacts" hidden></section>
+<section id="advanced" hidden></section>
+<section id="privacy" hidden></section>
+<section id="help" hidden></section>
+</main>
+<div id="drawer-root"></div>
+<script>
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const TOKEN = new URLSearchParams(location.search).get("t") || "";   // this launch's key; every call carries it
+try { if (TOKEN) history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}   // keep it out of the address bar and history
+const api = async (path, body) => { const h = {"X-Kit-Token": TOKEN}; let r;
+  try { r = await fetch(path, body === undefined ? {headers:h} : {method:"POST", headers:{...h, "Content-Type":"application/json"}, body:JSON.stringify(body)}); }
+  catch (e) { closedNotice(); throw e; }
+  return r.json(); };
+function closedNotice() { if (document.getElementById("closed")) return; document.querySelector("main").insertAdjacentHTML("afterbegin",
+  `<div class="note banner" id="closed"><b>This page has closed.</b> It stops after 30 minutes without use. Open Job Search Kit again from the Start menu.</div>`); }
+const safeUrl = u => /^https?:\/\/[^\s]+$/i.test(String(u||"")) ? u : "";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lines = v => (v||[]).join("\n");
+const unlines = s => s.split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const ICON_I = `<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1a5 5 0 1 0 0 10A5 5 0 1 0 6 1z" stroke="currentColor" fill="none"></path><path d="M6 5.2V9M6 3v.2" stroke="currentColor" stroke-width="1.4"></path></svg>`;
+const ICON_EDIT = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 10.5V12h1.5L11 4.5 9.5 3 2 10.5zM9.5 3L11 1.5 12.5 3 11 4.5" stroke="currentColor" stroke-width="1.3" fill="none"></path></svg>`;
+const ICON_X = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" fill="none"></path></svg>`;
+let A = null, step = 0, UI = {theme:"auto", status_colors:{}}, ST = {};
+
+// ---------------------------------------------------------------- theme (kept in settings/app.json; localStorage only paints the first frame)
+function applyTheme(t) { document.documentElement.dataset.theme = t || "auto"; $("#theme").value = t || "auto"; }
+applyTheme(store.get("kit-theme", "auto"));
+$("#theme").onchange = async e => { const t = e.target.value; applyTheme(t); store.set("kit-theme", t); UI.theme = t; await api("/api/ui", {theme:t}); };
+window.addEventListener("storage", e => { if (e.key === "kit-theme") { try { applyTheme(JSON.parse(e.newValue)); } catch (x) {} }
+  if (e.key === "kit-colors" && !$("#tracker").hidden) renderTracker(); });
+
+const STEPS = [
+ {key:"work", title:"The work you want", sub:"What you're looking for, in your own words.", fields:[
+  ["titles","Job titles you're looking for","One per line, e.g. senior product manager","list"],
+  ["field","What do you call your field?","e.g. product management, customer success, analytics","text"],
+  ["never_titles","Words in a title that make it never right","One per line, e.g. intern, sales","list"],
+  ["skip_title_words","Other title words to skip","e.g. vice president, intern","list"],
+  ["ask_title_words","Title words that should ask you first","e.g. platform, head of","list"],
+  ["level_at","Titles at your level","e.g. senior product manager, lead product manager","list"],
+  ["level_below","Titles a step below that are still OK","","list"],
+  ["level_junior","Titles that are too junior","e.g. associate, intern","list"],
+  ["years","Years of experience in your field you can claim","","number"],
+  ["years_words","How postings name that experience","e.g. product management, product manager","list"]]},
+ {key:"where", title:"Where and how you work", sub:"Remote, hybrid, or onsite, and your limits.", custom:"where"},
+ {key:"rules", title:"Rules that rule a job out", sub:"Things that make a job a no for you.", custom:"rules"},
+ {key:"pay", title:"Pay", sub:"Base pay, before bonus or equity.", fields:[
+  ["floor","Lowest base pay you'd take","Postings below this are skipped","number"],
+  ["target","Pay you're aiming for","","number"],
+  ["rank_no_pay_lower","Rank postings with no posted pay lower","","bool"]]},
+ {key:"fields", title:"Fields and companies", sub:"What interests you, and where you'd love to work.", custom:"fields"},
+ {key:"resume", title:"Your resume", sub:"Format and words to keep off the page. Your stories come from the Start Here interviews with Claude.", fields:[
+  ["name","Your name as it appears on your resume","","text"],["headline","Your resume headline","e.g. Senior Product Manager | Patient Scheduling","text"],
+  ["font","Font","","text"],["body_pt","Body size (points)","","number"],["name_pt","Name size","","number"],["heading_pt","Heading size","","number"],
+  ["margin_in","Margins (inches)","","number"],["line_spacing","Line spacing","","number"],
+  ["avoid_words","Words to keep off your resume","One per line","list"],["abbreviations","Abbreviations to spell out","","list"],
+  ["retired","Wording you've retired","Phrases that should never come back","list"],["once_per_resume","Figures that may appear only once per resume","","list"]]},
+ {key:"run", title:"How it runs", sub:"When it checks for new jobs.", fields:[
+  ["full","Main daily check","Fetches, scores, and tidies your tracker","time"],
+  ["quick","Quick checks during the day","One time per line, like 14:00","list"],
+  ["auto_update","Install updates automatically","Checks this project's GitHub page once a day. Off means you update with Check for updates in the Start menu","bool"]]},
+];
+
+function input(key, sec, [k, label, hint, kind]) {
+  const v = A[sec][k]; const id = `${sec}.${k}`;
+  const h = hint ? ` <span class="hint">${esc(hint)}</span>` : "";
+  if (kind === "list") return `<label for="${id}">${esc(label)}${h}</label><textarea id="${id}" data-k="${id}" data-kind="list">${esc(lines(v))}</textarea>`;
+  if (kind === "bool") return `<label><input type="checkbox" data-k="${id}" data-kind="bool" ${v?"checked":""}> ${esc(label)}</label>`;
+  const t = kind === "number" ? "number" : kind === "time" ? "time" : "text";
+  return `<label for="${id}">${esc(label)}${h}</label><input id="${id}" type="${t}" data-k="${id}" data-kind="${kind}" value="${esc(v ?? "")}">`;
+}
+
+function custom(name) {
+  if (name === "where") { const w = A.where; return `
+   <label>How do you want to work?</label><div class="choice">
+    ${[["remote","Remote only"],["remote_or_hybrid","Remote or hybrid"],["any","Any, including onsite"]].map(([v,l])=>`<label><input type="radio" name="mode" value="${v}" ${w.mode===v?"checked":""}> ${l}</label>`).join("")}</div>
+   <div id="office" ${w.mode==="remote"?"hidden":""}>
+    <label for="home">Where do you live? <span class="hint">City and state</span></label><input id="home" type="text" value="${esc(w.home)}">
+    <label for="areas">Cities or areas you could commute to <span class="hint">One per line</span></label><textarea id="areas">${esc(lines(w.commute_areas))}</textarea>
+    <label for="days">Most office days a week you'd accept <span class="hint">Leave blank for no limit</span></label><input id="days" type="number" min="0" max="5" value="${w.max_office_days ?? ""}">
+    <label id="onsite-wrap" ${w.mode!=="any"?"hidden":""}><input type="checkbox" id="onsite" ${w.onsite_ok?"checked":""}> I'd work fully onsite in those areas</label>
+   </div>
+   <label><input type="checkbox" id="reloc" ${w.relocation_ok?"checked":""}> I'd relocate for the right job</label>`; }
+  if (name === "rules") { const r = A.rules; const yn = (id, q, val) => `<label>${q}</label><div class="choice"><label><input type="radio" name="${id}" value="yes" ${val?"checked":""}> Yes</label><label><input type="radio" name="${id}" value="no" ${!val?"checked":""}> No</label></div>`;
+   return `${yn("dr","Are you open to managing people (direct reports)?", r.direct_reports_ok)}
+    ${yn("oc","Are you OK with on-call or after-hours duty?", r.on_call_ok)}
+    ${yn("ct","Would you take a contract or temporary role?", r.contract_ok)}
+    <label for="travel">Most travel you'd accept (percent of time)</label><input id="travel" type="number" min="0" max="100" value="${r.travel_max_pct}">
+    <label for="ind">Industries you won't work in <span class="hint">One per line</span></label><textarea id="ind">${esc(lines(r.excluded_industries))}</textarea>
+    <label for="cos">Companies you won't work for</label><textarea id="cos">${esc(lines(r.excluded_companies))}</textarea>
+    <label for="exc">Exceptions: words that turn an excluded industry into "ask me first"</label><textarea id="exc">${esc(lines(r.exception_words))}</textarea>
+    <label><input type="checkbox" id="ben" ${r.benefits_rule?"checked":""}> Skip companies rated weak on both time off and health benefits</label>`; }
+  if (name === "fields") { const f = A.fields; return `
+    <label>Fields you care about <span class="hint">Name, how interested you are, and words that show up in postings for that field</span></label>
+    <div id="doms">${f.domains.map(domRow).join("")}</div><button type="button" id="adddom">Add a field</button>
+    <label for="top">Companies you'd love to work for <span class="hint">One per line</span></label><textarea id="top">${esc(lines(f.top_companies))}</textarea>
+    <label for="good">Companies you'd be happy at</label><textarea id="good">${esc(lines(f.good_companies))}</textarea>
+    <label>Company job boards to check every day <span class="hint">Paste a careers page link and press Find board</span></label>
+    <div class="row"><input id="burl" type="text" placeholder="https://example.com/careers"><input id="bname" type="text" placeholder="Company name"></div>
+    <p><button type="button" id="detect">Find board</button> <span id="dmsg" class="hint"></span></p>
+    <div id="boards">${boardList()}</div>
+    <label for="feed">Remote job feed for your field</label><select id="feed">${["product","customer support","data","design","marketing","programming","management and finance"].map(x=>`<option ${f.feed===x?"selected":""}>${x}</option>`).join("")}</select>`; }
+}
+function domRow(d={name:"",interest:"medium",keywords:[]}) { return `<div class="dom" data-points="${d.points ?? ""}" data-was="${esc(d.interest)}"><input type="text" class="dn" placeholder="Field" value="${esc(d.name)}">
+  <select class="di">${["high","medium","low","no"].map(x=>`<option value="${x}" ${d.interest===x?"selected":""}>${x==="no"?"Not interested":x[0].toUpperCase()+x.slice(1)}</option>`).join("")}</select>
+  <input type="text" class="dk" placeholder="Words, separated by commas" value="${esc((d.keywords||[]).join(", "))}"><button type="button" class="rm" aria-label="Remove">Remove</button></div>`; }
+function boardList() { const f = A.fields; const all = [...f.boards.map((b,i)=>`${esc(b.name)} <small>(${esc(b.platform)})</small>` + (b.platform === "workday"
+    ? `<br><label class="hint"><input type="checkbox" class="wdok" data-i="${i}" ${b.workday_ok ? "checked" : ""}> Read this Workday board every day. Workday's own terms limit automated tools on Workday's sites; it's unclear whether that covers company career sites. Leave this off to check this company by hand.</label>` : "")), ...f.custom_sites.map(c=>`${esc(c.name)} <small>(check by hand)</small>`)];
+  return all.length ? `<ul>${all.map((x,i)=>`<li>${x} <button type="button" class="rmb" data-i="${i}">Remove</button></li>`).join("")}</ul>` : `<p class="hint">No boards yet.</p>`; }
+
+function collect() {
+  const s = STEPS[step];
+  document.querySelectorAll("#setup [data-k]").forEach(el => { const [sec,k] = el.dataset.k.split("."); const kind = el.dataset.kind;
+    A[sec][k] = kind==="list" ? unlines(el.value) : kind==="bool" ? el.checked : kind==="number" ? (el.value===""?null:Number(el.value)) : el.value; });
+  if (s.custom==="where") { const w=A.where; w.mode = $("input[name=mode]:checked").value; w.home = $("#home").value; w.commute_areas = unlines($("#areas").value);
+    w.max_office_days = $("#days").value===""?null:Number($("#days").value); w.onsite_ok = $("#onsite").checked; w.relocation_ok = $("#reloc").checked; }
+  if (s.custom==="rules") { const r=A.rules; r.direct_reports_ok=$("input[name=dr]:checked").value==="yes"; r.on_call_ok=$("input[name=oc]:checked").value==="yes";
+    r.contract_ok=$("input[name=ct]:checked").value==="yes"; r.travel_max_pct=Number($("#travel").value||0); r.excluded_industries=unlines($("#ind").value);
+    r.excluded_companies=unlines($("#cos").value); r.exception_words=unlines($("#exc").value); r.benefits_rule=$("#ben").checked; }
+  if (s.custom==="fields") { const f=A.fields; f.domains=[...document.querySelectorAll(".dom")].map(r=>({name:$(".dn",r).value,interest:$(".di",r).value,keywords:unlines($(".dk",r).value),points:r.dataset.points?Number(r.dataset.points):null,was:r.dataset.was||null})).filter(d=>d.name.trim());
+    f.top_companies=unlines($("#top").value); f.good_companies=unlines($("#good").value); f.feed=$("#feed").value; }
+}
+
+function renderSetup(msg="") {
+  const s = STEPS[step]; const done = step === STEPS.length;
+  $("#setup").innerHTML = `<div class="steps">${STEPS.map((x,i)=>`<button type="button" data-step="${i}" class="${i===step?"on":""}">${i+1}. ${esc(x.title)}</button>`).join("")}<button type="button" data-step="${STEPS.length}" class="${done?"on":""}">Finish</button></div>
+   <div class="card">${done ? `<h2>You're set up</h2><p class="sub">Your answers are saved. Two last things:</p>
+     <p><button class="primary" id="sched">Turn on the daily checks</button> <span id="smsg"></span></p>
+     <div class="note">Next, open the Claude app, open your Job Search folder, and type <b>/start-here</b>. Claude will interview you about your work and build your evidence bank and master resume.</div>
+     <p><a href="#tracker">Open your tracker</a> · You can change any answer here later.</p>`
+   : `<h2>${esc(s.title)}</h2><p class="sub">${esc(s.sub)}</p>${s.fields ? s.fields.map(f=>input(f[0], s.key, f)).join("") : custom(s.custom)}
+     <div class="bar"><button type="button" id="back" ${step===0?"disabled":""}>Back</button><span id="msg" class="ok">${esc(msg)}</span><button type="button" class="primary" id="next">Save and continue</button></div>`}</div>`;
+  document.querySelectorAll("[data-step]").forEach(b => b.onclick = async () => { if (!done) await save(false); step = Number(b.dataset.step); renderSetup(); });
+  if (done) { $("#sched").onclick = async () => { const r = await api("/api/schedule/install", {}); $("#smsg").textContent = r.message || r.error; $("#smsg").className = r.ok ? "ok" : "err"; }; return; }
+  $("#next").onclick = async () => { if (await save(true)) { step++; renderSetup(); window.scrollTo(0,0); } };
+  $("#back").onclick = async () => { await save(false); step--; renderSetup(); };
+  if (s.custom==="where") document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => { $("#office").hidden = r.value==="remote"; $("#onsite-wrap").hidden = r.value!=="any"; });
+  if (s.custom==="fields") {
+    $("#adddom").onclick = () => $("#doms").insertAdjacentHTML("beforeend", domRow());
+    $("#doms").onclick = e => { if (e.target.classList.contains("rm")) e.target.closest(".dom").remove(); };
+    $("#boards").onchange = e => { if (e.target.classList.contains("wdok")) A.fields.boards[Number(e.target.dataset.i)].workday_ok = e.target.checked; };
+    $("#boards").onclick = e => { if (!e.target.classList.contains("rmb")) return; const i = Number(e.target.dataset.i), nb = A.fields.boards.length;
+      if (i < nb) A.fields.boards.splice(i,1); else A.fields.custom_sites.splice(i-nb,1); $("#boards").innerHTML = boardList(); };
+    $("#detect").onclick = async () => { $("#dmsg").textContent = "Looking..."; const r = await api("/api/detect", {url:$("#burl").value, name:$("#bname").value});
+      if (r.board) { A.fields.boards.push(r.board); $("#dmsg").textContent = r.board.platform === "workday" ? "Found a Workday board. It stays off until you tick the box under it." : `Found ${r.board.platform} board.`; } else if (r.custom) { A.fields.custom_sites.push(r.custom); $("#dmsg").textContent = "No standard board; added to check by hand."; } else $("#dmsg").textContent = r.error || "Couldn't check that link.";
+      $("#boards").innerHTML = boardList(); $("#burl").value = ""; $("#bname").value = ""; };
+  }
+}
+async function save(show) { collect(); const r = await api("/api/answers", A); if (show && !r.ok) { $("#msg").textContent = r.error; $("#msg").className = "err"; return false; } return true; }
+
+
+// ---------------------------------------------------------------- shared bits
+const STATUS_ORDER = ["Interested","Drafting Resume","Applied","Interviewing","Offer","Closed","Rejected"];
+const GROUPS = [["To Do",["Interested","Drafting Resume"]],["In Progress",["Applied","Interviewing"]],["Complete",["Offer","Closed","Rejected"]]];
+const PALETTE = ["gray","blue","teal","green","yellow","orange","red","purple","pink"];
+const CO_VERDICT_COLOR = {"Pursue":"green","Watch list":"yellow","Not reviewed yet":"purple","Not a fit":"gray"};
+const RISK_COLOR = {"Low":"green","Some concerns":"yellow","High":"red","Needs research":"gray"};
+const WORK_ORDER = ["Remote","Hybrid","Onsite","Not stated"];
+const FIT_LABEL_COLOR = {"Strong fit":"green","Possible fit":"yellow","Poor fit":"gray","Applying":"blue","Passed":"gray"};
+const FIT_ORDER = ["Applying","Strong fit","Possible fit","Poor fit","Passed"];
+const labelOf = r => r["Overall Verdict"] || "";
+const labelPill = r => { const l = labelOf(r); return l ? pill(l, FIT_LABEL_COLOR[l] || "gray") : ""; };
+const pill = (text, color) => `<span class="pill p-${esc(color || "gray")}">${esc(text)}</span>`;
+const statusPill = s => pill(s, (UI.status_colors || {})[s] || "gray");
+const fit100 = r => r["Role Fit Score"] === "" || r["Role Fit Score"] == null ? null : Math.round(Number(r["Role Fit Score"]) * 10);
+function fitPill(f) { if (f == null) return `<span class="muted">-</span>`;
+  const h = f < 45 ? 0 : f < 60 ? 28 : f < 75 ? 50 : 125;   // red, orange, yellow, green (Help page bands)
+  return `<span class="fit" style="background:hsl(${h},var(--fit-bg-s),var(--fit-bg-l));color:hsl(${h},var(--fit-fg-s),var(--fit-fg-l))">${f}</span>`; }
+const workOf = r => r["Remote Status"] === "Fully Remote" ? "Remote" : ["Hybrid","Onsite"].includes(r["Remote Status"]) ? r["Remote Status"] : "Not stated";
+const payOf = r => r["Base Salary"] ? "$" + Math.round(Number(r["Base Salary"]) / 1000) + "k" : "Not listed";
+const fmtDate = d => { if (!d) return ""; const t = new Date(String(d).slice(0,10) + "T12:00:00"); return isNaN(t) ? String(d) : t.toLocaleDateString(undefined, {month:"short", day:"numeric"}); };
+const rating = v => v == null || v === "" ? "Unknown" : Number(v).toFixed(1) + " of 5";
+const pct = v => v == null || v === "" ? "Unknown" : Number(v) + "%";
+const orUnknown = v => v ? v : "Unknown";
+function sortRows(rows, keys, sort) {
+  const fn = (keys.find(k => k[0] === sort.key) || keys[0])[2];
+  return rows.slice().sort((a, b) => { const x = fn(a), y = fn(b); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
+}
+function headCells(keys, sort, extra="") {
+  return keys.map(([k, label]) => `<div role="columnheader"><button type="button" data-sort="${k}">${esc(label)}<span aria-hidden="true" style="color:var(--accent)">${sort.key === k ? (sort.dir > 0 ? "▲" : "▼") : ""}</span></button></div>`).join("") + extra;
+}
+function bindSort(el, viewKey, view, rerender) {
+  $$("[data-sort]", el).forEach(b => b.onclick = () => { const k = b.dataset.sort;
+    view.sort = {key:k, dir: view.sort.key === k ? -view.sort.dir : 1}; store.set(viewKey, view); rerender(); });
+}
+
+// ---------------------------------------------------------------- drawer
+let drawerReturn = null;
+function openDrawer(html, onClose) {
+  drawerReturn = document.activeElement;
+  $("#drawer-root").innerHTML = `<button type="button" class="backdrop" aria-label="Close panel" data-close></button>
+   <div class="drawer" role="dialog" aria-modal="true">${html}</div>`;
+  $$("[data-close]", $("#drawer-root")).forEach(b => b.onclick = () => { closeDrawer(); if (onClose) onClose(); });
+  const first = $(".drawer input, .drawer select, .drawer textarea, .drawer button.x", $("#drawer-root")); if (first) first.focus();
+}
+function closeDrawer() { if (!$("#drawer-root").innerHTML) return; $("#drawer-root").innerHTML = "";
+  if (drawerReturn && document.contains(drawerReturn)) drawerReturn.focus(); drawerReturn = null; }
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+const xButton = `<button type="button" class="x" data-close aria-label="Close">${ICON_X}</button>`;
+
+// ---------------------------------------------------------------- Applications
+let T = {rows:[]}, C = {rows:[], choices:{}};
+const APPS_VIEW = "kit-apps-view";
+async function renderTracker(openId) {
+  [T, C] = await Promise.all([api("/api/tracker"), api("/api/companies")]);
+  drawTracker();
+  if (openId) openApp(openId);
+}
+function coFor(r) { return C.rows.find(c => (r.company_id && c.id === r.company_id) || (!r.company_id && c.name.toLowerCase() === String(r.Company||"").toLowerCase())) || null; }
+function drawTracker() {
+  const view = store.get(APPS_VIEW, {layout:"table", grouped:true, collapsed:{}, sort:{key:"status", dir:1}});
+  const el = $("#tracker"); const q = (el.dataset.q || "").toLowerCase();
+  const recent = (T.alerts || []).filter(a => (Date.now() - new Date(a.time)) < 7*864e5);
+  const lr = T.last_run || {};
+  const newLine = T.new_count ? ` ${T.new_count} new ${T.new_count === 1 ? "posting" : "postings"} to look at.` : "";
+  const runLine = lr.ts ? `Last successful check: ${esc(new Date(lr.ts).toLocaleString(undefined, {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}))} (${lr.run === "quick" ? "quick check" : "daily run"}).${newLine}` : `No check has finished yet. The first daily run happens at the time you set in My search profile.`;
+  const runBanner = lr.stale ? `<div class="note banner"><b>No successful check in over a day and a half.</b> The computer may have been off or asleep at run time, or the run hit a problem. If this stays, send an error report from the Help page.</div>` : "";
+  const KEYS = [["role","Role",r=>String(r.Role||"").toLowerCase()],["company","Company",r=>String(r.Company||"").toLowerCase()],
+    ["status","Status",r=>STATUS_ORDER.indexOf(r.Status)],["fit","Fit",r=>[FIT_ORDER.indexOf(labelOf(r)) < 0 ? 9 : FIT_ORDER.indexOf(labelOf(r)), -(fit100(r) ?? -1)]],["pay","Base pay",r=>-(Number(r["Base Salary"])||0)],
+    ["work","Work",r=>WORK_ORDER.indexOf(workOf(r))],["posted","Posted",r=>{ const d = String(r["Posted Date"]||r.created||""); return d ? -Date.parse(d.slice(0,10)) : 0; }],
+    ["coVerdict","Company verdict",r=>Object.keys(CO_VERDICT_COLOR).indexOf((coFor(r)||{}).verdict || "Not reviewed yet")],
+    ["glassdoor","Glassdoor",r=>-((coFor(r)||{}).glassdoor ?? -1)]];
+  const all = sortRows(T.rows.filter(r => !q || [r.Role, r.Company, r.Notes, r["Next Step"]].join(" ").toLowerCase().includes(q)), KEYS, view.sort);
+  const rowHtml = r => { const co = coFor(r); const link = safeUrl(r["Job Posting"]);
+    return `<div role="row" class="gr cols-apps" data-row="${esc(r.id)}">
+     <div role="cell">${link ? `<a class="role" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-opened="${esc(r.id)}">${esc(r.Role)}</a>` : `<span class="role">${esc(r.Role)}</span>`}${r.is_new ? ` <span class="newtag">New</span>` : ""}</div>
+     <div role="cell" style="display:flex;gap:6px;align-items:center"><span>${esc(r.Company)}</span><button type="button" class="ib" data-co="${esc(co ? (co.id || "name:" + co.name) : "name:" + (r.Company||""))}" aria-label="Research on ${esc(r.Company)}">${ICON_I}</button></div>
+     <div role="cell">${statusPill(r.Status)}</div><div role="cell" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${fitPill(fit100(r))}${labelPill(r)}</div>
+     <div role="cell">${esc(payOf(r))}</div><div role="cell">${esc(workOf(r))}</div>
+     <div role="cell" class="muted">${esc(fmtDate(r["Posted Date"] || r.created))}</div>
+     <div role="cell">${pill(co ? co.verdict : "Not reviewed yet", CO_VERDICT_COLOR[co ? co.verdict : "Not reviewed yet"])}</div>
+     <div role="cell">${esc(co ? rating(co.glassdoor) : "Unknown")}</div>
+     <div role="cell" class="edit"><button type="button" class="eb" data-edit="${esc(r.id)}" aria-label="Edit ${esc(r.Role)}">${ICON_EDIT}</button></div></div>`; };
+  const groups = view.grouped ? GROUPS.map(([name, sts]) => ({name, sts, rows: all.filter(r => sts.includes(r.Status))}))
+    : [{name:"", sts:[], rows: all}];
+  const table = `<div class="grid" role="table" aria-label="Applications">
+    <div role="row" class="gr gh cols-apps">${headCells(KEYS, view.sort, `<div role="columnheader"><span class="sr">Edit</span></div>`)}</div>
+    ${groups.map(g => { const open = !view.collapsed[g.name];
+      return (g.name ? `<div role="row" class="group"><button type="button" data-group="${esc(g.name)}" aria-expanded="${open}"><span aria-hidden="true">${open ? "▾" : "▸"}</span>${esc(g.name)}<span class="muted" style="font-weight:500">${g.rows.length}</span><span class="m">${esc(g.sts.join(", "))}</span></button></div>` : "")
+        + (open ? g.rows.map(rowHtml).join("") : ""); }).join("")}
+    ${all.length ? "" : `<p style="margin:0;padding:24px" class="muted">${T.rows.length ? "Nothing matches. Clear the search." : "Nothing here yet. New postings arrive after the first daily check, or press Add a posting."}</p>`}</div>`;
+  const board = `<div class="board">${STATUS_ORDER.map(st => { const items = all.filter(r => r.Status === st);
+    return `<div class="col"><div class="ch">${statusPill(st)}<span class="muted" style="font-size:13px">${items.length}</span></div>
+      <div class="cards">${items.map(r => `<button type="button" data-edit="${esc(r.id)}"><b>${esc(r.Role)}${r.is_new ? ` <span class="newtag">New</span>` : ""}</b><span class="co">${esc(r.Company)}</span>${fitPill(fit100(r))}</button>`).join("")}</div></div>`; }).join("")}</div>`;
+  const hadFocus = document.activeElement && document.activeElement.id === "q";
+  el.innerHTML = `${runBanner}${recent.map(a=>`<div class="note banner"><b>${esc(a.title)}</b> ${esc(a.message)} <small>${esc(String(a.time).replace("T"," "))}</small></div>`).join("")}
+   <p class="sub" style="font-size:13px">${runLine}</p>
+   <div class="tools"><div><label for="q" class="sr">Search applications</label><input id="q" type="search" placeholder="Search role, company, notes" value="${esc(el.dataset.q || "")}">
+     <button type="button" id="grp" class="${view.grouped ? "on" : ""}" aria-pressed="${view.grouped}" ${view.layout === "board" ? "hidden" : ""}>Group by status</button>
+     <div class="seg" role="group" aria-label="Layout"><button type="button" id="lt" class="${view.layout === "table" ? "on" : ""}" aria-pressed="${view.layout === "table"}">Table</button><button type="button" id="lb" class="${view.layout === "board" ? "on" : ""}" aria-pressed="${view.layout === "board"}">Board</button></div>
+     <button type="button" id="colors">Colors</button></div>
+    <button type="button" class="primary" id="addp">Add a posting</button></div>
+   ${view.layout === "board" ? board : table}`;
+  if (hadFocus) { const qi = $("#q"); qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); }
+  $("#q").oninput = e => { el.dataset.q = e.target.value; drawTracker(); };
+  $("#grp").onclick = () => { view.grouped = !view.grouped; store.set(APPS_VIEW, view); drawTracker(); };
+  $("#lt").onclick = () => { view.layout = "table"; store.set(APPS_VIEW, view); drawTracker(); };
+  $("#lb").onclick = () => { view.layout = "board"; store.set(APPS_VIEW, view); drawTracker(); };
+  $("#colors").onclick = openColors; $("#addp").onclick = openAddPosting;
+  $$("[data-group]", el).forEach(b => b.onclick = () => { view.collapsed[b.dataset.group] = !view.collapsed[b.dataset.group]; store.set(APPS_VIEW, view); drawTracker(); });
+  $$("[data-edit]", el).forEach(b => b.onclick = () => openApp(b.dataset.edit));
+  $$("[data-co]", el).forEach(b => b.onclick = () => openCompany(b.dataset.co, false));
+  $$("[data-opened]", el).forEach(a => a.addEventListener("click", () => markOpened(a.dataset.opened)));
+  bindSort(el, APPS_VIEW, view, drawTracker);
+}
+async function markOpened(id) { const r = T.rows.find(x => x.id === id); if (!r || !r.is_new) return;
+  r.is_new = false; T.new_count = Math.max(0, (T.new_count||1) - 1); await api("/api/tracker/update", {id, opened:true}); drawTracker(); }
+function openApp(id) {
+  const r = T.rows.find(x => x.id === id); if (!r) return;
+  if (r.is_new) markOpened(id);
+  $$(".gr.sel").forEach(x => x.classList.remove("sel")); const rowEl = $(`[data-row="${CSS.escape(id)}"]`); if (rowEl) rowEl.classList.add("sel");
+  const link = safeUrl(r["Job Posting"]); const why = String(r["Label Reason"]||"").replace(/\s*Scored \d{4}-\d{2}-\d{2} by agent v[\d.]+\.?/,"");
+  openDrawer(`<div class="dhead"><div><h2>${esc(r.Role)}</h2><p class="muted" style="margin:0">${esc(r.Company)} · ${esc(workOf(r))} · ${esc(payOf(r))}</p></div>${xButton}</div>
+   <div class="pills"><span>${fitPill(fit100(r))} <span class="muted" style="font-size:12px">Fit</span></span>${labelPill(r)}${statusPill(r.Status)}</div>
+   ${why ? `<p style="margin:0 0 6px;font-size:13px;color:var(--text2)">${esc(why)}</p>` : ""}
+   <div class="two"><div><label for="st">Status</label><select id="st">${STATUS_ORDER.map(s => `<option ${r.Status===s?"selected":""}>${s}</option>`).join("")}</select></div>
+    <div><label for="fu">Follow up on</label><input id="fu" type="date" value="${esc(String(r["Follow-up Date"]||"").slice(0,10))}"></div>
+    <div><label for="ap">Date applied</label><input id="ap" type="date" value="${esc(String(r["Date Applied"]||"").slice(0,10))}"></div>
+    <div><label for="rv">Resume versions</label><input id="rv" type="number" min="0" value="${esc(r["Resume Versions"] ?? "")}"></div>
+    <div><label for="dc">Your decision</label><select id="dc"><option value="">None (keep the kit's fit label)</option>${["Applying","Passed"].map(d => `<option ${labelOf(r)===d?"selected":""}>${d}</option>`).join("")}</select></div></div>
+   <label for="nx">Next step</label><input id="nx" type="text" value="${esc(r["Next Step"])}">
+   <label for="nt">Notes</label><textarea id="nt" rows="4">${esc(r.Notes)}</textarea>
+   <div class="acts"><button type="button" class="primary" id="saveapp">Save</button>${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open posting</a>` : ""}<span id="appmsg"></span></div>`,
+   () => $$(".gr.sel").forEach(x => x.classList.remove("sel")));
+  $("#saveapp").onclick = async () => {
+    const body = {id, status: $("#st").value, follow_up: $("#fu").value, applied: $("#ap").value, versions: $("#rv").value, next: $("#nx").value, notes: $("#nt").value};
+    const dc = $("#dc").value, was = labelOf(r);
+    if (dc) body.verdict = dc; else if (was === "Applying" || was === "Passed") body.verdict = "";   // the daily check puts its label back
+    const res = await api("/api/tracker/update", body);
+    if (!res.ok) { $("#appmsg").textContent = res.error || "Couldn't save."; $("#appmsg").className = "err"; return; }
+    closeDrawer(); renderTracker();
+  };
+}
+function openColors() {
+  const draw = () => openDrawer(`<div class="dhead"><div><h2>Pill colors</h2><p class="muted" style="margin:0;font-size:13px">Pick a color for each status. Fit always uses the red to green scale.</p></div>${xButton}</div>
+   <div style="margin-top:12px">${STATUS_ORDER.map(st => `<div class="swrow">${statusPill(st)}<div style="display:flex;gap:4px;flex-wrap:wrap">${PALETTE.map(c =>
+     `<button type="button" class="sw p-${c}" data-st="${esc(st)}" data-c="${c}" aria-label="Make ${esc(st)} ${c}" aria-pressed="${UI.status_colors[st]===c}" style="${UI.status_colors[st]===c ? "border-color:var(--p-" + c + "-fg)" : ""}"></button>`).join("")}</div></div>`).join("")}</div>`, drawTracker);
+  draw();
+  const bind = () => $$("[data-st]").forEach(b => b.onclick = async () => {
+    UI.status_colors = {...UI.status_colors, [b.dataset.st]: b.dataset.c}; store.set("kit-colors", UI.status_colors);
+    await api("/api/ui", {status_colors: {[b.dataset.st]: b.dataset.c}}); draw(); bind(); const sel = $(`[data-st="${CSS.escape(b.dataset.st)}"][data-c="${b.dataset.c}"]`); if (sel) sel.focus(); });
+  bind();
+}
+function openAddPosting() {
+  openDrawer(`<div class="dhead"><div><h2>Add a posting</h2><p class="muted" style="margin:0;font-size:13px">Found a job on LinkedIn or anywhere else? Paste the link, or the posting text if the link won't open.</p></div>${xButton}</div>
+   <label for="aurl">Link to the posting</label><input id="aurl" type="text">
+   <div class="two" style="margin-top:12px"><div><label for="atitle">Job title</label><input id="atitle" type="text"></div><div><label for="aco">Company</label><input id="aco" type="text"></div></div>
+   <label for="atext">Posting text <span class="hint">Optional</span></label><textarea id="atext" rows="6"></textarea>
+   <div class="acts"><button type="button" class="primary" id="add">Score and add</button><span id="amsg"></span></div>`);
+  $("#add").onclick = async () => { $("#amsg").className = ""; $("#amsg").textContent = "Scoring...";
+    const r = await api("/api/tracker/add", {url:$("#aurl").value, title:$("#atitle").value, company:$("#aco").value, text:$("#atext").value});
+    if (!r.ok) { $("#amsg").textContent = r.message || r.error; $("#amsg").className = "err"; return; }
+    $("#amsg").className = "ok"; $("#amsg").textContent = r.hard_skip ? `Added as Closed: ${r.reasons[0]||""}` : `Added with a fit of ${r.score} (${r.verdict}).`;
+    setTimeout(() => { closeDrawer(); renderTracker(); }, 1400); };
+}
+
+// ---------------------------------------------------------------- Companies
+const COS_VIEW = "kit-cos-view";
+const POSTURE_ORDER = ["Fully remote","Remote-first","Hybrid","Onsite","Unknown"];
+const numKey = v => v == null || v === "" ? 99 : -Number(v);
+const CO_KEYS = [["name","Company",c=>c.name.toLowerCase()],["field","Field",c=>(c.field||"~").toLowerCase()],["posture","How it works",c=>POSTURE_ORDER.indexOf(c.posture)],
+  ["board","Job board",c=>c.board.label||"~"],["openRoles","Open roles",c=>-c.open_roles],["apps","Your applications",c=>-c.open_apps],
+  ["verdict","Verdict",c=>Object.keys(CO_VERDICT_COLOR).indexOf(c.verdict)],["risk","Risk level",c=>Object.keys(RISK_COLOR).indexOf(c.risk)],
+  ["health","Health benefits",c=>numKey(c.health)],["match","401(k) match",c=>numKey(c.match)],["bonus","Bonus and equity",c=>(c.bonus||"~").toLowerCase()],
+  ["perks","Other perks",c=>(c.perks||"~").toLowerCase()],["pto","PTO policy",c=>(c.pto||"~").toLowerCase()],["dni","D&I rating",c=>numKey(c.dni)],
+  ["growth","Company growth",c=>["Growing","Steady","Shrinking","Unknown"].indexOf(c.growth||"Unknown")],["career","Career growth",c=>["Strong","Some","Limited","Unknown"].indexOf(c.career||"Unknown")],
+  ["glassdoor","Glassdoor",c=>numKey(c.glassdoor)],["values","Key values",c=>(c.values||"~").toLowerCase()],["green","Green flags",c=>(c.green||"~").toLowerCase()],["red","Red flags",c=>(c.red||"~").toLowerCase()]];
+async function renderCompanies() { [C, T] = await Promise.all([api("/api/companies"), api("/api/tracker")]); drawCompanies(); }
+const coKey = c => c.id || "name:" + c.name;
+function drawCompanies() {
+  const view = store.get(COS_VIEW, {sort:{key:"verdict", dir:1}});
+  const el = $("#companies"); const q = (el.dataset.q || "").toLowerCase();
+  const rows = sortRows(C.rows.filter(c => !q || [c.name, c.field, c.values, c.green, c.red].join(" ").toLowerCase().includes(q)), CO_KEYS, view.sort);
+  const hadFocus = document.activeElement && document.activeElement.id === "cq";
+  el.innerHTML = `<div class="tools"><div><label for="cq" class="sr">Search companies</label><input id="cq" type="search" placeholder="Search companies, values, flags" value="${esc(el.dataset.q || "")}">
+     <span class="muted" style="font-size:13px">Open roles counts only tracker postings that fit your search. Research columns are filled in by you or Claude.</span></div>
+    <button type="button" class="primary" id="addco">Add a company</button></div>
+   <div class="grid" role="table" aria-label="Companies"><div role="row" class="gr gh cols-cos">${headCells(CO_KEYS, view.sort)}</div>
+   ${rows.map(c => { const careers = safeUrl(c.careers), board = safeUrl(c.board.url);
+     return `<div role="row" class="gr cols-cos">
+      <div role="cell">${careers ? `<a href="${esc(careers)}" target="_blank" rel="noopener noreferrer" style="font-weight:600;font-size:14px">${esc(c.name)}</a>` : `<span style="font-weight:600;font-size:14px">${esc(c.name)}</span>`}<button type="button" class="ib" data-co="${esc(coKey(c))}" aria-label="Details for ${esc(c.name)}">${ICON_I}</button></div>
+      <div role="cell">${esc(c.field) || `<span class="muted">Unknown</span>`}</div><div role="cell">${esc(c.posture)}</div>
+      <div role="cell">${board ? `<a href="${esc(board)}" target="_blank" rel="noopener noreferrer">${esc(c.board.label)}</a>` : esc(c.board.label || "None")}<span style="display:block;font-size:12px" class="muted">${esc(c.board.note)}</span></div>
+      <div role="cell">${c.open_roles}</div><div role="cell">${c.open_apps}</div>
+      <div role="cell">${pill(c.verdict, CO_VERDICT_COLOR[c.verdict])}</div><div role="cell">${pill(c.risk, RISK_COLOR[c.risk])}</div>
+      <div role="cell">${esc(rating(c.health))}</div><div role="cell">${esc(pct(c.match))}</div><div role="cell">${esc(orUnknown(c.bonus))}</div>
+      <div role="cell">${esc(orUnknown(c.perks))}</div><div role="cell">${esc(orUnknown(c.pto))}</div><div role="cell">${esc(rating(c.dni))}</div>
+      <div role="cell">${esc(orUnknown(c.growth))}</div><div role="cell">${esc(orUnknown(c.career))}</div><div role="cell">${esc(rating(c.glassdoor))}</div>
+      <div role="cell">${esc(orUnknown(c.values))}</div><div role="cell" class="green">${esc(c.green || "Not researched")}</div><div role="cell" class="red">${esc(c.red || "Not researched")}</div></div>`; }).join("")}
+   ${rows.length ? "" : `<p style="margin:0;padding:24px" class="muted">${C.rows.length ? "Nothing matches. Clear the search." : "No companies yet. The daily check adds one for each new posting, or press Add a company."}</p>`}</div>`;
+  if (hadFocus) { const qi = $("#cq"); qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); }
+  $("#cq").oninput = e => { el.dataset.q = e.target.value; drawCompanies(); };
+  $("#addco").onclick = openAddCompany;
+  $$("[data-co]", el).forEach(b => b.onclick = () => openCompany(b.dataset.co, true));
+  bindSort(el, COS_VIEW, view, drawCompanies);
+}
+const findCo = key => C.rows.find(c => coKey(c) === key) || (key.startsWith("name:") ? C.rows.find(c => c.name.toLowerCase() === key.slice(5).toLowerCase()) : null);
+function openCompany(key, onCompaniesPage) {
+  const c = findCo(key);
+  if (!c) { const name = key.startsWith("name:") ? key.slice(5) : "";
+    openDrawer(`<div class="dhead"><div><h2>${esc(name || "This company")}</h2><p class="muted" style="margin:0">Not on the Companies page yet.</p></div>${xButton}</div>
+      <div class="acts"><button type="button" class="primary" id="mkco">Add it and research it</button></div>`);
+    $("#mkco").onclick = async () => { const r = await api("/api/companies/save", {name}); if (r.ok) { C = await api("/api/companies"); editCompany(coKey(C.rows.find(x => x.id === r.id)), onCompaniesPage); } };
+    return; }
+  const careers = safeUrl(c.careers);
+  const facts = [["Job board", c.board.label ? c.board.label + " (" + c.board.note + ")" : "None"], ["Open roles", String(c.open_roles)], ["Glassdoor", rating(c.glassdoor)],
+    ["Health benefits", rating(c.health)], ["401(k) match", pct(c.match)], ["Bonus and equity", orUnknown(c.bonus)], ["Other perks", orUnknown(c.perks)],
+    ["PTO policy", orUnknown(c.pto)], ["D&I rating", rating(c.dni)], ["Company growth", orUnknown(c.growth)], ["Career growth", orUnknown(c.career)],
+    ["Key values", orUnknown(c.values)], ["Green flags", c.green || "Not researched"], ["Red flags", c.red || "Not researched"]];
+  openDrawer(`<div class="dhead"><div><h2>${esc(c.name)}</h2><p class="muted" style="margin:0">${esc(c.field || "Field unknown")} · ${esc(c.posture)}</p></div>${xButton}</div>
+   <div class="pills">${pill(c.verdict, CO_VERDICT_COLOR[c.verdict])}${pill("Risk: " + c.risk, RISK_COLOR[c.risk])}</div>
+   ${c.board.platform === "workday" ? `<label class="wd"><input type="checkbox" id="wdok" ${c.board.workday_ok ? "checked" : ""}><span>Read this Workday board every day. Workday's own terms limit automated tools on Workday's sites; it's unclear whether that covers company career sites. Leave this off to check this company by hand.</span></label><p id="wdmsg" class="hint"></p>` : ""}
+   <dl class="facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+   <h3>Your applications here</h3>
+   ${c.apps.length ? `<div class="applist">${c.apps.map(a => `<a href="#tracker" data-app="${esc(a.id)}"><span style="font-weight:600">${esc(a.role)}</span><span class="muted">${esc(a.status)}</span></a>`).join("")}</div>` : `<p class="muted" style="margin:0">None yet.</p>`}
+   <div class="acts"><button type="button" class="primary" id="editco">Edit research</button>${careers ? `<a class="btn" href="${esc(careers)}" target="_blank" rel="noopener noreferrer">Careers page</a>` : ""}${onCompaniesPage ? "" : `<a class="btn" href="#companies">All companies</a>`}</div>`);
+  $("#editco").onclick = () => editCompany(key, onCompaniesPage);
+  $$("[data-app]").forEach(a => a.onclick = e => { e.preventDefault(); closeDrawer(); if (location.hash === "#tracker") openApp(a.dataset.app);
+    else { location.hash = "#tracker"; setTimeout(() => renderTracker(a.dataset.app), 0); } });
+  const wd = $("#wdok"); if (wd) wd.onchange = async () => { const r = await api("/api/companies/workday", {name: c.name, ok: wd.checked});
+    $("#wdmsg").textContent = r.ok ? (wd.checked ? "On. The next daily check reads this board." : "Off. Check this company by hand.") : (r.error || "Couldn't save that.");
+    if (r.ok) { c.board.workday_ok = wd.checked; c.board.note = wd.checked ? "Read daily" : "Not read daily (your choice)"; } };
+}
+function editCompany(key, onCompaniesPage) {
+  const c = findCo(key); if (!c) return; const ch = C.choices || {};
+  const sel = (id, label, list, v) => `<div><label for="${id}">${label}</label><select id="${id}">${list.map(o => `<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+  const txt = (id, label, v, hint="") => `<label for="${id}">${label}${hint ? ` <span class="hint">${hint}</span>` : ""}</label><input id="${id}" type="text" value="${esc(v)}">`;
+  const num = (id, label, v, max, step, hint) => `<div><label for="${id}">${label} <span class="hint">${hint}</span></label><input id="${id}" type="number" min="0" max="${max}" step="${step}" value="${esc(v ?? "")}"></div>`;
+  openDrawer(`<div class="dhead"><div><h2>${esc(c.name)}</h2><p class="muted" style="margin:0;font-size:13px">Research you or Claude found. Leave anything you don't know blank.</p></div>${xButton}</div>
+   ${txt("e-field", "Field", c.field, "A few words")}
+   <div class="two" style="margin-top:12px">${sel("e-posture", "How it works", ch.posture || [], c.posture)}${sel("e-verdict", "Verdict", ch.verdict || [], c.verdict)}
+    ${sel("e-risk", "Risk level", ch.risk || [], c.risk)}${num("e-glass", "Glassdoor", c.glassdoor, 5, 0.1, "out of 5")}
+    ${num("e-health", "Health benefits", c.health, 5, 0.5, "1 to 5")}${num("e-dni", "D&I rating", c.dni, 5, 0.5, "1 to 5")}
+    ${num("e-match", "401(k) match", c.match, 100, 0.5, "percent")}<div></div>
+    ${sel("e-growth", "Company growth", ["", ...(ch.growth || [])], c.growth)}${sel("e-career", "Career growth", ["", ...(ch.career || [])], c.career)}</div>
+   ${txt("e-bonus", "Bonus and equity", c.bonus)}${txt("e-perks", "Other perks", c.perks)}${txt("e-pto", "PTO policy", c.pto)}
+   <label class="check" style="font-size:13px"><input type="checkbox" id="e-ptoweak" ${c.pto_weak ? "checked" : ""}><span>Time off is weak (counts against this company's postings in Fit, like a health rating of 2 or lower)</span></label>
+   ${txt("e-values", "Key values", c.values)}
+   <label for="e-green">Green flags</label><textarea id="e-green" rows="2">${esc(c.green)}</textarea>
+   <label for="e-red">Red flags</label><textarea id="e-red" rows="2">${esc(c.red)}</textarea>
+   ${txt("e-careers", "Careers page link", c.careers)}
+   ${c.verdict !== "Not a fit" ? `<p class="hint">Setting Verdict to Not a fit closes this company's new postings automatically.</p>` : ""}
+   <div class="acts"><button type="button" class="primary" id="saveco">Save</button><button type="button" id="cancelco">Cancel</button><span id="comsg"></span></div>`);
+  $("#cancelco").onclick = () => openCompany(key, onCompaniesPage);
+  $("#saveco").onclick = async () => {
+    const v = id => $("#" + id).value;
+    const body = {id: c.id, name: c.name, field: v("e-field"), posture: v("e-posture"), verdict: v("e-verdict"), risk: v("e-risk"), glassdoor: v("e-glass"),
+      health: v("e-health"), dni: v("e-dni"), match: v("e-match"), growth: v("e-growth"), career: v("e-career"), bonus: v("e-bonus"), perks: v("e-perks"),
+      pto: v("e-pto"), pto_weak: $("#e-ptoweak").checked, values: v("e-values"), green: v("e-green"), red: v("e-red"), careers: v("e-careers")};
+    const r = await api("/api/companies/save", body);
+    if (!r.ok) { $("#comsg").textContent = r.error || "Couldn't save."; $("#comsg").className = "err"; return; }
+    C = await api("/api/companies"); const nk = r.id || c.id;
+    if (onCompaniesPage) drawCompanies(); else drawTracker();
+    openCompany(nk ? nk : key, onCompaniesPage);
+  };
+}
+function openAddCompany() {
+  openDrawer(`<div class="dhead"><div><h2>Add a company</h2><p class="muted" style="margin:0;font-size:13px">Paste its careers page and the kit looks for a job board the daily check can read.</p></div>${xButton}</div>
+   <label for="nco">Company name</label><input id="nco" type="text">
+   <label for="nurl">Careers page link <span class="hint">Optional</span></label><input id="nurl" type="text" placeholder="https://example.com/careers">
+   <div class="acts"><button type="button" class="primary" id="addcogo">Add</button><span id="nmsg"></span></div>`);
+  $("#addcogo").onclick = async () => { $("#nmsg").className = ""; $("#nmsg").textContent = "Adding...";
+    const r = await api("/api/companies/add", {name: $("#nco").value, url: $("#nurl").value});
+    if (!r.ok) { $("#nmsg").textContent = r.error || r.message || "Couldn't add it."; $("#nmsg").className = "err"; return; }
+    $("#nmsg").className = "ok"; $("#nmsg").textContent = r.message; C = await api("/api/companies"); drawCompanies(); };
+}
+
+// ---------------------------------------------------------------- My search profile
+async function renderProfile() {
+  const a = await api("/api/answers"); A = a; const w = a.where, r = a.rules, p = a.pay, run = a.run; const el = $("#profile");
+  el.innerHTML = `<div class="tools" style="align-items:flex-end"><div style="display:block"><h1>My search profile</h1><p class="sub" style="margin:0">What the daily check looks for. Change anything here; it applies from the next check.</p></div>
+    <div><span id="pmsg" class="ok" style="font-size:13px"></span><button type="button" class="primary" id="psave">Save changes</button></div></div>
+   <div class="card"><h2>The role</h2><div class="two">
+    <div><label for="p-titles">Job titles to look for <span class="hint">One per line</span></label><textarea id="p-titles" rows="3">${esc(lines(a.work.titles))}</textarea></div>
+    <div><label for="p-dr">Managing people</label><select id="p-dr"><option value="no" ${!r.direct_reports_ok?"selected":""}>No direct reports, please</option><option value="yes" ${r.direct_reports_ok?"selected":""}>Open to it</option></select></div>
+    <div><label>Fields you care about</label><p style="margin:0">${a.fields.domains.length ? a.fields.domains.map(d => esc(d.name)).join(", ") : `<span class="muted">None yet</span>`}</p><p class="hint" style="margin:4px 0 0">Change fields, interest levels, and the words that find them in <a href="#setup" data-step="4">Setup, Fields and companies</a>.</p></div>
+    <div><label for="p-ind">Industries you won't work in <span class="hint">One per line</span></label><textarea id="p-ind" rows="3">${esc(lines(r.excluded_industries))}</textarea></div></div></div>
+   <div class="card"><h2>Where and how you work</h2><label style="margin-top:0">Work arrangement</label><div class="choice">
+    ${[["remote","Remote only"],["remote_or_hybrid","Remote or hybrid near me"],["any","Any, including onsite"]].map(([v,l]) => `<label><input type="radio" name="p-mode" value="${v}" ${w.mode===v?"checked":""}> ${l}</label>`).join("")}</div>
+    <div class="two" id="p-commute" ${w.mode==="remote"?"hidden":""} style="margin-top:12px"><div><label for="p-areas">Commute areas <span class="hint">One per line</span></label><textarea id="p-areas" rows="2">${esc(lines(w.commute_areas))}</textarea></div>
+     <div><label for="p-days">Most office days a week <span class="hint">Blank for no limit</span></label><input id="p-days" type="number" min="0" max="5" value="${w.max_office_days ?? ""}"></div></div>
+    <div class="two" style="margin-top:12px"><div><label for="p-travel">Most travel you'd accept <span class="hint">Percent of time</span></label><input id="p-travel" type="number" min="0" max="100" value="${esc(r.travel_max_pct)}"></div></div></div>
+   <div class="card"><h2>Pay and benefits</h2><div class="two">
+    <div><label for="p-floor">Lowest base pay you'd take</label><input id="p-floor" type="number" min="0" value="${esc(p.floor ?? "")}"></div>
+    <div><label for="p-target">What you're aiming for</label><input id="p-target" type="number" min="0" value="${esc(p.target ?? "")}"></div></div>
+    <label class="check" style="margin-top:14px"><input type="checkbox" id="p-ben" ${r.benefits_rule?"checked":""}><span>Skip companies rated weak on both time off and health benefits (from the Companies page)</span></label></div>
+   <div class="card"><h2>How it runs</h2><div class="two">
+    <div><label for="p-full">Daily check</label><input id="p-full" type="time" value="${esc(run.full)}"></div>
+    <div><label for="p-quick">Quick checks during the day <span class="hint">Like 11:00, 14:00</span></label><input id="p-quick" type="text" value="${esc((run.quick||[]).join(", "))}"></div></div>
+    <label class="check" style="margin-top:14px"><input type="checkbox" id="p-upd" ${run.auto_update?"checked":""}><span>Install updates by itself (signed releases only, 72 hours after they come out)</span></label>
+    <p class="muted" style="margin:14px 0 0;font-size:13px">Your folder: ${esc(String(ST.settings||"").replace(/[\\/]settings$/,""))}. Daily backups: 14 days kept.</p>
+    <p style="margin:8px 0 0;font-size:13px"><a href="#setup">All setup steps</a> · <a href="#advanced">Advanced settings</a></p></div>`;
+  $$("input[name=p-mode]").forEach(x => x.onchange = () => { $("#p-commute").hidden = x.value === "remote"; });
+  $$("[data-step]", el).forEach(x => x.onclick = () => { step = Number(x.dataset.step); });
+  $("#psave").onclick = async () => {
+    a.work.titles = $("#p-titles").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    r.direct_reports_ok = $("#p-dr").value === "yes"; r.excluded_industries = $("#p-ind").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    w.mode = $("input[name=p-mode]:checked").value; w.commute_areas = $("#p-areas").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    w.max_office_days = $("#p-days").value === "" ? null : Number($("#p-days").value); r.travel_max_pct = Number($("#p-travel").value || 0);
+    p.floor = $("#p-floor").value === "" ? null : Number($("#p-floor").value); p.target = $("#p-target").value === "" ? null : Number($("#p-target").value);
+    r.benefits_rule = $("#p-ben").checked; run.full = $("#p-full").value; run.quick = unlines($("#p-quick").value); run.auto_update = $("#p-upd").checked;
+    const res = await api("/api/answers", a);
+    $("#pmsg").textContent = res.ok ? "Saved. The next check uses these. " : (res.error || "Couldn't save."); $("#pmsg").className = res.ok ? "ok" : "err";
+  };
+}
+
+// ---------------------------------------------------------------- Help
+const GH_NEW_ISSUE = "https://github.com/nicolelivingston/job-search-kit/issues/new";
+function renderHelp() {
+  const el = $("#help");
+  const dl = items => `<dl class="defs">${items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+  el.innerHTML = `<div class="help"><h1>Help</h1><p style="margin:0 0 8px;color:var(--text2)">What every column means, where its information comes from, and a few ways to work faster.</p>
+   <p style="margin:0 0 20px"><a href="#help" data-jump="where">Where the information comes from</a> · <a href="#help" data-jump="apps">Applications columns</a> · <a href="#help" data-jump="cos">Companies columns</a> · <a href="#help" data-jump="tips">Tips</a> · <a href="#help" data-jump="broken">Something went wrong?</a> · <a href="#suggest">Suggest an idea</a></p>
+   <div class="card" id="where"><h2>Where the information comes from</h2><ul>
+    <li><b>The daily check</b> reads the job boards you picked and adds postings that pass your search profile. It fills Role, Company, Fit, Base pay, Work, Posted, Open roles, and Job board.</li>
+    <li><b>You</b> set Status and the company Verdict, and anything else you want to change. Your changes are never overwritten by the daily check.</li>
+    <li><b>Research</b> (Risk level, ratings, benefits, perks, values, and flags) is filled in by you, or by Claude from pages you open together. The kit never reads Glassdoor or review sites on its own; their terms don't allow it.</li>
+    <li>Everything stays on this computer, in your Job Search folder.</li></ul></div>
+   <div class="card" id="apps"><h2>Applications columns</h2>${dl([
+    ["Role","The job title from the posting. Click it to open the posting on the company's site so you can apply. A <b>New</b> tag means the daily check added it and you haven't opened it yet."],
+    ["Company","Who's hiring. The <b>i</b> button shows everything in the company's research."],
+    ["Status",`Where it stands, grouped three ways.<span style="display:block;margin-top:6px"><b>To Do:</b> Interested (new postings start here, and anything worth a look) and Drafting Resume.</span><span style="display:block"><b>In Progress:</b> Applied and Interviewing.</span><span style="display:block"><b>Complete:</b> Offer, Closed (you stopped, or the posting closed), and Rejected.</span>Close anything you're not interested in. Sorting by Status follows this order.`],
+    ["Fit","How well the posting matches your search profile, 0 to 100, from the kit's scoring. The color runs red (not a good match, under 45), orange (lower fit, 45 to 59), yellow (medium fit, 60 to 74), and green (good match, 75 and up). Open the row to see why it scored that way."],
+    ["Base pay","The lowest base salary the posting lists. \"Not listed\" when it doesn't say."],
+    ["Work","Remote, Hybrid, or Onsite, from the posting. Sorting goes from fully remote to fully onsite."],
+    ["Posted","When the posting first appeared. Newer postings get more replies, so apply early when you can."],
+    ["Fit label","Next to the score. <b>Strong fit:</b> scores 70 or more and meets every stated requirement (or misses one with a score of 80 or more before the cap). <b>Possible fit:</b> worth a look; the reason is in the row's panel (a judgment call, a missing requirement, required items your evidence can't vouch for). <b>Poor fit:</b> a rule it broke, no posted pay, two or more missing requirements, or a weak score; hard-rule ones close, the rest stay open. The daily check writes these three. <b>Applying</b> and <b>Passed</b> are yours, set in the row's panel, and are never overwritten; Passed rows close on the next check."],
+    ["Company verdict","Your verdict on the company, from the Companies page."],
+    ["Glassdoor","The company's overall Glassdoor rating out of 5, from the Companies page."]])}</div>
+   <div class="card" id="cos"><h2>Companies columns</h2>${dl([
+    ["Company","Click the name to open its careers page. The <b>i</b> button shows all its research and your applications there."],
+    ["Field","What the company does, in a few words."],
+    ["How it works","Fully remote (no headquarters), Remote-first (offices exist, remote is normal), Hybrid, Onsite, or Unknown."],
+    ["Job board","A link to the company's job board, and whether the daily check reads it. Workday boards are off until you turn them on in the company's details, because Workday's terms limit automated tools. \"Careers page\" means there's no standard board, so check it by hand."],
+    ["Open roles","Postings at this company in your tracker that passed your search profile and are still open. Not every job the company has."],
+    ["Your applications","How many of your applications there are still To Do or In Progress."],
+    ["Verdict","<b>Pursue:</b> you want to work here; apply to good fits. <b>Watch list:</b> you like it, but there's nothing to apply to right now. <b>Not reviewed yet:</b> the kit added it and you haven't looked. <b>Not a fit:</b> you've decided against it, and its new postings close automatically."],
+    ["Risk level","<b>Low:</b> nothing worrying found. <b>Some concerns:</b> a reorganization, mixed reviews, or unclear money. <b>High:</b> layoffs, a return-to-office push, or financial trouble. <b>Needs research:</b> not looked into yet."],
+    ["Health benefits","1 to 5. 5 means low premiums and deductibles, good mental health and dental coverage; 3 is typical; 1 is minimal. \"Unknown\" until researched. 2 or lower counts as weak in Fit."],
+    ["401(k) match","How much of your pay the company matches, as a percent."],
+    ["Bonus and equity","Published pay on top of base: bonuses, stock, profit sharing."],
+    ["Other perks","Home office, internet, gym, learning, or wellness stipends, and anything similar."],
+    ["PTO policy","Paid time off as published. For unlimited PTO, note any minimum and what reviews say people actually take. Tick \"Time off is weak\" when editing to count it in Fit."],
+    ["D&amp;I rating","1 to 5, on the same scale as health benefits, from published reports, employee groups, leadership makeup, and reviews."],
+    ["Company growth","How the company is doing: Growing, Steady, or Shrinking, from hiring, funding, and news."],
+    ["Career growth","Your room to grow there: Strong, Some, or Limited, from career ladders, promotion from within, learning budgets, and what reviews say about moving up."],
+    ["Glassdoor","The overall rating out of 5, entered by you or Claude from the page you open."],
+    ["Key values","What the company says it stands for, in its own words."],
+    ["Green flags","Good signs from reviews, articles, and the company's own pages."],
+    ["Red flags","Warning signs from the same sources."]])}</div>
+   <div class="card" id="tips"><h2>Tips</h2><ul>
+    <li>Click any column name to sort by it. Click again to reverse.</li>
+    <li>Group by status is on by default. Click a group's name to fold it away.</li>
+    <li>Board shows the same applications as cards, one column per status.</li>
+    <li>Colors changes the color of each status.</li>
+    <li>Search looks through roles, companies, and notes.</li>
+    <li>The pencil at the end of a row opens the application to change its status, dates, next step, and notes.</li>
+    <li>Panels close with the X, a click outside them, or the Escape key.</li></ul></div>
+   <div class="card" id="broken"><h2>Something went wrong?</h2><p class="sub">Send an error report. It holds the kit's run log only, with names, emails, phone numbers, and links scrubbed out. Nothing about your postings, resume, or evidence bank. You press Send.</p>
+    <div class="acts" style="margin-top:0"><button type="button" id="errrep">Send an error report</button><span id="ermsg"></span></div></div>
+   <div class="card" id="suggest"><h2>Suggest an idea</h2>
+    <p style="margin:0 0 14px;color:var(--text2)">Something that would make the kit better for you? Write it here, then pick how to send it. Nothing is sent until you press Send or Submit yourself.</p>
+    <label for="sg-what" style="margin-top:0">What would you like the kit to do?</label><textarea id="sg-what" rows="3"></textarea>
+    <label for="sg-why">What would it help you do? <span class="hint">Optional</span></label><textarea id="sg-why" rows="2"></textarea>
+    <div class="acts">${ST.support_email_set ? `<button type="button" class="primary" id="sg-mail">Email it</button>` : ""}<a class="btn ${ST.support_email_set ? "" : "primary"}" id="sg-gh" href="${GH_NEW_ISSUE}" target="_blank" rel="noopener noreferrer">Suggest on GitHub</a><span id="sgmsg"></span></div>
+    <p class="hint" style="margin:10px 0 0">${ST.support_email_set ? "<b>Email it</b> opens a new email in your own mail app, ready to send to the person who set up your kit. " : ""}<b>Suggest on GitHub</b> opens a public suggestion on the kit's GitHub page with your words filled in. You'll need a free GitHub account, and anything there is public, so leave out anything personal.</p></div></div>`;
+  $$("[data-jump]", el).forEach(a => a.onclick = e => { e.preventDefault(); $("#" + a.dataset.jump).scrollIntoView(); });
+  const ghUrl = () => { const what = $("#sg-what").value, why = $("#sg-why").value;
+    const title = "Idea: " + (what.split("\n")[0] || "").slice(0, 80);
+    const body = "**What would you like the kit to do?**\n" + what + "\n\n**What would it help you do?**\n" + why + "\n";
+    return GH_NEW_ISSUE + "?template=feature_request.md&labels=enhancement&title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body); };
+  const upd = () => { $("#sg-gh").href = ghUrl(); }; $("#sg-what").oninput = upd; $("#sg-why").oninput = upd; upd();
+  const m = $("#sg-mail"); if (m) m.onclick = async () => { const r = await api("/api/suggest", {what: $("#sg-what").value, why: $("#sg-why").value});
+    $("#sgmsg").textContent = r.ok ? "A new email is open in your mail app. Press Send there." : (r.error || "Couldn't open your mail app."); $("#sgmsg").className = r.ok ? "ok" : "err"; };
+  $("#errrep").onclick = async () => { $("#ermsg").textContent = "Collecting the log..."; const r = await api("/api/error_report", {});
+    $("#ermsg").textContent = r.ok ? (r.how === "attached" ? "A new email is open with the report attached. Press Send." : `A new email is open. Drag this file into it, then press Send: ${r.report}`) : (r.error || "Couldn't make the report."); };
+}
+
+async function renderContacts() {
+  const rows = await api("/api/contacts"); const el = $("#contacts");
+  const cols = [["name","Name"],["company","Company"],["role","Role"],["last","Last touch"],["notes","Notes"]];
+  el.innerHTML = `<div class="card"><h2>Contacts</h2><p class="sub">People you're talking to. Saved on this computer only.</p><div class="scroll"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}<th></th></tr></thead><tbody>
+   ${rows.map((r,i)=>`<tr>${cols.map(([k])=>`<td><input type="${k==="last"?"date":"text"}" data-i="${i}" data-k="${k}" value="${esc(r[k])}"></td>`).join("")}<td><button data-del="${i}">Remove</button></td></tr>`).join("")}</tbody></table></div>
+   <p><button id="addc">Add a contact</button> <button class="primary" id="savec">Save</button> <span id="cmsg" class="ok"></span></p></div>`;
+  const read = () => rows.map((r,i)=>Object.fromEntries(cols.map(([k])=>[k, el.querySelector(`[data-i="${i}"][data-k="${k}"]`)?.value || ""])));
+  $("#addc").onclick = () => { const cur = read(); cur.push({}); api("/api/contacts", cur).then(renderContacts); };
+  $("#savec").onclick = async () => { await api("/api/contacts", read()); $("#cmsg").textContent = "Saved."; };
+  el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const cur = read(); cur.splice(Number(b.dataset.del),1); api("/api/contacts", cur).then(renderContacts); });
+}
+
+const ADV = {"agent.FRESH_DAYS":"Days a posting counts as fresh","agent.FRESH_ALERT_DAYS":"How new a top posting must be to alert you (days)",
+ "agent.EVERGREEN_AGE_DAYS":"Days open before a posting is flagged as likely evergreen","agent.AGE_NOTE_DAYS":"Days open before a posting gets an age note","agent.REPOST_WINDOW_DAYS":"How far back to catch reposts (days)",
+ "agent.GHOST_FLAG_IDS":"Reposts under new IDs before a posting is flagged","agent.GHOST_FLAG_LOCATIONS":"Locations for one role before it's flagged","agent.GHOST_SKIP_IDS":"Reposts before it's skipped"};
+async function renderAdvanced() {
+  const v = await api("/api/advanced"); const el = $("#advanced");
+  el.innerHTML = `<div class="card"><h2>Advanced</h2><p class="sub">Most people never change these. The defaults work well.</p>
+   ${Object.entries(ADV).map(([k,l])=>`<label for="${k}">${l}</label><input id="${k}" type="number" min="0" value="${esc(v[k])}">`).join("")}
+   <p><button class="primary" id="savea">Save</button> <span id="advmsg" class="ok"></span></p></div>`;
+  $("#savea").onclick = async () => { const out = Object.fromEntries(Object.keys(ADV).map(k=>[k, $("#"+CSS.escape(k)).value])); const r = await api("/api/advanced", out); $("#advmsg").textContent = r.ok ? "Saved." : r.error; };
+}
+
+const PRIVACY_HTML = `<div class="card"><h2>What stays here, what goes to Claude, and what you promise</h2>
+   <p class="sub">Plain words, no legal language. Read it once before you start.</p>
+   <h3>Stays on this computer</h3>
+   <p>Your settings, your evidence bank, your resumes and cover letters, your applications, your contacts, and your tracker are plain files in the folder you choose. The daily job checks, the scoring, and the pre-send gate run here. The kit connects to no email account and no other account of yours.</p>
+   <h3>Goes out</h3>
+   <p>Requests to the job boards you picked (they see a request from this computer and the kit's name, nothing about you). Once a day, a check of this project's GitHub releases page for updates (GitHub sees your computer's internet address, nothing else); you can turn that off under My search profile, How it runs. When you use the Claude plugin, whatever you put in front of Claude: your evidence bank, the posting, the draft, your answers. That goes to Anthropic under your own Claude plan's terms. Nothing goes to the person who made this kit except an error report you choose to send, and that report holds error lines only.</p>
+   <h3>What you promise</h3>
+   <p>Every bullet on your resume is true, in your words, and you confirm each one before it goes on a page. The kit traces every bullet back to your evidence bank and refuses anything that isn't there, but you are the one who knows what's true. If an application asks whether AI helped write your materials, answer honestly: Claude helped you select and arrange your own evidence, and you reviewed every line.</p>
+   <h3>This is a free beta</h3>
+   <p>The kit is free, provided as is, with no guarantee that it works or that its scores and drafts are right. It can miss a posting, score one wrong, or draft a line you wouldn't say. You review and confirm everything before you send it, and you are responsible for every application, resume, letter, and message you send. The kit never sends anything for you.</p>
+   <h3>If you change your mind</h3>
+   <p>The kit keeps a daily backup of your tracker, contacts, evidence bank, and settings for 14 days, on this computer only (in the data folder, under backups). Logs are kept about 30 days. Copy the folder to keep your own copy. To remove your data, use Delete your data on the Privacy page. Uninstalling the app leaves the folder alone.</p>
+   <p><label><input type="checkbox" id="privok"> I've read this. I understand the kit is a free beta, provided as is, and that I review and send everything myself.</label> <span id="privmsg"></span></p></div>`;
+const DELETE_HTML = `<div class="card"><h2>Delete your data</h2>
+   <p class="sub">This can't be undone, and it removes the daily backups too. Copy your folder first if you might want anything back.</p>
+   <div class="choice">
+    <label><input type="radio" name="delscope" value="records" checked> Tracker, contacts, backups, and logs only<br><small>Keeps your evidence bank, applications, and settings.</small></label>
+    <label><input type="radio" name="delscope" value="everything"> Everything the kit made<br><small>Also your evidence bank, applications, resumes, settings, and the daily schedule. Files you added yourself stay.</small></label>
+   </div>
+   <label for="delconfirm">Type <b>delete my data</b> to confirm</label><input id="delconfirm" type="text" autocomplete="off">
+   <p><button id="delgo">Delete</button> <span id="delmsg"></span></p></div>`;
+function renderPrivacy(next) {
+  const el = next ? $("#setup") : $("#privacy"); el.innerHTML = PRIVACY_HTML;
+  if (!next) el.insertAdjacentHTML("beforeend", DELETE_HTML);
+  const box = $("#privok"); if (!next) { try { box.checked = localStorage.getItem("privacy_ok") === "1"; } catch (e) {} }
+  if (!next) $("#delgo").onclick = async () => {
+    const scope = document.querySelector("input[name=delscope]:checked").value;
+    const r = await api("/api/delete_data", {scope, confirm: $("#delconfirm").value});
+    if (!r.ok) { $("#delmsg").textContent = r.error || "Couldn't delete."; $("#delmsg").className = "err"; return; }
+    $("#delmsg").className = "ok";
+    $("#delmsg").textContent = scope === "everything"
+      ? (r.folder_left ? "Deleted. Files you added yourself are still in the folder. You can uninstall the app in Windows Settings, Apps." : "Deleted. You can uninstall the app in Windows Settings, Apps.")
+      : "Your tracker, contacts, backups, and logs are deleted. Your evidence bank and applications are still there.";
+  };
+  box.onchange = async () => { try { localStorage.setItem("privacy_ok", box.checked ? "1" : "0"); } catch (e) {}
+    if (box.checked) { const r = await api("/api/acknowledge", {}); if (r && r.ok === false && !r.later) { $("#privmsg").textContent = "Couldn't save that; try again."; return; } }
+    if (box.checked && next) next(); };
+}
+function privacyRead() { try { return localStorage.getItem("privacy_ok") === "1"; } catch (e) { return true; } }
+async function renderFolder() {
+  const f = await api("/api/folder"); const el = $("#setup");
+  el.innerHTML = `<div class="card"><h2>Where should your Job Search folder live?</h2>
+   <p class="sub">This folder will hold your settings, your evidence bank, your applications, and your tracker. Everything stays on this computer either way.</p>
+   ${f.documents_synced ? `<div class="note banner">Your Documents folder is backed up to a cloud service (OneDrive or similar). That means your resumes and evidence bank would be copied there too. Pick what you prefer.</div>` : ""}
+   <div class="choice">
+    <label><input type="radio" name="fold" value="documents" ${f.documents_synced ? "" : "checked"}> ${esc(f.documents.label)}<br><small>${esc(f.documents.path)}</small></label>
+    <label><input type="radio" name="fold" value="local" ${f.documents_synced ? "checked" : ""}> ${esc(f.local.label)}<br><small>${esc(f.local.path)}</small></label>
+   </div>
+   <p><button class="primary" id="foldok">Create the folder</button> <span id="foldmsg"></span></p></div>`;
+  $("#foldok").onclick = async () => { $("#foldmsg").textContent = "Creating..."; const choice = document.querySelector("input[name=fold]:checked").value;
+    const r = await api("/api/folder", {choice, acknowledged: privacyRead()}); if (r.ok) { A = null; route(); } else $("#foldmsg").textContent = r.error || "Couldn't create the folder."; };
+}
+
+async function route() {
+  let page = (location.hash || "#tracker").slice(1);
+  const anchor = page === "suggest" ? "suggest" : "";
+  if (anchor) page = "help";
+  const PAGES = ["setup","tracker","companies","profile","contacts","advanced","privacy","help"];
+  if (!PAGES.includes(page)) page = "tracker";
+  closeDrawer();
+  ST = await api("/api/status");
+  UI = {theme: ST.theme, status_colors: ST.status_colors || {}};
+  applyTheme(ST.theme); store.set("kit-theme", ST.theme); store.set("kit-colors", UI.status_colors);
+  if (page !== "setup" && page !== "privacy" && page !== "help" && (ST.needs_folder || ST.needs_ack || !ST.configured)) page = "setup";
+  PAGES.forEach(p => { $("#"+p).hidden = p !== page; const n = $("#n-"+p); if (n) n.classList.toggle("on", p === page && !anchor); });
+  $("#n-suggest").classList.toggle("on", !!anchor);
+  $("main").classList.toggle("narrow", !["tracker","companies"].includes(page));
+  if (page==="setup") { if (ST.needs_folder) { if (!privacyRead()) { renderPrivacy(route); return; } renderFolder(); return; }
+    if (ST.needs_ack) { renderPrivacy(route); return; } if (!A) A = await api("/api/answers"); renderSetup(); }
+  if (page==="privacy") renderPrivacy();
+  if (page==="tracker") renderTracker();
+  if (page==="companies") renderCompanies();
+  if (page==="profile") renderProfile();
+  if (page==="contacts") renderContacts();
+  if (page==="advanced") renderAdvanced();
+  if (page==="help") { renderHelp(); if (anchor) $("#suggest").scrollIntoView(); else window.scrollTo(0,0); }
+}
+window.addEventListener("hashchange", route); route();
+</script>
+</body>
+</html>

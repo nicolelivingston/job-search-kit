@@ -1,0 +1,5 @@
+# Test code is scanned by the test run itself; its fixtures and assertions
+# are not reachable in the shipped kit, so CodeQL skips them.
+name: "Job Search Kit"
+paths-ignore:
+  - app/agent/agent_tests

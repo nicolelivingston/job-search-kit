@@ -1,0 +1,11 @@
+{
+  "name": "job-search-kit",
+  "version": "0.1.0",
+  "description": "Claude skills for the Job Search Kit: Start Here interviews that build your evidence bank and master resume, tailored application materials that select from the bank and pass the pre-send gate, evidence interviews, and approval sessions.",
+  "author": {
+    "name": "Job Search Kit"
+  },
+  "repository": "https://github.com/nicolelivingston/job-search-kit",
+  "license": "MIT",
+  "keywords": ["job search", "resume", "cover letter", "evidence bank"]
+}
