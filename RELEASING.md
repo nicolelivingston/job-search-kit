@@ -15,6 +15,22 @@ can't be moved or deleted).
       the pause stays until it has been checked).
 - [ ] What changed is written down for the release notes, in plain words.
 
+## Test before it reaches anyone
+Three places to catch a problem, each before the next:
+1. **Every pull request**: the full test suite runs as the made-up test
+   people (Priya, Dana, and Marcus, in `examples/`), never real data, and a
+   fresh Windows machine builds the installer and installs it
+   (`installer/smoke_test_windows.ps1`). Merge only on a green check.
+2. **Merging to main ships nothing.** Kits only ever install a published,
+   signed release.
+3. **Beta first.** Tag `vX.Y.Z-beta.1` (any tag with a dash). It builds and
+   runs every release check, then publishes as a GitHub pre-release, which
+   automatic updates never see. Install it by hand on a test computer from
+   the releases page and use it for a day. If it's wrong, fix it and tag
+   `-beta.2`. When it's right, tag the plain `vX.Y.Z` from the same commit.
+
+- [ ] A beta of this exact commit was installed by hand and used for a day.
+
 ## Tag and build
 - [ ] `git tag vX.Y.Z && git push origin vX.Y.Z`
 - [ ] The Release workflow passes every job: tests, Windows installer with

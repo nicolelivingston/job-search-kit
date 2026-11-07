@@ -76,6 +76,21 @@ class Updater(unittest.TestCase):
         self.assertTrue(updater.needs_update("0.1.0", "v0.2.0"))
         self.assertFalse(updater.needs_update("0.2.0", "v0.2.0"))
         self.assertFalse(updater.needs_update("0.2.1", "v0.2.0"))
+
+    def test_beta_sorts_before_its_release(self):
+        # a tester on a beta moves to the real release with the same number
+        self.assertTrue(updater.needs_update("0.2.0-beta.1", "v0.2.0"))
+        self.assertTrue(updater.needs_update("0.1.1", "v0.2.0-beta.1"))
+        # a kit on a real release never "updates" to that release's beta
+        self.assertFalse(updater.needs_update("0.2.0", "v0.2.0-beta.1"))
+        self.assertFalse(updater.needs_update("0.2.0-beta.1", "v0.2.0-beta.1"))
+        self.assertTrue(updater.is_beta("v0.2.0-beta.1"))
+        self.assertFalse(updater.is_beta("v0.2.0"))
+
+    def test_kits_only_ask_for_the_latest_full_release(self):
+        # GitHub's /releases/latest never returns a pre-release, so betas
+        # can't reach anyone's automatic updates
+        self.assertTrue(updater.API.endswith("/releases/latest"))
         self.assertEqual(updater.expected_hash(self.good_sums.decode(), "job-search-kit.plugin"), "abc")
         self.assertIsNone(updater.expected_hash(self.good_sums.decode(), "other.exe"))
         self.assertEqual(len(bytes.fromhex(updater.RELEASE_PUBLIC_KEY_HEX)), 32)   # a real pinned key is in the code
