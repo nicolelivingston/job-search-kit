@@ -102,6 +102,20 @@ class Wizard(unittest.TestCase):
         _, back = self.call("/api/answers")
         self.assertEqual(back["pay"]["floor"], 141000)
 
+    def test_2b_preferences_step(self):
+        _, a = self.call("/api/answers")
+        a["prefs"]["tools"] = ["Excel", "Jira"]
+        a["prefs"]["voice"]["avoid_habits"] = ["em_dash"]
+        a["prefs"]["permissions"]["update_tracker"] = "ask"
+        code, r = self.call("/api/answers", a)
+        self.assertEqual((code, r.get("ok")), (200, True), r)
+        p = json.loads((self.settings / "preferences.json").read_text())
+        self.assertEqual((p["tools"], p["permissions"]["update_tracker"]), (["Excel", "Jira"], "ask"))
+        self.assertIs(json.loads((self.settings / "resume.json").read_text())["presend_gate"]["FLAG_EM_DASH"], True)
+        page = (APP / "wizard_page.html").read_text(encoding="utf-8")
+        self.assertIn('custom:"prefs"', page)
+        self.assertNotIn("\u2014", page, "no em dashes on the page")
+
     def test_3_advanced(self):
         code, r = self.call("/api/advanced", {"agent.FRESH_DAYS": "21"})
         self.assertTrue(r["ok"])

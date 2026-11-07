@@ -1,0 +1,42 @@
+{
+  "tools": [],
+  "format_rules": {
+    "action_verbs": true,
+    "no_pronouns": true,
+    "spell_out_abbreviations": true,
+    "show_results": true,
+    "posting_words": true,
+    "posting_order": true,
+    "explain_jargon": true,
+    "letter_one_page": true,
+    "letter_named_person": true,
+    "letter_tie_to_posting": true,
+    "letter_light_on_i": true
+  },
+  "own_rules": [],
+  "resume_pages": "auto",
+  "bullet_length": "short",
+  "voice": {
+    "what_bugged_you": "",
+    "avoid_habits": [],
+    "oxford_comma": false,
+    "contractions": false,
+    "keep_my_wording": false,
+    "tone": ""
+  },
+  "feedback": "balanced",
+  "drafts": "one",
+  "decisions": "list",
+  "obvious_calls": "decide_and_tell",
+  "file_format": "word",
+  "permissions": {
+    "update_tracker": "can",
+    "draft_messages": "can",
+    "draft_form_answers": "can",
+    "save_fixes": "ask"
+  },
+  "keep_general": [],
+  "saved_fixes": [],
+  "talk_it_through": true,
+  "talked_through": ""
+}

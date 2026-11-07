@@ -81,6 +81,55 @@ class SetupModel(unittest.TestCase):
             self.assertIs(appj["auto_update"], False)
             self.assertEqual(appj["schedule"]["update"], "10:15", "setup keeps the update time it doesn't ask about")
 
+    def test_preferences_step(self):
+        """Step 8 (How Claude works for you): defaults, the two gate settings it writes, bad values refused,
+        and the keys the plugin owns kept."""
+        root = next(r for r in EXAMPLES if r.name.startswith("priya"))
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = self.copy_settings(root, tmp)
+            self.assertFalse((dst / "preferences.json").exists(), "an older folder has no preferences file")
+            before = score(root, dst)
+            a = sm.read_answers(dst)
+            p = a["prefs"]
+            self.assertEqual(p["voice"]["avoid_habits"], [], "habits are suggestions only, none picked by default")
+            self.assertTrue(all(p["format_rules"].values()), "format rules start on")
+            self.assertEqual((p["resume_pages"], p["file_format"], p["permissions"]["save_fixes"]), ("auto", "word", "ask"))
+            limit = json.loads((dst / "resume.json").read_text())["presend_gate"].get("PAGE_LIMIT")
+
+            sm.write_answers(dst, a)   # defaults: no gate change beyond writing the em dash flag off
+            g = json.loads((dst / "resume.json").read_text())["presend_gate"]
+            self.assertIs(g["FLAG_EM_DASH"], False)
+            self.assertEqual(g.get("PAGE_LIMIT"), limit, "'auto' leaves the page limit to Start Here session 3")
+
+            pf = json.loads((dst / "preferences.json").read_text())
+            pf["talked_through"] = "2026-11-07"   # written by the plugin, not the wizard
+            (dst / "preferences.json").write_text(json.dumps(pf))
+            a = sm.read_answers(dst)
+            a["prefs"].update(tools=["Excel", " excel ", "Jira", ""], resume_pages="one", feedback="savage",
+                              file_format="pdf", permissions={"update_tracker": "never", "save_fixes": "sometimes"})
+            a["prefs"]["voice"].update(avoid_habits=["em_dash", "emojis", "not-a-habit"], tone="pirate", oxford_comma=True)
+            a["prefs"]["format_rules"]["explain_jargon"] = False
+            sm.write_answers(dst, a)
+            p = sm.read_answers(dst)["prefs"]
+            self.assertEqual(p["tools"], ["Excel", "Jira"], "tools are trimmed and de-duplicated")
+            self.assertEqual(p["voice"]["avoid_habits"], ["em_dash", "emojis"])
+            self.assertEqual((p["voice"]["tone"], p["feedback"], p["file_format"]), ("", "balanced", "pdf"), "unknown choices keep the saved value")
+            self.assertEqual(p["permissions"], {"update_tracker": "never", "draft_messages": "can",
+                                                "draft_form_answers": "can", "save_fixes": "ask"})
+            self.assertFalse(p["format_rules"]["explain_jargon"])
+            self.assertTrue(p["voice"]["oxford_comma"])
+            self.assertEqual(p["talked_through"], "2026-11-07", "the wizard keeps the plugin's date")
+            g = json.loads((dst / "resume.json").read_text())["presend_gate"]
+            self.assertIs(g["FLAG_EM_DASH"], True, "picking em dashes turns on the gate's em dash flag")
+            self.assertEqual(g["PAGE_LIMIT"], 1)
+            self.assertEqual(sm.read_answers(dst)["prefs"], p, "preferences survive a write and read")
+            self.assertEqual(score(root, dst), before, "preferences never change fit scores")
+
+            a = sm.read_answers(dst)
+            del a["prefs"]   # a page from before step 8 doesn't send them
+            sm.write_answers(dst, a)
+            self.assertEqual(sm.read_answers(dst)["prefs"], p, "an answer set without preferences leaves them alone")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

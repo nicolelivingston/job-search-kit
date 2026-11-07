@@ -2,7 +2,7 @@
 
 Goal: four to six story cards in `Evidence Bank/Evidence Bank.md`, each with one to three approved bullets, its figures sorted into paper and prep, and its exact detail in `Evidence Bank/Prep File.md`. More stories come later through the `evidence-interview` skill; this session establishes the shape.
 
-Read `bullet-format.md` and `confidentiality.md` (in the kit-basics skill's references) before starting. Read the bank template's "How to read a card" section so the card shape and the `- ID [tag]: text` bullet line are exact; the index builder reads them by machine.
+Read `bullet-format.md` and `confidentiality.md` (in the kit-basics skill's references) before starting. Write bullets to the user's `bullet_length` and `format_rules` in `settings/preferences.json`. Read the bank template's "How to read a card" section so the card shape and the `- ID [tag]: text` bullet line are exact; the index builder reads them by machine.
 
 ## Picking the stories
 

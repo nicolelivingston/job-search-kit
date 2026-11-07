@@ -99,6 +99,19 @@ th{font-size:12px;color:var(--text3);font-weight:600}.scroll{overflow-x:auto}
 .swrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line3)}
 .sw{width:28px;height:28px;padding:0;border-radius:999px;border:2px solid var(--surface)}
 .wd{display:flex;gap:10px;align-items:flex-start;margin:4px 0 12px;padding:10px;background:var(--note);border-radius:8px;font-size:13px;font-weight:400;line-height:1.45}
+/* setup step 8: how Claude works for you */
+.pgroup{border-top:1px solid var(--line3);margin-top:22px;padding-top:6px}.pgroup:first-of-type{border-top:0;margin-top:8px}
+.pgroup h3{font-size:16px;margin:12px 0 2px}.pgroup>.sub{margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chips button{height:auto;min-height:40px;padding:6px 14px;border-radius:999px;display:inline-flex;gap:6px;align-items:center}
+.chips button.sugg{border-style:dashed}
+.chips button.have,.chips button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text)}
+.addrow{display:flex;gap:8px}.addrow input{flex:1 1 auto}
+.prule{margin:8px 0}.prule .check{margin:0;padding:6px 0}
+.permrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line3)}
+.permrow .seg button{min-width:84px}.seg button.on{background:var(--accent);color:var(--on-accent);font-weight:600}
+.locked{background:var(--note);border-radius:10px;padding:10px 14px;margin-top:14px}.locked h4{margin:4px 0;font-size:14px}
+.locked .check{margin:0;padding:5px 0;color:var(--text3)}
 /* help */
 dl.defs{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px 18px;margin:0}dl.defs dt{font-weight:600}dl.defs dd{margin:0}
 .help ul{margin:0;padding-left:20px}
@@ -168,16 +181,17 @@ const STEPS = [
   ["target","Pay you're aiming for","","number"],
   ["rank_no_pay_lower","Rank postings with no posted pay lower","","bool"]]},
  {key:"fields", title:"Fields and companies", sub:"What interests you, and where you'd love to work.", custom:"fields"},
- {key:"resume", title:"Your resume", sub:"Format and words to keep off the page. Your stories come from the Start Here interviews with Claude.", fields:[
+ {key:"resume", title:"Your resume", sub:"Format and abbreviations. Words to never use are in step 8, How Claude works for you. Your stories come from the Start Here interviews with Claude.", fields:[
   ["name","Your name as it appears on your resume","","text"],["headline","Your resume headline","e.g. Senior Product Manager | Patient Scheduling","text"],
   ["font","Font","","text"],["body_pt","Body size (points)","","number"],["name_pt","Name size","","number"],["heading_pt","Heading size","","number"],
   ["margin_in","Margins (inches)","","number"],["line_spacing","Line spacing","","number"],
-  ["avoid_words","Words to keep off your resume","One per line","list"],["abbreviations","Abbreviations to spell out","","list"],
+  ["abbreviations","Abbreviations to spell out","","list"],
   ["retired","Wording you've retired","Phrases that should never come back","list"],["once_per_resume","Figures that may appear only once per resume","","list"]]},
  {key:"run", title:"How it runs", sub:"When it checks for new jobs.", fields:[
   ["full","Main daily check","Fetches, scores, and tidies your tracker","time"],
   ["quick","Quick checks during the day","One time per line, like 14:00","list"],
   ["auto_update","Install updates automatically","Checks this project's GitHub page once a day. Off means you update with Check for updates in the Start menu","bool"]]},
+ {key:"prefs", title:"How Claude works for you", sub:"Pick what fits and skip the rest. Everything here is optional, and you can change it anytime. Claude reads these choices every time it drafts for you.", custom:"prefs"},
 ];
 
 function input(key, sec, [k, label, hint, kind]) {
@@ -209,6 +223,7 @@ function custom(name) {
     <label for="cos">Companies you won't work for</label><textarea id="cos">${esc(lines(r.excluded_companies))}</textarea>
     <label for="exc">Exceptions: words that turn an excluded industry into "ask me first"</label><textarea id="exc">${esc(lines(r.exception_words))}</textarea>
     <label><input type="checkbox" id="ben" ${r.benefits_rule?"checked":""}> Skip companies rated weak on both time off and health benefits</label>`; }
+  if (name === "prefs") return prefsHtml();
   if (name === "fields") { const f = A.fields; return `
     <label>Fields you care about <span class="hint">Name, how interested you are, and words that show up in postings for that field</span></label>
     <div id="doms">${f.domains.map(domRow).join("")}</div><button type="button" id="adddom">Add a field</button>
@@ -219,6 +234,109 @@ function custom(name) {
     <p><button type="button" id="detect">Find board</button> <span id="dmsg" class="hint"></span></p>
     <div id="boards">${boardList()}</div>
     <label for="feed">Remote job feed for your field</label><select id="feed">${["product","customer support","data","design","marketing","programming","management and finance"].map(x=>`<option ${f.feed===x?"selected":""}>${x}</option>`).join("")}</select>`; }
+}
+// ---------------------------------------------------------------- setup step 8: how Claude works for you (settings/preferences.json)
+const PREF = {
+ suggest: ["Excel","Google Sheets","SQL","Jira","Salesforce","Tableau","Power BI","HubSpot","Asana","Canva","Figma","Trello"],
+ resume: [["action_verbs","Start each bullet with a strong action verb"],["no_pronouns","Leave out personal pronouns (I, me, my)"],
+  ["spell_out_abbreviations","Spell out abbreviations"],["show_results","Show results, with numbers only when they're real"],
+  ["posting_words","Use the posting's words where they're true of your work"],["posting_order","Lead with what the posting cares about most"],
+  ["explain_jargon","Explain company jargon so outside readers can follow"]],
+ letter: [["letter_one_page","Keep it to one page"],["letter_named_person","Address a named person when one can be found"],
+  ["letter_tie_to_posting","Tie each example to the job posting"],["letter_light_on_i","Go light on the word “I”"]],
+ habits: [["em_dash","Em dashes"],["not_x_its_y","“It’s not X, it’s Y” lines"],["lists_of_three","Lists of three everywhere"],
+  ["buzzwords","Words like delve, leverage, and seamless"],["hope_this_finds_you","“I hope this finds you well”"],
+  ["repeat_ending","Endings that repeat the point"],["gushing","Gushing words like thrilled and passionate"],
+  ["resume_cliches","Resume clichés like spearheaded and synergy"],["heavy_bold","Lots of bold text"],["emojis","Emojis"],
+  ["rhetorical_questions","Rhetorical questions"],["stacked_hedges","Piled-up hedges like perhaps and potentially"]],
+ perms: [["update_tracker","Update my tracker"],["draft_messages","Draft emails and messages for me to send"],
+  ["draft_form_answers","Draft answers for application forms"],["save_fixes","Save my draft fixes as new preferences"]],
+};
+const plines = s => s.split(/\n/).map(x=>x.trim()).filter(Boolean);   // one per line; commas stay inside a line
+function pradios(name, cur, opts) { return `<div class="choice" role="radiogroup">${opts.map(([v,l])=>`<label><input type="radio" name="${name}" value="${esc(v)}" ${cur===v?"checked":""}> ${esc(l)}</label>`).join("")}</div>`; }
+function pcheck(id, label, on, extra="") { return `<label class="check" for="${id}"><input type="checkbox" id="${id}" ${extra} ${on?"checked":""}> <span>${label}</span></label>`; }
+function prefTools() { const t = A.prefs.tools, have = new Set(t.map(x=>x.toLowerCase()));
+  return `<div class="chips" aria-label="Your tools">${t.length ? t.map((x,i)=>`<button type="button" class="have" data-rmtool="${i}" aria-label="Remove ${esc(x)}">${esc(x)} ${ICON_X}</button>`).join("") : `<span class="hint">No tools added yet.</span>`}</div>
+   <p class="hint" style="margin:10px 0 0">Common picks, tap to add</p>
+   <div class="chips">${PREF.suggest.filter(x=>!have.has(x.toLowerCase())).map(x=>`<button type="button" class="sugg" data-addtool="${esc(x)}">+ ${esc(x)}</button>`).join("")}</div>`; }
+function prefsHtml() { const p = A.prefs, v = p.voice, fr = p.format_rules, habits = new Set(v.avoid_habits);
+  const rule = ([k,l]) => pcheck(`pr-${k}`, esc(l), fr[k], `data-rule="${k}"`);
+  return `
+  <div class="pgroup"><h3>Your tools</h3><p class="sub">List the tools you use at work. When Claude tailors a resume, it picks the ones that match each posting, so you don't have to trim this list yourself.</p>
+   <div id="ptools">${prefTools()}</div>
+   <label for="p-newtool">Add a tool</label><div class="addrow"><input id="p-newtool" type="text" placeholder="Type a tool and press Enter"><button type="button" id="p-addtool">Add</button></div></div>
+
+  <div class="pgroup"><h3>Resume and letter format</h3><p class="sub">These follow common university career-office guidance, like Harvard's and MIT's, plus a few that help with tailoring. They're all on to start. Turn off anything you'd rather not follow.</p>
+   <label>Resume</label><div class="prule">${PREF.resume.map(rule).join("")}</div>
+   <label>Resume length</label>${pradios("p-pages", p.resume_pages, [["auto","Let Claude decide by experience"],["one","1 page"],["two","2 pages"]])}
+   <label>Bullet length</label>${pradios("p-bullets", p.bullet_length, [["short","Short"],["medium","Medium"],["detailed","Detailed"]])}
+   <label>Cover letter</label><div class="prule">${PREF.letter.map(rule).join("")}</div>
+   <p class="hint">The resume builder always lists experience newest first, keeps formatting consistent, and uses the same font for the resume and letter.</p>
+   <label for="p-own">Your own rules <span class="hint">One per line, for example: put certifications above education</span></label><textarea id="p-own">${esc(p.own_rules.join("\n"))}</textarea></div>
+
+  <div class="pgroup"><h3>Writing voice</h3><p class="sub">Help Claude sound like you.</p>
+   <label for="p-bugged">Think of the last AI draft that didn't sound like you. What bugged you?</label><textarea id="p-bugged" placeholder="Anything goes: a word, a habit, the tone, how long it was">${esc(v.what_bugged_you)}</textarea>
+   <label>Common AI habits people notice <span class="hint">Suggestions only. Tap any you want Claude to avoid.</span></label>
+   <div class="chips" id="phabits">${PREF.habits.map(([k,l])=>`<button type="button" data-habit="${k}" aria-pressed="${habits.has(k)}">${habits.has(k)?"✓":"+"} ${esc(l)}</button>`).join("")}</div>
+   <label>Other habits</label><div class="prule">${pcheck("p-ox","Use the Oxford comma (red, white, and blue)",v.oxford_comma)}${pcheck("p-con","Use contractions (it’s, don’t)",v.contractions)}${pcheck("p-keep","Keep my wording when I give Claude a phrase",v.keep_my_wording)}</div>
+   <label>Tone</label>${pradios("p-tone", v.tone, [["","No preference"],["plain","Plain and direct"],["warm","Warm and conversational"],["formal","Formal"],["match","Match each company"]])}
+   <label for="resume.avoid_words">Words to never use <span class="hint">One per line. The checker also flags these on resumes and letters.</span></label><textarea id="resume.avoid_words" data-k="resume.avoid_words" data-kind="list">${esc(lines(A.resume.avoid_words))}</textarea>
+   <label for="p-fixes">Fixes you've saved <span class="hint">When you fix a draft, Claude asks once whether to save the fix here, so it doesn't happen again. Delete a line to drop it.</span></label><textarea id="p-fixes">${esc(p.saved_fixes.join("\n"))}</textarea></div>
+
+  <div class="pgroup"><h3>Feedback and drafts</h3><p class="sub">How Claude reviews your work and hands things back.</p>
+   <label>Feedback on your materials</label>${pradios("p-fb", p.feedback, [["blunt","Blunt"],["balanced","Balanced"],["gentle","Gentle"]])}
+   <label>First drafts of letters and written answers</label>${pradios("p-drafts", p.drafts, [["one","One version, close to final"],["options","Two or three options to pick from"]])}
+   <label>When Claude needs you to decide</label>${pradios("p-dec", p.decisions, [["list","One numbered list of choices"],["conversation","Ask in conversation"]])}
+   <label>When the answer seems obvious</label>${pradios("p-obv", p.obvious_calls, [["decide_and_tell","Decide and tell me, so I can veto"],["ask_first","Ask me first"]])}</div>
+
+  <div class="pgroup"><h3>Files</h3><p class="sub">The format for finished resumes and cover letters.</p>
+   ${pradios("p-file", p.file_format, [["word","Word (.docx)"],["pdf","PDF (made from the checked Word file)"]])}
+   <div class="locked"><h4>Built in, so you can see your progress</h4>
+    ${pcheck("pb-1","Every draft gets a version number (v1, v2, v3)",true,"disabled")}
+    ${pcheck("pb-2","Tracks time and versions for each application, from first draft to sent, so you can see your process get faster",true,"disabled")}
+    ${pcheck("pb-3","Moves older drafts to an archive once you send the final, and keeps the counts",true,"disabled")}</div></div>
+
+  <div class="pgroup"><h3>What Claude can do</h3><p class="sub">Choose what Claude does on its own, what it checks with you first, and what it never does.</p>
+   ${PREF.perms.map(([k,l])=>`<div class="permrow"><span>${esc(l)}</span><div class="seg" role="group" aria-label="${esc(l)}">${[["can","Can"],["ask","Ask first"],["never","Never"]].map(([lv,ll])=>`<button type="button" data-perm="${k}" data-level="${lv}" class="${p.permissions[k]===lv?"on":""}" aria-pressed="${p.permissions[k]===lv}">${ll}</button>`).join("")}</div></div>`).join("")}
+   <div class="locked"><h4>Always on</h4><p class="hint" style="margin:0 0 4px">These protect you, so they can't be turned off.</p>
+    ${pcheck("pa-1","Never invents accomplishments, numbers, or experience",true,"disabled")}
+    ${pcheck("pa-2","Flags gaps honestly instead of covering them up",true,"disabled")}
+    ${pcheck("pa-3","Fixes a correction in every document it touches",true,"disabled")}
+    ${pcheck("pa-4","Never sends emails or messages for you",true,"disabled")}
+    ${pcheck("pa-5","Never submits applications for you",true,"disabled")}</div></div>
+
+  <div class="pgroup"><h3>Private details</h3><p class="sub">Anything that should stay general on your resume and cover letters? Claude keeps these vague on paper and can be specific in your private interview prep.</p>
+   <label for="p-private">Keep these general <span class="hint">One per line, for example: client names, internal project names, or exact budgets</span></label><textarea id="p-private">${esc(p.keep_general.join("\n"))}</textarea></div>
+
+  <div class="pgroup"><h3>Talk it through (optional)</h3><p class="sub">If you left a section blank, Claude asks up to three quick questions about it in your first chat. It asks once, and you can skip any question.</p>
+   ${pcheck("p-talk","Yes, ask me once",p.talk_it_through)}</div>`; }
+function collectPrefs() { const p = A.prefs, v = p.voice, val = n => ($(`input[name=${n}]:checked`) || {}).value;
+  $$("[data-rule]").forEach(el => p.format_rules[el.dataset.rule] = el.checked);
+  p.own_rules = plines($("#p-own").value);
+  p.resume_pages = val("p-pages") || p.resume_pages; p.bullet_length = val("p-bullets") || p.bullet_length;
+  v.what_bugged_you = $("#p-bugged").value.trim();
+  v.avoid_habits = $$("#phabits [data-habit]").filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.habit);
+  v.oxford_comma = $("#p-ox").checked; v.contractions = $("#p-con").checked; v.keep_my_wording = $("#p-keep").checked;
+  v.tone = val("p-tone") ?? v.tone;
+  p.saved_fixes = plines($("#p-fixes").value);
+  p.feedback = val("p-fb") || p.feedback; p.drafts = val("p-drafts") || p.drafts; p.decisions = val("p-dec") || p.decisions;
+  p.obvious_calls = val("p-obv") || p.obvious_calls; p.file_format = val("p-file") || p.file_format;
+  $$("[data-perm].on").forEach(b => p.permissions[b.dataset.perm] = b.dataset.level);
+  p.keep_general = plines($("#p-private").value);
+  p.talk_it_through = $("#p-talk").checked; }
+function wirePrefs() {
+  const addTool = name => { const t = String(name || "").trim(); if (!t) return;
+    if (!A.prefs.tools.some(x => x.toLowerCase() === t.toLowerCase())) A.prefs.tools.push(t);
+    $("#ptools").innerHTML = prefTools(); $("#p-newtool").value = ""; };
+  $("#ptools").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.rmtool !== undefined) { A.prefs.tools.splice(Number(b.dataset.rmtool), 1); $("#ptools").innerHTML = prefTools(); }
+    else if (b.dataset.addtool) addTool(b.dataset.addtool); };
+  $("#p-addtool").onclick = () => addTool($("#p-newtool").value);
+  $("#p-newtool").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addTool(e.target.value); } };
+  $("#phabits").onclick = e => { const b = e.target.closest("[data-habit]"); if (!b) return;
+    const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(on));
+    b.firstChild.textContent = (on ? "✓" : "+") + b.firstChild.textContent.slice(1); };
+  $$("[data-perm]").forEach(b => b.onclick = () => { $$(`[data-perm="${b.dataset.perm}"]`).forEach(x => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); }); });
 }
 function domRow(d={name:"",interest:"medium",keywords:[]}) { return `<div class="dom" data-points="${d.points ?? ""}" data-was="${esc(d.interest)}"><input type="text" class="dn" placeholder="Field" value="${esc(d.name)}">
   <select class="di">${["high","medium","low","no"].map(x=>`<option value="${x}" ${d.interest===x?"selected":""}>${x==="no"?"Not interested":x[0].toUpperCase()+x.slice(1)}</option>`).join("")}</select>
@@ -238,6 +356,7 @@ function collect() {
     r.excluded_companies=unlines($("#cos").value); r.exception_words=unlines($("#exc").value); r.benefits_rule=$("#ben").checked; }
   if (s.custom==="fields") { const f=A.fields; f.domains=[...document.querySelectorAll(".dom")].map(r=>({name:$(".dn",r).value,interest:$(".di",r).value,keywords:unlines($(".dk",r).value),points:r.dataset.points?Number(r.dataset.points):null,was:r.dataset.was||null})).filter(d=>d.name.trim());
     f.top_companies=unlines($("#top").value); f.good_companies=unlines($("#good").value); f.feed=$("#feed").value; }
+  if (s.custom==="prefs") collectPrefs();
 }
 
 function renderSetup(msg="") {
@@ -253,6 +372,7 @@ function renderSetup(msg="") {
   if (done) { $("#sched").onclick = async () => { const r = await api("/api/schedule/install", {}); $("#smsg").textContent = r.message || r.error; $("#smsg").className = r.ok ? "ok" : "err"; }; return; }
   $("#next").onclick = async () => { if (await save(true)) { step++; renderSetup(); window.scrollTo(0,0); } };
   $("#back").onclick = async () => { await save(false); step--; renderSetup(); };
+  if (s.custom==="prefs") wirePrefs();
   if (s.custom==="where") document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => { $("#office").hidden = r.value==="remote"; $("#onsite-wrap").hidden = r.value!=="any"; });
   if (s.custom==="fields") {
     $("#adddom").onclick = () => $("#doms").insertAdjacentHTML("beforeend", domRow());

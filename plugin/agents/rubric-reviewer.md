@@ -31,7 +31,7 @@ Read, in this order, and do not start without all of them:
 1. `<kit>/app/resume/agents/README.md` (the shared rules for every reviewer) and `<kit>/app/resume/agents/rubric-reviewer.md` (your full instructions, steps, stop rule, and output format). Follow that file exactly.
 2. The user's `Evidence Bank/Evidence Bank.md`, end to end, including each card's "To find out" line and Part C.
 3. The user's `Evidence Bank/Rules File.md` (especially "Confirmed gaps", "Tiers", and "Reviewer constraints") and `Evidence Bank/Retired Claims Log.md`.
-4. `Review/bank-issues.md`.
+4. `Review/bank-issues.md`, and `settings/preferences.json` (the user's format rules, voice choices, and saved fixes; don't raise a finding against a format rule they turned off, and do raise one when a draft breaks a habit they asked Claude to avoid).
 5. The application folder: `posting.md`, the selection file, and the document text. The gate's trace output is in your brief (the drafting session ran it); if it is missing, say so and stop.
 6. The brief's tier and the user's two persona answers.
 
