@@ -2016,7 +2016,7 @@ def migrate_needs_your_ok(today):
 
 
 REPAIRS_FILE = DATA_DIR / "repairs_done.json"
-EEO_REPAIR_KEY = "eeo_closed_rows_v4.1"
+EEO_REPAIR_NAME = "eeo_closed_rows_v4.1"
 
 
 def _repairs_done():
@@ -2036,7 +2036,7 @@ def repair_eeo_closed_rows(today, apply=True):
     Runs on the first full run after the update, then records itself in
     repairs_done.json and never runs again. apply=False only lists.
     Returns the list of (company, role) reopened (or that would be)."""
-    if not NOTION_TOKEN or _repairs_done().get(EEO_REPAIR_KEY):
+    if not NOTION_TOKEN or _repairs_done().get(EEO_REPAIR_NAME):
         return []
     url = f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query"
     flt = {"and": [{"property": "Status", "status": {"equals": "Closed"}},
@@ -2079,7 +2079,7 @@ def repair_eeo_closed_rows(today, apply=True):
             update_status(page["id"], "Interested")
     if apply and not run_stats.DRY_RUN:
         done = _repairs_done()
-        done[EEO_REPAIR_KEY] = {"date": today.isoformat(), "reopened": len(reopened)}
+        done[EEO_REPAIR_NAME] = {"date": today.isoformat(), "reopened": len(reopened)}
         REPAIRS_FILE.write_text(json.dumps(done, indent=2))
     return reopened
 

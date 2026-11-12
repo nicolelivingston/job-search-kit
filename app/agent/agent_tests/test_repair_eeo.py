@@ -76,7 +76,7 @@ class RepairEEO(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             self.run_repair(tmp)
             done = json.loads((Path(tmp) / "repairs_done.json").read_text())
-            self.assertIn(agent.EEO_REPAIR_KEY, done)
+            self.assertIn(agent.EEO_REPAIR_NAME, done)
             out, patched, reopened = self.run_repair(tmp)
         self.assertEqual((out, patched, reopened), ([], [], []))
 
