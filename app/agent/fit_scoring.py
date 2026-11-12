@@ -114,13 +114,27 @@ Version notes
         pass off. (4) The uncapped score is kept (score_uncapped, and
         "uncapped NN" in the breakdown) so capped rows can still be ranked
         and a near miss can alert (job_search_agent).
+  v4.1  Posting boilerplate is never a requirement, and equal-opportunity
+        text never trips a rule. (1) Required-item coverage skips
+        disclaimers, hiring-scam notices, equal-opportunity and
+        accommodation text, pay and benefits lines, time off, physical
+        demands, application-process lines, and company-values lines; the
+        required block also stops at more section endings (Additional
+        information, Physical demands, Time off, Who we are, Our mission or
+        culture, Date of posting). Benefits text after the requirements was
+        being quoted as requirements the user couldn't meet and capping good
+        fits. (2) A hard rule or an excluded-industry word that only appears
+        inside an equal-opportunity statement ("race, religion, ... military
+        or veteran status") no longer counts. Excluding an industry such as
+        defense was closing nearly every US posting on arrival, because the
+        statement names veterans and military service.
 """
 
 import html
 import re
 from datetime import date, datetime, timedelta
 
-RUBRIC_VERSION = "v4.0"
+RUBRIC_VERSION = "v4.1"
 
 # Verdicts (v3.3). The agent writes AGENT_VERDICTS on every row;
 # HUMAN_VERDICTS are the user's alone and are never overwritten.
@@ -223,7 +237,11 @@ REQ_END_RE = re.compile(
     r"About (?i:us|the|our)|Why (?i:join|you'll love|you’ll love|work|us)|Our (?i:benefits|process|team|values|hiring)|"
     r"Responsibilities|What (?i:you'll do|you’ll do|you will do)|In (?i:this role)|Not (?i:a fit)|"
     r"Interview (?i:process)|Hiring (?i:process)|Application (?i:process)|What (?i:to expect)|How (?i:we work)|The (?i:team)|"
-    r"Equal (?i:opportunity|employment)|We (?i:are an equal)|How (?i:to apply)|Location)\b"
+    r"Equal (?i:opportunity|employment)|We (?i:are an equal)|How (?i:to apply)|Location|"
+    # v4.1: more section endings (benefits, time off, physical demands, culture)
+    r"Additional (?i:information|details)|Physical (?i:demands|requirements)|Work (?i:environment|schedule)|"
+    r"(?:Paid )?Time (?i:off)|Vacation|Holidays|Who (?i:we are)|Our (?i:mission|culture|story|commitment)|"
+    r"Life (?i:at)|Date (?i:of posting)|Diversity|Inclusion)\b"
     r"|#LI|(?:\b[A-Z]{3,}\b[ ,]+){2,}[A-Z]{3,}\b")   # an all-caps heading (WHAT TO EXPECT IN THE INTERVIEW PROCESS)
 REQ_BLOCK_MAX = 3000
 
@@ -275,6 +293,55 @@ INDUSTRY_EXCEPTION_RE = _S("fit_scoring.INDUSTRY_EXCEPTION_RE", rx=_rx)
 # Hard-rule codes (HARD_RULES) whose match the exception words above turn into
 # a "your call" instead of a Poor fit.
 INDUSTRY_RULE_CODES = set(_S("fit_scoring.INDUSTRY_RULE_CODES", default=["industry"]))
+
+# v4.1: an equal-opportunity statement lists protected classes ("race, color,
+# religion, ... military or veteran status"). A rule word that only appears
+# there (military, religion, political, government) says nothing about the
+# job, so matches inside such a sentence are ignored. A sentence counts as
+# equal-opportunity text when it names at least EEO_MIN_MARKERS of these.
+EEO_MARKER_RX = re.compile(
+    r"\b(?:race|colou?r|religio\w*|creed|sex|gender identity|gender expression|sexual orientation|"
+    r"national origin|ancestry|age|disabilit\w*|veterans?|military (?:service|status)|marital status|"
+    r"pregnancy|genetic information|citizenship status|protected (?:class\w*|status|characteristic\w*|by)|"
+    r"without regard|equal (?:employment )?opportunit\w*|uniformed services|political (?:affiliation|activities))\b", re.I)
+EEO_MIN_MARKERS = 3
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?;•])\s+|\n+")
+
+
+def _eeo_spans(body):
+    """(start, end) spans of the sentences in body that are equal-opportunity text."""
+    spans, pos = [], 0
+    for part in _SENTENCE_SPLIT.split(body or ""):
+        start = (body or "").find(part, pos)
+        if start < 0:
+            continue
+        pos = start + len(part)
+        if len({m.group(0).lower() for m in EEO_MARKER_RX.finditer(part)}) >= EEO_MIN_MARKERS:
+            spans.append((start, pos))
+    return spans
+
+
+def search_outside_eeo(rx, body, spans=None):
+    """The first match of rx in body that isn't inside equal-opportunity text, or None."""
+    if not rx or not body:
+        return None
+    spans = _eeo_spans(body) if spans is None else spans
+    for m in rx.finditer(body):
+        if not any(a <= m.start() < b for a, b in spans):
+            return m
+    return None
+
+
+def strip_eeo(text):
+    """text with its equal-opportunity sentences removed (for keyword checks)."""
+    spans = _eeo_spans(text)
+    if not spans:
+        return text or ""
+    out, last = [], 0
+    for a, b in spans:
+        out.append(text[last:a]); last = b
+    out.append(text[last:])
+    return " ".join(out)
 
 PAY_HARD_FLOOR = _S("fit_scoring.PAY_HARD_FLOOR")
 PAY_TARGET = _S("fit_scoring.PAY_TARGET")
@@ -348,7 +415,8 @@ HYBRID_WORDS = _rx("hybrid", "in-office", "in office", "office days", "return to
 POSTING_REMOTE_RE = _S("fit_scoring.POSTING_REMOTE_RE", rx=_rx)
 
 
-def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, company_name=""):
+def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, company_name="",
+                eeo_aware=True):
     """Returns (verdict, reasons). verdict is 'skip', 'ask', or None (clean).
     reasons is a list of short strings, each quoting the posting where useful.
     remote_hint: the caller already knows the posting is remote (location
@@ -369,10 +437,13 @@ def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, c
     if m:
         worst("ask"); reasons.append(f"Title needs your call (dev tooling / head-of): '{m.group(0)}'")
 
+    # v4.1: rule words inside equal-opportunity text don't count. eeo_aware=False
+    # reproduces the old reading, used once by the agent's repair pass.
+    eeo = _eeo_spans(body) if eeo_aware else []
     for code, rx, action, label in HARD_RULES:
         if WORK_MODE != "remote" and code in ("remote-hybrid", "remote-catch"):
             continue   # office rules for hybrid and onsite users run in office_check below
-        m = rx.search(body)
+        m = search_outside_eeo(rx, body, eeo)
         if not m:
             continue
         if code in INDUSTRY_RULE_CODES and INDUSTRY_EXCEPTION_RE.search(body):
@@ -403,7 +474,8 @@ def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, c
         worst(action)
         reasons.append(f"{label}: \"{_snippet(body, m, 60)}\"")
 
-    gm = EXCLUDED_COMPANIES.search(company_name or "") or EXCLUDED_INDUSTRY_RE.search(f"{t} {body}")
+    gm = (EXCLUDED_COMPANIES.search(company_name or "") or EXCLUDED_INDUSTRY_RE.search(t)
+          or search_outside_eeo(EXCLUDED_INDUSTRY_RE, body, eeo))
     if gm:
         worst("skip"); reasons.append(f"{EXCLUDED_INDUSTRY_LABEL}: '{gm.group(0)}' (hard no)")
 
@@ -656,6 +728,25 @@ VOUCH_GENERIC_RX = _rx(*VOUCH_GENERIC_WORDS) if VOUCH_GENERIC_WORDS else None
 REQUIRED_COVERAGE = _S("fit_scoring.REQUIRED_COVERAGE", default=True)   # the v4.0 item-by-item pass; off = no coverage caps
 
 COVERAGE_MIN_WORDS = 6
+# v4.1: posting boilerplate that can sit inside or after the required block.
+# None of it is a requirement, so it never counts as an unvouched item.
+BOILERPLATE_ITEM_RX = re.compile(
+    r"\b(?:job description is not (?:designed|intended)|not (?:designed|intended) to (?:cover|be) (?:or contain )?a comprehensive|"
+    r"duties,? responsibilities,? and activities may change|hiring scams?|recruiting scams?|recruitment scams?|"
+    r"beware of scams|equal (?:employment )?opportunit\w*|without regard to|protected by (?:applicable )?law|"
+    r"reasonable accommodations?|request (?:a|an) accommodation|individuals? with (?:a )?disabilit\w*|"
+    r"applicable (?:federal|state|local) laws?|pay transparency|salary range|base salary range|"
+    r"compensation (?:range|practices)|incentive plans?|e-verify|candidate privacy|privacy notice|"
+    r"opens in a new tab|"
+    r"vacation|paid (?:holidays?|sick leave|time off|parental leave)|sick leave|accrual|accrued|prorated|"
+    r"401\(?k\)?|health(?:care)? (?:insurance|benefits)|benefits? (?:package|eligib\w*|include)|"
+    r"eligib\w+ for (?:equity|benefits|vacation)|peer equity|internal equity|cost of labor|placed into the range|"
+    r"repeating motions|stationary position|lift up to|dedicated,? (?:and )?secure work (?:area|space)|"
+    r"interviews will be conducted|date of posting|application window|"
+    r"applications? (?:are|will be) (?:assessed|reviewed|accepted)|apply (?:today|now|via)|"
+    r"if you think you(?:'|’)re the right fit|applying for jobs can feel|how your data is processed|"
+    r"careers (?:page|site)|we are proud to be|great place to work|best places to work|best workplaces|"
+    r"equal opportunities|expect this position to be filled)\b", re.I)
 COVERAGE_CAP_TWO = 2       # unvouched items that cap at MIN_CAP_ONE (Possible fit)
 COVERAGE_CAP_FOUR = 4      # unvouched items that cap at MIN_CAP_TWO (Poor fit)
 COVERAGE_CAP_SHARE = 0.5   # or this share of the substantive items, with at least 3 items
@@ -677,6 +768,8 @@ def required_items(text, req_spans=None):
             words = p.split()
             if len(words) < COVERAGE_MIN_WORDS or p.startswith("#") or "$" in p:
                 continue
+            if BOILERPLATE_ITEM_RX.search(p):
+                continue   # disclaimer, benefits, process, or values line (v4.1)
             if sum(c.isupper() for c in p) > len(p) * 0.5:
                 continue   # an all-caps heading
             if REQ_HEAD_RE.match(p):

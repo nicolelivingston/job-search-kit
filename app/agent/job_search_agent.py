@@ -262,7 +262,9 @@ def domain_rejection_reason(title, description):
     """None if the posting is clear of rejected technical domains, else a
     reason. Checked across title + description since these terms show up
     more in the body than the title."""
-    combined = f"{title} {description or ''}"
+    # Equal-opportunity sentences ("... military or veteran status ...") say
+    # nothing about the domain, so their words never reject a posting.
+    combined = f"{title} {fit_scoring.strip_eeo(description or '')}"
     for kw, pattern in DOMAIN_REJECT_PATTERNS:
         if pattern.search(combined):
             return f"domain keyword {kw!r} found in title/description"
@@ -287,7 +289,7 @@ def get_rejection_reason(job):
 
 
 def industry_flag(text):
-    t = text.lower()
+    t = fit_scoring.strip_eeo(text).lower()   # EEO wording is not the industry
     has_exclude = any(kw in t for kw in EXCLUDE_KEYWORDS)
     has_exception = any(kw in t for kw in INDUSTRY_EXCEPTION_KEYWORDS)
     if has_exclude and not has_exception:
@@ -381,7 +383,7 @@ def score_level(title):
 
 def score_domain(text):
     """0-3: industry fit, reusing the same exclude/exception keyword logic as industry_flag."""
-    t = text.lower()
+    t = fit_scoring.strip_eeo(text).lower()
     has_exclude = any(kw in t for kw in EXCLUDE_KEYWORDS)
     has_exception = any(kw in t for kw in INDUSTRY_EXCEPTION_KEYWORDS)
     if has_exclude and not has_exception:
@@ -2013,6 +2015,75 @@ def migrate_needs_your_ok(today):
         payload["start_cursor"] = data["next_cursor"]
 
 
+REPAIRS_FILE = DATA_DIR / "repairs_done.json"
+EEO_REPAIR_KEY = "eeo_closed_rows_v4.1"
+
+
+def _repairs_done():
+    try:
+        return json.loads(REPAIRS_FILE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def repair_eeo_closed_rows(today, apply=True):
+    """One-time repair (fit scoring v4.1). Before v4.1 a rule word inside the
+    equal-opportunity statement ("... military or veteran status ...") could
+    fail a hard rule, so the row was written Closed on arrival and never shown.
+    Finds Closed rows the user never applied to or decided on, re-reads each
+    stored posting both ways, and reopens a row (Status Interested, rescored)
+    only when the old reading failed a hard rule and the new one doesn't.
+    Runs on the first full run after the update, then records itself in
+    repairs_done.json and never runs again. apply=False only lists.
+    Returns the list of (company, role) reopened (or that would be)."""
+    if not NOTION_TOKEN or _repairs_done().get(EEO_REPAIR_KEY):
+        return []
+    url = f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query"
+    flt = {"and": [{"property": "Status", "status": {"equals": "Closed"}},
+                   {"property": "Date Applied", "date": {"is_empty": True}}]}
+    payload, rows = {"filter": flt, "page_size": 100}, []
+    while True:
+        try:
+            resp = request_with_retry(requests.post, url, headers=NOTION_HEADERS, json=payload, timeout=60)
+        except requests.RequestException as e:
+            logger.warning(f"EEO repair query failed: {e}")
+            return []
+        if resp.status_code >= 300:
+            logger.warning(f"EEO repair query failed: {resp.status_code}")
+            return []
+        data = resp.json()
+        rows.extend(data.get("results", []))
+        if not data.get("has_more"):
+            break
+        payload["start_cursor"] = data["next_cursor"]
+    reopened = []
+    for page in rows:
+        p = page.get("properties", {})
+        if _sel(p, "Overall Verdict") in fit_scoring.HUMAN_VERDICTS:
+            continue   # the user's own decision stands
+        snapshot = clean_posting_text(_rt(p, "Posting Snapshot"))
+        if not snapshot:
+            continue
+        title, company_name = _title(p, "Role"), _rt(p, "Company")
+        salary = p.get("Base Salary", {}).get("number")
+        remote = _sel(p, "Remote Status") == "Fully Remote"
+        old, _ = fit_scoring.hard_screen(title, snapshot, salary_min=salary, remote_hint=remote,
+                                         company_name=company_name, eeo_aware=False)
+        new, _ = fit_scoring.hard_screen(title, snapshot, salary_min=salary, remote_hint=remote,
+                                         company_name=company_name)
+        if old != "skip" or new == "skip":
+            continue
+        reopened.append((company_name, title))
+        if apply:
+            rescore_page(page, today)
+            update_status(page["id"], "Interested")
+    if apply and not run_stats.DRY_RUN:
+        done = _repairs_done()
+        done[EEO_REPAIR_KEY] = {"date": today.isoformat(), "reopened": len(reopened)}
+        REPAIRS_FILE.write_text(json.dumps(done, indent=2))
+    return reopened
+
+
 ROLE_TITLE_RE = _S("agent.ROLE_TITLE_RE")
 ROLE_BAD_RE = _S("agent.ROLE_BAD_RE")
 
@@ -2551,6 +2622,10 @@ def main(quick=False):
         rescored = rescore_tracker(today)                                # then score on them
     with STATS.stage("close_skips"):
         closed_skips = close_skipped_rows(today)                         # Skip rows leave the open views
+    with STATS.stage("repair_eeo"):
+        eeo_reopened = repair_eeo_closed_rows(today)                     # one-time (v4.1), then no-op
+    if eeo_reopened:
+        print(f"{len(eeo_reopened)} row(s) reopened: closed before v4.1 over equal-opportunity wording.")
     with STATS.stage("screen_candidates"):
         candidate_report = screen_candidates(today)
     STATS.extra.update({"rescored": rescored, "verified": verified, "dated": dated,
@@ -2578,6 +2653,9 @@ def main(quick=False):
         if waiting:
             extra.append("## Possible fit, still waiting on you\n" + "\n".join(
                 f"- {company}, {role} ({score}/10)" for company, role, score in waiting))
+    if eeo_reopened:
+        extra.append("## Reopened by the v4.1 repair\nClosed earlier because a rule word was only in the equal-opportunity statement:\n"
+                     + "\n".join(f"- {c}, {r}" for c, r in eeo_reopened))
     if candidate_report:
         extra.append(candidate_report)
     if run_stats.DRY_RUN:
