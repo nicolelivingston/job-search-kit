@@ -18,7 +18,7 @@ Sanctioned shape for a change-of-plans story: "A key supplier changed its terms 
 
 ## Two more rules
 
-4. **Never criticize another team, an internal decision, or a failed internal attempt.** Sanctioned shapes: "I built the measurement myself"; "an earlier attempt that hadn't resolved the underlying gaps". Describe a thing that wasn't built by what it didn't need to be, never by the platform it was wrongly built on. Never describe a team's composition, headcount, funding, or the roles it lacks; "a cross-functional delivery team" is the whole description.
+4. **Never criticize another team, an internal decision, or a failed internal attempt.** Sanctioned shapes: "I set up the tracking myself"; "a first version that left some cases uncovered". Describe a thing that wasn't built by what the work called for, never by what was wrong with an earlier choice. Never describe a team's makeup, headcount, funding, or missing roles; "a cross-functional team" says enough.
 5. **What stays in. Do not over-sanitize.** The test is non-obvious, not internal. Round scale figures the bank cleared, the shape of the problem, the decision the user made and its cost, plain-English technical facts (moving an old desktop tool to the web), the firsts the bank cleared, the tools they used. The failure to avoid is a resume that is perfectly safe and says nothing.
 
 ## Always excluded, every tier

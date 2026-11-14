@@ -27,17 +27,17 @@ class StaleCloseTests(unittest.TestCase):
         return closed
 
     def test_live_posting_with_query_string_stays_open(self):
-        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/6221619004"
-        fetched = "https://job-boards.greenhouse.io/ridgeline/jobs/6221619004?gh_jid=6221619004"
+        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/9100011004"
+        fetched = "https://job-boards.greenhouse.io/ridgeline/jobs/9100011004?gh_jid=9100011004"
         self.assertEqual(self.run_close(stored, fetched), [])
 
     def test_live_posting_with_trailing_slash_stays_open(self):
-        stored = "https://jobs.ashbyhq.com/claimwise/fbb9f162-d868-40a5-be78-c1a0303e80da"
-        fetched = "https://jobs.ashbyhq.com/claimwise/fbb9f162-d868-40a5-be78-c1a0303e80da/"
+        stored = "https://jobs.ashbyhq.com/claimwise/00000000-0000-4000-8000-000000000101"
+        fetched = "https://jobs.ashbyhq.com/claimwise/00000000-0000-4000-8000-000000000101/"
         self.assertEqual(self.run_close(stored, fetched), [])
 
     def test_gone_posting_still_closes_after_two_runs(self):
-        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/6207943004"
+        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/9100012004"
         self.assertEqual(self.run_close(stored, None, runs=2), ["page-1"])
 
 

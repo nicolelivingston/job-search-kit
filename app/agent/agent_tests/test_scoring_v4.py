@@ -56,7 +56,7 @@ class VerdictNames(unittest.TestCase):
         import run_stats
         run_stats.STATS = run_stats._Stats()
         for name in ("Applying", "Passed"):
-            run_stats.STATS.note("patch", "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41",
+            run_stats.STATS.note("patch", "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201",
                                  {"json": {"properties": {"Overall Verdict": {"select": {"name": name}}}}})
         self.assertEqual(len(run_stats.STATS.violations), 2)
 

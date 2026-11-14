@@ -10,11 +10,11 @@ service grounds); the email is the source.
 
 Each card in the plain-text body looks like:
 
-    Principal Product Manager, Platform and Shared Capabilities
+    Principal Product Manager, Platform Tools
     Maple Learning
     United States
 
-    3 school alumni
+    2 school alumni
     View job: https://www.linkedin.com/comm/jobs/view/4000000001/?trackingId=...
 
 Cards are separated by a dashed line. Title, company, and location are the
@@ -25,7 +25,7 @@ What a lead does and does not carry: title, company, location, LinkedIn job
 id and a clean URL, the alert date (approximate posting date). No salary, no
 description, so the agent scores it title-only (NO SNAPSHOT) and the row shows
 Remote Status Unverified until someone reads the posting. City-only locations
-("Charlotte, NC") fail the agent's location filter, so only "United States"
+("Columbus, OH") fail the agent's location filter, so only "United States"
 and remote-worded leads get in. If the same role is on a company board the
 agent already fetches, the board copy wins and the LinkedIn copy is dropped.
 

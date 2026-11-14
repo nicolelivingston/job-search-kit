@@ -1,13 +1,13 @@
-# Saves the 14-day traffic numbers (views, clones, referring sites, popular
-# pages) once a day so the history outlasts GitHub's 14-day window. Data goes
-# to a separate traffic-log branch, so main stays clean. Needs a TRAFFIC_TOKEN
+# Saves the daily view and clone counts once a day so the history outlasts
+# GitHub's 14-day window. Data goes to a separate traffic-log branch, so main
+# stays clean. Referring sites and popular pages are not saved. Needs a TRAFFIC_TOKEN
 # secret (fine-grained token, this repo only, Administration: Read-only).
 # Actions are pinned to commit SHAs.
 name: Traffic log
 
 on:
   schedule:
-    - cron: "17 11 * * *"   # daily, about 6am US Central
+    - cron: "17 11 * * *"   # once a day
   workflow_dispatch:         # lets you run it by hand from the Actions tab
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PY'
-          import csv, datetime, json, os, urllib.request
+          import csv, json, os, urllib.request
 
           repo, tok = os.environ["REPO"], os.environ["GH_TOKEN"]
 
@@ -70,23 +70,16 @@ jobs:
                   for d in sorted(rows):
                       w.writerow(rows[d])
 
-          # Referring sites and popular pages: 14-day totals, snapshot each day
-          today = datetime.date.today().isoformat()
-          for name, key in (("referrers", "referrer"), ("paths", "path")):
-              path = f"traffic/{name}.csv"
-              new = not os.path.exists(path)
-              with open(path, "a", newline="") as f:
-                  w = csv.writer(f)
-                  if new:
-                      w.writerow(["snapshot_date", key, "count", "uniques"])
-                  for it in get(f"popular/{name}"):
-                      w.writerow([today, it[key], it["count"], it["uniques"]])
+          # Counts only. Files from earlier versions of this job are removed.
+          for name in ("referrers", "paths"):
+              if os.path.exists(f"traffic/{name}.csv"):
+                  os.remove(f"traffic/{name}.csv")
           PY
 
       - name: Save to branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add traffic
+          git add -A traffic
           git diff --cached --quiet || git commit -m "Traffic snapshot $(date -u +%F)"
           git push origin traffic-log
