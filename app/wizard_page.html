@@ -511,6 +511,7 @@ function openApp(id) {
   openDrawer(`<div class="dhead"><div><h2>${esc(r.Role)}</h2><p class="muted" style="margin:0">${esc(r.Company)} · ${esc(workOf(r))} · ${esc(payOf(r))}</p></div>${xButton}</div>
    <div class="pills"><span>${fitPill(fit100(r))} <span class="muted" style="font-size:12px">Fit</span></span>${labelPill(r)}${statusPill(r.Status)}</div>
    ${why ? `<p style="margin:0 0 6px;font-size:13px;color:var(--text2)">${esc(why)}</p>` : ""}
+   ${r["Posting Health"] === "Unlisted" ? `<p style="margin:0 0 6px;font-size:13px;color:var(--text2)">This posting is off the company's public job list, but it still opens. It may close soon.</p>` : ""}
    <div class="two"><div><label for="st">Status</label><select id="st">${STATUS_ORDER.map(s => `<option ${r.Status===s?"selected":""}>${s}</option>`).join("")}</select></div>
     <div><label for="fu">Follow up on</label><input id="fu" type="date" value="${esc(String(r["Follow-up Date"]||"").slice(0,10))}"></div>
     <div><label for="ap">Date applied</label><input id="ap" type="date" value="${esc(String(r["Date Applied"]||"").slice(0,10))}"></div>

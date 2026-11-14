@@ -1,7 +1,9 @@
 """Built-in tracker (kit): main() runs end to end with "tracker": "local",
 writes rows to local files instead of Notion, never duplicates a posting,
 reads the rows back for rescoring, and closes a posting after it disappears
-from its board on two runs. Also unit-tests the filter engine. No network.
+from its board on two runs, unless the board still answers for that one
+posting (then the row stays open, marked Unlisted). Also unit-tests the
+filter engine. No network.
     python3 app/agent/agent_tests/test_local_tracker.py
 """
 import json
@@ -16,23 +18,33 @@ from pathlib import Path
 
 AGENT = Path(__file__).resolve().parent.parent
 KIT = AGENT.parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import person   # noqa: E402
 
 CHILD = textwrap.dedent(r'''
-    import io, json, sys
+    import io, json, re, sys
     from contextlib import ExitStack, redirect_stdout
     from unittest import mock
     sys.path.insert(0, sys.argv[1])
     import job_search_agent as jsa, invariants, local_tracker
     assert jsa.TRACKER_MODE == "local" and jsa.NOTION_TOKEN == "local-tracker"
     jobs = json.loads(sys.argv[2])
+    still_answers = set(json.loads(sys.argv[3]))   # job numbers the board still has, on or off its public list
     class R:
         status_code = 200; ok = True
-        def __init__(self, url): self.url = url; self.text = "<html>Senior Product Manager. Fully remote.</html>"; self.content = self.text.encode(); self.headers = {}
-        def json(self): return {}
+        def __init__(self, url): self.url = url; self.text = "<html>Fully remote.</html>"; self.content = self.text.encode(); self.headers = {}; self.body = {}
+        def json(self): return self.body
         def raise_for_status(self): pass
     def fake_get(url, **kw):
         assert "api.notion.com" not in url, "Notion call reached the network"
-        return R(url)
+        r = R(url)
+        one = re.search(r"boards-api\.greenhouse\.io/v1/boards/[^/]+/jobs/(\d+)$", url)
+        if one:   # the agent asking the board about one posting
+            if one.group(1) in still_answers:
+                r.body = {"id": int(one.group(1)), "title": "a posting"}
+            else:
+                r.status_code = 404
+        return r
     def fake_post(url, **kw):
         raise AssertionError("unexpected POST to " + url)
     patches = [mock.patch.object(jsa, "fetch_remotive", return_value=[]),
@@ -54,10 +66,9 @@ CHILD = textwrap.dedent(r'''
     print("RUN_OK")
 ''')
 
-JOB = {"id": "gh-acme-1", "title": "Senior Product Manager", "company": "Acme",
-       "url": "https://job-boards.greenhouse.io/acme/jobs/1234567890", "location": "Remote (US)",
-       "description": "Fully remote. Requirements: 5+ years product management. Base salary $170,000 to $200,000.",
-       "salary_text": "$170,000 - $200,000", "source": "Company Site", "published": "2026-10-28"}
+JOB = person.sample_job(id="gh-acme-1")   # a posting the test person these tests run as would want
+OTHER = dict(JOB, id="gh-acme-2", title=JOB["title"] + ", Billing",
+             url="https://job-boards.greenhouse.io/acme/jobs/2222222222")
 
 
 def _settings(tmp):
@@ -91,10 +102,10 @@ class LocalTrackerRun(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp)
 
-    def run_agent(self, jobs):
+    def run_agent(self, jobs, still_answers=()):
         env = dict(os.environ, KIT_SETTINGS_DIR=str(self.settings))
         env.pop("NOTION_TOKEN", None)
-        r = subprocess.run([sys.executable, "-c", CHILD, str(AGENT), json.dumps(jobs)],
+        r = subprocess.run([sys.executable, "-c", CHILD, str(AGENT), json.dumps(jobs), json.dumps(list(still_answers))],
                            capture_output=True, text=True, env=env, timeout=120)
         self.assertIn("RUN_OK", r.stdout, r.stdout[-2000:] + r.stderr[-3000:])
 
@@ -127,15 +138,35 @@ class LocalTrackerRun(unittest.TestCase):
         self.run_agent([JOB])
         self.assertEqual(len(self.apps()), 1)
         # posting gone from its board for two runs (the board itself was
-        # fetched, with a different posting on it): closed
-        other = dict(JOB, id="gh-acme-2", title="Senior Product Manager, Billing",
-                     url="https://job-boards.greenhouse.io/acme/jobs/2222222222")
-        self.run_agent([other])
-        self.run_agent([other])
-        first = [p for p in self.apps() if self.plain(p, "Job Posting") == JOB["url"]][0]
-        self.assertEqual(self.plain(first, "Status"), "Closed")
+        # fetched, with a different posting on it, and no longer has this one): closed
+        self.run_agent([OTHER])
+        self.run_agent([OTHER])
+        self.assertEqual(self.plain(self.first(), "Status"), "Closed")
         # state files went to the data folder, not the app folder
         self.assertTrue((self.data / "seen_jobs.json").exists())
+
+    def first(self):
+        return [p for p in self.apps() if self.plain(p, "Job Posting") == JOB["url"]][0]
+
+    def test_a_posting_off_the_public_list_stays_open(self):
+        number = JOB["url"].rsplit("/", 1)[1]
+        self.run_agent([JOB])
+        # off the board's public list for two runs, but the board still answers for it
+        self.run_agent([OTHER], still_answers=[number])
+        self.run_agent([OTHER], still_answers=[number])
+        row = self.first()
+        self.assertEqual(self.plain(row, "Status"), "Interested")
+        self.assertEqual(self.plain(row, "Posting Health"), "Unlisted")
+        self.assertTrue(self.plain(row, "Last Verified"))
+        # listed again: the mark clears
+        self.run_agent([JOB, OTHER], still_answers=[number])
+        row = self.first()
+        self.assertEqual(self.plain(row, "Status"), "Interested")
+        self.assertIsNone(self.plain(row, "Posting Health"))
+        # then really gone: closed after two runs
+        self.run_agent([OTHER])
+        self.run_agent([OTHER])
+        self.assertEqual(self.plain(self.first(), "Status"), "Closed")
 
 
 class FilterEngine(unittest.TestCase):

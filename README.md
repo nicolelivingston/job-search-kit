@@ -47,7 +47,7 @@ Privacy: see [Privacy](#privacy). This program sends no information to other net
 ## Running the tests
     cd app/agent && KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python3 agent_tests/run_all.py
 
-Needs `python-docx`, `python-dotenv`, `requests`, and LibreOffice for page counts. The same tests run on GitHub before every release.
+Needs `python-docx`, `python-dotenv`, `requests`, and LibreOffice for page counts. Swap in `dana-retail-analytics` or `marcus-customer-success` to run as the other two test people. GitHub runs the tests as all three on every pull request and before every release.
 
 ## Releases
 Pushing a tag like `v1.2.3` runs the tests, builds the Windows installer on GitHub's Windows machines, scans it (Microsoft Defender, plus VirusTotal when a key is set; a Microsoft flag or three other engines stop the release), attaches it with the packaged plugin, SHA-256 checksums, and a software bill of materials (CycloneDX) to the GitHub release once the maintainer approves it, and the installed app picks it up on its next daily check after 72 hours. Every push also runs a code scan (bandit), a check of every pinned package against known vulnerabilities (pip-audit), and a secret scan of the whole history (gitleaks). If something goes wrong, `INCIDENTS.md` is the plan.

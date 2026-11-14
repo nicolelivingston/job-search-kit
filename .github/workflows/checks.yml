@@ -1,8 +1,9 @@
-# Runs on every push and pull request: the full test suite against a
-# synthetic test person, which includes the leak test (no personal data in
-# the public kit). On pull requests it also builds the Windows installer and
-# installs it on a fresh Windows machine, so a broken install shows up as a
-# red X on the pull request, before anything reaches main or a release.
+# Runs on every push and pull request: the full test suite as each of the
+# three made-up test people in examples/, which includes the leak test (no
+# personal data in the public kit). On pull requests it also builds the
+# Windows installer and installs it on a fresh Windows machine, so a broken
+# install shows up as a red X on the pull request, before anything reaches
+# main or a release.
 # Actions are pinned to commit SHAs.
 name: Checks
 
@@ -25,10 +26,14 @@ jobs:
         with: { python-version: "3.12" }
       - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-ci.txt'
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils
-      - name: Tests and leak check
+      - name: Tests and leak check, as each made-up test person
         run: |
           cd app/agent
-          KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python agent_tests/run_all.py
+          for person in priya-healthtech-pm dana-retail-analytics marcus-customer-success; do
+            echo "::group::Tests as $person"
+            KIT_SETTINGS_DIR=../../examples/$person/settings python agent_tests/run_all.py
+            echo "::endgroup::"
+          done
 
   security:
     # Code scan (bandit), known vulnerabilities in every pinned package

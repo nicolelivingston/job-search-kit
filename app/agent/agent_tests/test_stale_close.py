@@ -19,6 +19,7 @@ class StaleCloseTests(unittest.TestCase):
                 mock.patch.object(agent, "STALE_MISS_FILE", Path(tmp) / "misses.json"), \
                 mock.patch.object(agent, "fetch_interested_rows",
                                   return_value=[("page-1", stored_url)]), \
+                mock.patch.object(agent, "ask_the_board", return_value=None), \
                 mock.patch.object(agent, "update_status",
                                   side_effect=lambda pid, s: closed.append(pid) or True):
             for _ in range(runs):

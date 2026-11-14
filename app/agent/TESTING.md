@@ -7,6 +7,11 @@ Bugs are cheaper to catch with a script than by poking around. Four pieces:
    `cd app/agent && KIT_SETTINGS_DIR=../../dev-settings python3 agent_tests/run_all.py`
    Rule: a bug found by hand isn't fixed until a test here would have caught
    it. Write the test from the real case, then fix the code.
+   The same files run as each made-up test person in `examples/`
+   (`KIT_SETTINGS_DIR=../../examples/<person>/settings`). A test that needs
+   a posting the person would want gets it from `agent_tests/person.py`; a
+   check that depends on one person's own answers (a remote-only search, an
+   on-call rule, product titles) says so and is skipped by name for the others.
 2. **Invariants**, `invariants.py`: rules every run must leave true, checked
    at the end of the full run. A new failure raises an alert; warnings go to
    `invariants_last.md` in the data folder.
@@ -33,7 +38,7 @@ install on a fresh machine) and a beta release. See `RELEASING.md`,
 - WARN: no Posted Date two days after the row was created
 - WARN: Applying under 7 with no override reason; Applying older than 14 days with no application
 - WARN: a row on a fetched board not verified in 7 or more days
-- a row stamped Last Verified today is in today's fetch
+- a row stamped Last Verified today is in today's fetch, unless it is marked Unlisted (off its board's public list, checked by asking the board about that one posting)
 - a row closed today isn't live in today's fetch
 - the agent never writes Applying or Passed
 - fetched postings under 60% of the 7-day median

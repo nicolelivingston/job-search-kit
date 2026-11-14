@@ -236,7 +236,7 @@ def tracker_rows():
         rows.append({"id": p["id"], **{k: _plain(pr.get(k)) for k in (
             "Role", "Company", "Job Posting", "Status", "Role Fit Score", "Research Tier", "Overall Verdict",
             "Label Reason", "Posted Date", "Base Salary", "Remote Status", "Notes", "Date Applied", "Outcome Type",
-            "Source", "Follow-up Date", "Next Step", "Resume Versions", "Opened")},
+            "Source", "Follow-up Date", "Next Step", "Resume Versions", "Opened", "Posting Health")},
             "created": p.get("created_time", "")[:10]})
         r = rows[-1]
         r["Job Posting"] = safe_url(r["Job Posting"])

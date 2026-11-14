@@ -162,11 +162,18 @@ class Wizard(unittest.TestCase):
         new["properties"]["Source"] = {"type": "select", "select": {"name": "Greenhouse"}}
         new["properties"]["Status"] = {"type": "status", "status": {"name": "Interested"}}
         new["properties"].pop("Opened", None)
+        new["properties"]["Posting Health"] = {"type": "select", "select": {"name": "Unlisted"}}
         apps["pages"]["daily-check-row"] = new
         f.write_text(json.dumps(apps))
         _, t = self.call("/api/tracker")
         row = next(r for r in t["rows"] if r["id"] == "daily-check-row")
         self.assertTrue(row["is_new"]); self.assertGreaterEqual(t["new_count"], 1)
+        # a posting off its board's public list that still opens says so in its panel
+        self.assertEqual(row["Posting Health"], "Unlisted")
+        self.assertFalse(next(r for r in t["rows"] if r["id"] != "daily-check-row")["Posting Health"])
+        page = (APP / "wizard_page.html").read_text(encoding="utf-8")
+        self.assertIn('r["Posting Health"] === "Unlisted"', page)
+        self.assertIn("off the company's public job list", page)
         self.assertTrue(self.call("/api/tracker/update", {"id": "daily-check-row", "opened": True})[1]["ok"])
         _, t = self.call("/api/tracker")
         self.assertFalse(next(r for r in t["rows"] if r["id"] == "daily-check-row")["is_new"])

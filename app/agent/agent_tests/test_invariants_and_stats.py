@@ -95,12 +95,15 @@ class RunStatsTests(unittest.TestCase):
             self.assertEqual(len(run_stats.read_recent()), 1)
 
 
-def _page(pid, url="https://job-boards.greenhouse.io/acme/jobs/1234567890", verified=None, snapshot="", salary=5, posted="2026-10-01"):
+def _page(pid, url="https://job-boards.greenhouse.io/acme/jobs/1234567890", verified=None, snapshot="", salary=5, posted="2026-10-01",
+          health=None):
     props = {"Job Posting": {"url": url}, "Posting Snapshot": {"rich_text": [{"plain_text": snapshot}]},
              "Base Salary": {"number": salary}, "Posted Date": {"date": {"start": posted}},
              "Company": {"rich_text": [{"plain_text": "Acme"}]}, "Role": {"title": [{"plain_text": "Senior Product Manager"}]}}
     if verified:
         props["Last Verified"] = {"date": {"start": verified}}
+    if health:
+        props["Posting Health"] = {"select": {"name": health}}
     return {"id": pid, "properties": props}
 
 
@@ -125,6 +128,16 @@ class LastVerifiedPolicyTests(unittest.TestCase):
         patches = self.run_refresh(_page("p1", verified="2026-10-26"), job)
         self.assertEqual(len(patches), 1)
         self.assertEqual(patches[0]["Last Verified"]["date"]["start"], "2026-10-29")
+
+    def test_unlisted_mark_clears_when_the_posting_is_back_on_the_list(self):
+        # Nov 13, 2026: Unlisted means off the public list; found in the fetch again, the mark goes
+        job = {"url": "https://job-boards.greenhouse.io/acme/jobs/1234567890", "description": ""}
+        patches = self.run_refresh(_page("p1", verified="2026-10-28", health="Unlisted"), job)
+        self.assertEqual(len(patches), 1)
+        self.assertEqual(patches[0]["Posting Health"], {"select": None})
+        self.assertEqual(patches[0]["Last Verified"]["date"]["start"], "2026-10-29")
+        # any other mark is left alone
+        self.assertEqual(self.run_refresh(_page("p1", verified="2026-10-28", health="Suspected evergreen"), job), [])
 
     def test_never_verified_is_stamped(self):
         job = {"url": "https://job-boards.greenhouse.io/acme/jobs/1234567890", "description": ""}
@@ -214,6 +227,12 @@ class InvariantTests(unittest.TestCase):
         covered = {jsa._board_scope("https://job-boards.greenhouse.io/acme/jobs/1234567890")}
         f = invariants.check_rows([R(verified=TODAY.isoformat())], [], [], TODAY, set(), covered)
         self.assertTrue(any("absent from today's fetch" in t for t in self.fails(f)))
+
+    def test_unlisted_row_verified_today_is_expected_to_be_absent(self):
+        # Nov 13, 2026: an Unlisted row is verified by asking its board about that one posting
+        covered = {jsa._board_scope("https://job-boards.greenhouse.io/acme/jobs/1234567890")}
+        f = invariants.check_rows([R(verified=TODAY.isoformat(), health="Unlisted")], [], [], TODAY, set(), covered)
+        self.assertEqual(self.fails(f), [])
 
     def test_stale_on_fetched_board_warns(self):
         covered = {jsa._board_scope("https://job-boards.greenhouse.io/acme/jobs/1234567890")}
