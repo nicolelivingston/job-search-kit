@@ -21,6 +21,13 @@ A job-search system you install on your own computer. It watches the job boards 
 - **Daily backups.** After each daily run, your tracker, contacts, evidence bank, and settings are zipped into the data folder's `backups/`, 14 days kept, on your computer only. `app/backup.py restore` puts them back (and backs up first, so a restore can be undone).
 - **Updates that never touch your data.** The app checks GitHub releases daily and installs signed updates quietly, 72 hours after each release comes out (the maintainer can pause every update with an `UPDATES_PAUSED` file in this repository); your folder, settings, bank, applications, and tracker are never changed by an update.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/skills-dark.png">
+  <img alt="The Skills page ranking nine skills by share of matching postings, each marked Skilled, Partial gap, or Gap, with the change since last week and the closest evidence" src="docs/images/skills-light.png">
+</picture>
+
+*The skills watch for a made-up retail analyst. Machine learning is a gap that moved up a place this week.*
+
 ## Layout
 - `app/` the code: `agent/` (job board agent, fit scoring, built-in tracker, tests), `resume/` (bank index, resume builder, pre-send gate, reviewer prompts), `kit_settings.py` (loads a user's settings), `first_run.py` (chooses and creates the user's folder), `wizard.py` and `wizard_page.html` (setup wizard and tracker page), `schedule.py` (daily runs), `tracker_cli.py` (tracker access for the plugin), `error_report.py` (scrubbed error reports), `updater.py` (auto-update), `platform_support.py` (notifications, LibreOffice lookup)
 - `plugin/` the Claude plugin: `start-here`, `application-materials`, `evidence-interview`, `approval-session`, `kit-basics`, and two reviewer agents
