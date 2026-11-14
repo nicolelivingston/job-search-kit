@@ -48,7 +48,7 @@ class EqualOpportunityText(unittest.TestCase):
 
     def test_one_marker_word_is_not_enough_to_hide_a_sentence(self):
         # "veterans" alone doesn't make a sentence equal-opportunity text.
-        text = "Fully remote. Brightspan builds benefits tools for veterans and the military."
+        text = "Fully remote. Ridgeline builds benefits tools for veterans and the military."
         verdict, reasons = fs.hard_screen("Senior Product Manager", text, salary_min=180000, remote_hint=True)
         self.assertEqual(verdict, "skip", reasons)
 
@@ -58,9 +58,9 @@ class EqualOpportunityText(unittest.TestCase):
         self.assertEqual(verdict, "skip", reasons)
 
     def test_strip_eeo_removes_only_the_statement(self):
-        text = "Fully remote role at Answerly. " + EEO + " Apply by Friday."
+        text = "Fully remote role at Northwind. " + EEO + " Apply by Friday."
         out = fs.strip_eeo(text)
-        self.assertIn("Answerly", out)
+        self.assertIn("Northwind", out)
         self.assertIn("Apply by Friday", out)
         self.assertNotIn("veteran", out)
 
@@ -68,8 +68,8 @@ class EqualOpportunityText(unittest.TestCase):
         saved = jsa.EXCLUDE_KEYWORDS
         try:
             jsa.EXCLUDE_KEYWORDS = ["military"]
-            self.assertEqual(jsa.industry_flag("Remote. Meridian builds scheduling software. " + EEO), "Clear")
-            self.assertEqual(jsa.industry_flag("Remote. Meridian sells to military bases."), "Excluded")
+            self.assertEqual(jsa.industry_flag("Remote. Harborline builds scheduling software. " + EEO), "Clear")
+            self.assertEqual(jsa.industry_flag("Remote. Harborline sells to military bases."), "Excluded")
         finally:
             jsa.EXCLUDE_KEYWORDS = saved
 

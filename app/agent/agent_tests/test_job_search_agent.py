@@ -400,9 +400,9 @@ import lead_resolver as lr  # noqa: E402
 
 check("company names normalise across legal suffixes",
       lr.norm_company("Harborline, Inc") == lr.norm_company("Harborline") == "harborline"
-      and lr.norm_company("Moody's Corporation") == "moodys")
+      and lr.norm_company("Baker's Corporation") == "bakers")
 check("same title with different punctuation is exact",
-      lr.title_match("Principal Product Manager, Agentic AI", "Principal Product Manager - Agentic AI") == 1.0)
+      lr.title_match("Principal Product Manager, Billing Tools", "Principal Product Manager - Billing Tools") == 1.0)
 check("level words must agree (Senior PM is not PM)",
       lr.title_match("Product Manager", "Senior Product Manager") == 0.0
       and lr.title_match("Staff Product Manager, Search", "Principal Product Manager, Search") == 0.0)
@@ -413,7 +413,7 @@ check("one title inside the other counts as a near match",
 check("Sr. and Senior are the same word",
       lr.title_match("Sr. Product Manager, Payments", "Senior Product Manager, Payments") == 1.0)
 check("slug guesses from a multi-word name",
-      lr.company_slug_guesses("Chainlink Labs")[:3] == ["chainlinklabs", "chainlink-labs", "chainlink"])
+      lr.company_slug_guesses("Quillco Labs")[:3] == ["quillcolabs", "quillco-labs", "quillco"])
 check("board URL -> platform and slug", lr.board_from_url("https://jobs.ashbyhq.com/harborline") == ("ashby", "harborline"))
 
 _board = [
@@ -437,7 +437,7 @@ check("role already in today's fetch -> in_run, board copy returned",
 _r = lr.resolve("Nowhere Labs", "Principal Product Manager", index=_index, today=date(2026, 10, 21), cache={}, probe=False)
 check("unknown company, no probe -> no_board with a Notes stamp",
       _r["status"] == "no_board" and _r["note"].startswith(lr.BOARD_STAMP))
-check("'Chainlink Labs' and 'Chainlink' are the same company", lr.norm_company("Chainlink Labs") == lr.norm_company("Chainlink"))
+check("'Quillco Labs' and 'Quillco' are the same company", lr.norm_company("Quillco Labs") == lr.norm_company("Quillco"))
 _cache = {lr.norm_company("Nowhere Labs"): {"platform": None, "slug": None, "checked": "2026-10-15"}}
 _r = lr.resolve("Nowhere Labs", "Principal Product Manager", today=date(2026, 10, 21), cache=_cache, probe=True)
 check("a recent cached miss is not re-probed", _r["status"] == "no_board" and "checked 2026-10-15" in _r["note"])
@@ -554,12 +554,12 @@ else:
 
 # --- v2.4 (2026-10-21): stale snapshots and access vocabulary --------------
 check("v2.4: RUBRIC_VERSION moved past v2.3", fs.RUBRIC_VERSION not in ("v2.0", "v2.1", "v2.2", "v2.3"))
-escaped_intro = "&lt;p&gt;Linus Yale patented the modern pin tumbler lock in 1861, and hotels took to it immediately.&lt;/p&gt;"
-check("stale snapshot: HTML-escaped capture is replaced", jsa.snapshot_is_stale(escaped_intro, "Linus Yale ... What we need from you: 7+ years"))
+escaped_intro = "&lt;p&gt;The first clinic we worked with ran its whole schedule on paper, and so did the next ten.&lt;/p&gt;"
+check("stale snapshot: HTML-escaped capture is replaced", jsa.snapshot_is_stale(escaped_intro, "The first clinic ... What you bring: 7+ years"))
 check("stale snapshot: intro-only capture is replaced by a longer fresh one",
-      jsa.snapshot_is_stale("Linus Yale patented the modern pin tumbler lock in 1861.", "x" * 400))
+      jsa.snapshot_is_stale("The first clinic we worked with ran its whole schedule on paper.", "x" * 400))
 check("stale snapshot: a good capture is kept",
-      not jsa.snapshot_is_stale("Intro [...] What we need from you: 7+ years of product management", "Intro [...] What we need from you: 7+ years of product management experience"))
+      not jsa.snapshot_is_stale("Intro [...] What you bring: 7+ years of product management", "Intro [...] What you bring: 7+ years of product management experience"))
 check("stale snapshot: empty stored text is filled", jsa.snapshot_is_stale("", "fresh text"))
 check("stale snapshot: nothing fresh means keep", not jsa.snapshot_is_stale(escaped_intro, ""))
 check("rescore_page scores cleaned text", "clean_posting_text(_rt(p, \"Posting Snapshot\"))" in inspect.getsource(jsa.rescore_page))
@@ -575,7 +575,7 @@ check("9+ years PM still counts as a miss", any("9+ years" in m for m in nine["m
 # near-misses (one missing minimum, capped at 69) sat blank at the top of the list.
 near = fs.score_posting("Senior Product Manager, Clinic Operations",
     "Clinic scheduling and intake workflows for outpatient practices; discovery with front desk staff; "
-    "evidence-based prioritization; cross-functional leadership; launch readiness. "
+    "usage-based prioritization; clear writing; calm launches. "
     "Requirements: 9+ years of product management experience. Fully remote. Base $190,000. "
     "Benefits: medical, dental, 401(k).",  # v3.7: no benefits plus one flat figure is a staffing signal
     salary_min=190000, company={"remote_posture": "Structurally remote (no HQ)", "risk": "Low", "pto": "Strong", "health": "Strong", "domains": ["Wellness"]})
@@ -704,8 +704,8 @@ check("redundant gh_jid query is dropped when the id is in the path",
       _at.clean_posting_url("https://example.com/careers/123/?gh_jid=123", 123) == "https://example.com/careers/123/")
 check("a gh_jid-only URL keeps its query",
       _at.clean_posting_url("https://acme.com/careers?gh_jid=123", 123) == "https://acme.com/careers?gh_jid=123")
-bw = "RESPONSIBILITIES Use AI tools to accelerate spec writing, competitive analysis, data modeling, and rapid prototyping This is an all-remote team. WHAT YOU BRING 4+ years experience in product management"
-check("'data modeling' as an AI-tools task is not a missing minimum", not fs.missing_minimums(bw), fs.missing_minimums(bw))
+ai_task = "RESPONSIBILITIES Draft specs, compare vendors, and sketch prototypes faster with AI tools, including for data modeling. The whole team works remotely. WHAT YOU BRING 4+ years experience in product management"
+check("'data modeling' as an AI-tools task is not a missing minimum", not fs.missing_minimums(ai_task), fs.missing_minimums(ai_task))
 
 print("\n12. v3.2: unresearched companies score lower and get rescored")
 check("an unresearched company scores 5 of 20", fs.company_score({})[0] == 5)

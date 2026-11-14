@@ -28,7 +28,7 @@ def check(name, ok, detail=""):
         print("         %s" % detail)
 
 
-def job(id_, loc, title="Senior Product Manager, Consumer Payments", company="northwind",
+def job(id_, loc, title="Senior Product Manager, Clinic Billing", company="northwind",
         published="2026-10-08", url=None):
     return {"id": id_, "location": loc, "title": title, "company": company,
             "published": published,
@@ -49,8 +49,8 @@ note, flag, skip, _ = run([job("gh-northwind-9100003003", "Remote US"),
 check("US + Canada twin not flagged", not flag, note)
 
 print("2. Tracker-seeded ids don't count as posting IDs")
-h = {"northwind::senior product manager, consumer payments": {
-    "ids": {"tracker-3f74ad72": "2026-10-12"}, "locations": {}}}
+h = {"northwind::senior product manager, clinic billing": {
+    "ids": {"tracker-00000000": "2026-10-12"}, "locations": {}}}
 note, flag, _, _ = run([job("gh-northwind-9100003003", "Remote US"),
                         job("gh-northwind-9100005003", "Remote Canada")], h)
 check("the old false positive (3 IDs, 2 locations) now clears", not flag, note)
@@ -65,18 +65,18 @@ check("second ID, same location, flags", flag and "reposted" in (note or ""), no
 check("two IDs does not skip the write", not skip)
 
 print("4. Age uses original publish date")
-note, flag, _, _ = run([job("gh-northwind-7694938003", "Remote US",
-                            title="Staff Product Manager, Northwind Bank", published="2026-04-14")])
-check("185 days open flags", flag and "185 days" in (note or ""), note)
-note, flag, _, _ = run([job("gh-northwind-7780490003", "Remote US",
-                            title="Director, Product Management", published="2026-06-25")])
-check("113 days open gets an age note but no flag", (not flag) and "113 days" in (note or ""), note)
+note, flag, _, _ = run([job("gh-northwind-9100007003", "Remote US",
+                            title="Staff Product Manager, Billing", published="2026-04-02")])
+check("197 days open flags", flag and "197 days" in (note or ""), note)
+note, flag, _, _ = run([job("gh-northwind-9100008003", "Remote US",
+                            title="Group Product Lead", published="2026-06-11")])
+check("127 days open gets an age note but no flag", (not flag) and "127 days" in (note or ""), note)
 note, flag, _, _ = run([job("gh-x-1", "Remote US", title="PM", company="x", published="")])
 check("missing publish date: no note, no flag", note is None and not flag)
 
 print("5. City spray, but not country-remote labels")
-jobs = [job(f"lever-veeva-{i}", loc, title="Product Manager - RIM", company="veeva")
-        for i, loc in enumerate(["Boston, MA", "Radnor, PA", "Toronto", "Pleasanton, CA"])]
+jobs = [job(f"lever-harborline-{i}", loc, title="Product Manager - Scheduling", company="harborline")
+        for i, loc in enumerate(["Denver, CO", "Columbus, OH", "Toronto", "Portland, OR"])]
 note, flag, _, _ = run(jobs)
 check("4 cities flags", flag and "4 different locations" in (note or ""), note)
 jobs = [job(f"gh-y-{i}", loc, title="PM", company="y")
@@ -93,7 +93,7 @@ note, flag, _, _ = run([job("workday-exampleco-y", "Remote-USA", title="Principa
                             company="exampleco", published="", url=z[:-2] + "-1")])
 check("-1 suffix does not flag", not flag, note)
 for t in ("Product Manager (Senior/Staff/Principal)",
-          "Open Call for Founders / Founding Teams - Product Management and Engineering"):
+          "Open Call: Product and Engineering"):
     note, flag, _, _ = run([job("gh-z-9", "Remote US", title=t, company="z")])
     check(f"pipeline title flags: {t[:40]}", flag, note)
 note, flag, _, _ = run([job("gh-z-8", "Remote US", title="Senior PM, Data Pipeline", company="z")])

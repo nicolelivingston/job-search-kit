@@ -48,10 +48,10 @@ class RepairEEO(unittest.TestCase):
     ROWS = [
         row("p-eeo", "Ledgerly", "Senior Product Manager",
             "Fully remote. Ledgerly builds invoicing software for small businesses. " + EEO),
-        row("p-real", "Brightspan", "Senior Product Manager",
+        row("p-real", "Ridgeline", "Senior Product Manager",
             "Fully remote. You will own mission planning software for military customers. " + EEO),
-        row("p-mine", "Answerly", "Product Manager",
-            "Fully remote. Answerly builds help desk software. " + EEO, verdict="Passed"),
+        row("p-mine", "Northwind", "Product Manager",
+            "Fully remote. Northwind builds help desk software. " + EEO, verdict="Passed"),
     ]
 
     def run_repair(self, tmp, apply=True):

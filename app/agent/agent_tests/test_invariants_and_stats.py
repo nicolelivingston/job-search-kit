@@ -44,8 +44,8 @@ class RunStatsTests(unittest.TestCase):
     def test_counts_notion_calls_by_kind(self):
         get, post, patch = _fake("get"), _fake("post"), _fake("patch")
         ats_tools.request_with_retry(post, "https://api.notion.com/v1/databases/abc/query", json={})
-        ats_tools.request_with_retry(get, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41")
-        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41", json={"properties": {}})
+        ats_tools.request_with_retry(get, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201")
+        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201", json={"properties": {}})
         ats_tools.request_with_retry(post, "https://api.notion.com/v1/pages", json={"properties": {}})
         ats_tools.request_with_retry(get, "https://boards-api.greenhouse.io/v1/boards/x/jobs")
         c = run_stats.STATS.calls
@@ -60,11 +60,11 @@ class RunStatsTests(unittest.TestCase):
                 mock.patch.object(lt, "_DATA", None) if lt else contextlib.nullcontext(), \
                 mock.patch.object(run_stats, "DRY_RUN", True), \
                 mock.patch.object(run_stats, "DRY_RUN_FILE", Path(tmp) / "w.jsonl"):
-            r = ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41",
+            r = ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201",
                                              json={"properties": {"Status": {"status": {"name": "Closed"}}}})
             ats_tools.request_with_retry(post, "https://api.notion.com/v1/pages", json={"properties": {"Role": {}}})
             ats_tools.request_with_retry(post, "https://api.notion.com/v1/databases/abc/query", json={})   # a read: still sent
-            ats_tools.request_with_retry(get, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41")
+            ats_tools.request_with_retry(get, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201")
             self.assertEqual(r.status_code, 200)
             self.assertEqual(patch.calls, [])
             self.assertEqual(len(post.calls), 1)          # only the query went out
@@ -76,11 +76,11 @@ class RunStatsTests(unittest.TestCase):
 
     def test_pursue_write_is_a_violation(self):
         patch = _fake("patch")
-        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41",
+        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201",
                                      json={"properties": {"Overall Verdict": {"select": {"name": "Applying"}}}})
-        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41",
+        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201",
                                      json={"properties": {"Overall Verdict": {"select": {"name": "Possible fit"}}}})
-        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/0f0f0f0f-cb28-819a-adbc-ef9e08fc8d41",
+        ats_tools.request_with_retry(patch, "https://api.notion.com/v1/pages/00000000-0000-4000-8000-000000000201",
                                      json={"properties": {"Overall Verdict": {"select": {"name": "Passed"}}}})
         self.assertEqual(len(run_stats.STATS.violations), 2)
         self.assertIn("Applying", run_stats.STATS.violations[0])

@@ -49,8 +49,8 @@ WEB_STAMP = "Web lookup"              # the daily research step's stamp (second 
 
 # Suffixes that never help identify a company (dropped for both matching and slugs)...
 _LEGAL_RE = re.compile(r"[,.]?\s*\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|gmbh)\b\.?", re.I)
-# ...and descriptive tails that vary between a board and an alert ("Chainlink
-# Labs" vs "Chainlink"), dropped for matching only; slugs try both forms.
+# ...and descriptive tails that vary between a board and an alert ("Quillco
+# Labs" vs "Quillco"), dropped for matching only; slugs try both forms.
 _TAIL_RE = re.compile(r"\b(holdings|group|technologies|technology|labs)\b\.?", re.I)
 _STOP = {"the", "of", "and", "a", "an", "for", "to", "in", "at", "on", "with", "our", "team", "remote", "us", "usa"}
 _SYNONYM = {"sr": "senior", "jr": "junior", "mgr": "manager", "mgmt": "management", "assoc": "associate",
@@ -78,8 +78,8 @@ def _clean_company(name, drop_tails):
 
 
 def norm_company(name):
-    """'Harborline, Inc' -> 'harborline'; "Moody's Corporation" -> 'moodys';
-    'Chainlink Labs' -> 'chainlink'. A tail-less result falls back to the
+    """'Harborline, Inc' -> 'harborline'; "Baker's Corporation" -> 'bakers';
+    'Quillco Labs' -> 'quillco'. A tail-less result falls back to the
     full name so 'Labs' alone never becomes an empty key."""
     return _clean_company(name, True) or _clean_company(name, False)
 
@@ -136,8 +136,8 @@ def title_match(lead_title, board_title):
 
 
 def company_slug_guesses(name, website=None):
-    """Slugs worth probing for a company: 'Chainlink Labs' -> chainlinklabs,
-    chainlink-labs, chainlink. The website's domain is tried too when known."""
+    """Slugs worth probing for a company: 'Quillco Labs' -> quillcolabs,
+    quillco-labs, quillco. The website's domain is tried too when known."""
     guesses = []
     for form in (_clean_company(name, False), norm_company(name)):
         words = form.split()

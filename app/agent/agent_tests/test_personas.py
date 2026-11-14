@@ -205,6 +205,26 @@ class NoLeaks(unittest.TestCase):
                     hits.append((rel, m))
         self.assertEqual(hits, [])
 
+    def test_job_ids_are_made_up(self):
+        """Test data is made up end to end, IDs included. Long numbers that follow a
+        job URL or job key must be in the kit's made-up shapes (91..., one repeated
+        digit, a digit then zeros, or a counting run), and every UUID starts
+        00000000-0000-4000-8000- (the installer's own app ID aside)."""
+        import re
+        after = r"(?:jobs/|view/|gh_jid=|listing/|Postings=|\d,|(?:gh|lever|ashby|workday|linkedin)-[A-Za-z0-9_.]+-)"
+        ok_number = re.compile(r"91\d+|(\d)\1+|[1-9]0{5,}\d{1,2}|1234567890|0123456789")
+        uuid = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I)
+        hits = []
+        for rel, text in self._files():
+            for m in re.findall(after + r"(\d{7,})(?![0-9A-Za-z])", text):
+                if not ok_number.fullmatch(m):
+                    hits.append((rel, m))
+            if rel != "installer/kit.iss":
+                for m in uuid.findall(text):
+                    if not m.lower().startswith("00000000-0000-4000-8000-"):
+                        hits.append((rel, m))
+        self.assertEqual(hits, [])
+
     def test_examples_and_templates_carry_nothing_personal(self):
         markers_file = KIT / "dev-settings" / "leak-markers.json"
         if not markers_file.exists():
