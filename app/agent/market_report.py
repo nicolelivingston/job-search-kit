@@ -145,7 +145,7 @@ def load_skills():
 
 
 def pattern_key(pattern):
-    return hashlib.sha1(pattern.encode()).hexdigest()[:8]
+    return hashlib.sha256(pattern.encode()).hexdigest()[:8]
 
 
 def lexicon_keys(skills):
@@ -412,7 +412,7 @@ def main():
     tmp = latest_file().with_suffix(".tmp")
     tmp.write_text(json.dumps(latest, indent=1), encoding="utf-8")
     os.replace(tmp, latest_file())
-    print(report)
+    print(f"Saved Market_Snapshot_{today}.md and the Skills page ranking ({len(rows)} skills).", file=sys.stderr)
 
     if os.environ.get("AGENT_DRY_RUN", "") == "1" or "--dry-run" in sys.argv[1:]:
         return
