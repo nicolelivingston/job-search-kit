@@ -398,7 +398,7 @@ def apply_match(lead, job, keep_source=True):
 
 
 if __name__ == "__main__":
-    # python3 lead_resolver.py "Harborline, Inc" "Principal Product Manager"
+    # python3 lead_resolver.py "Harborline, Inc" "Senior Data Analyst"
     if len(sys.argv) < 3:
         print(__doc__)
         sys.exit(1)

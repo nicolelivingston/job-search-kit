@@ -698,8 +698,8 @@ REQ_LEAD_MAX_START = 40  # the lead must open the item; a later "experience usin
 #                      (keyword-groups.json; when it isn't set, every phrase in
 #                      WORK_FAMILIES, plus the titles and domain keywords from
 #                      setup, stands in for it)
-#   VOUCH_FIELD_WORDS  the everyday nouns of the user's field ("product",
-#                      "customers" for a product manager; "campaign" for a
+#   VOUCH_FIELD_WORDS  the everyday nouns of the user's field ("accounts",
+#                      "renewals" for customer success; "campaign" for a
 #                      marketer), which vouch for a lead phrase but never
 #                      count on their own anywhere else in the item
 #   VOUCH_GENERIC      the soft-skill and logistics asks every posting makes;

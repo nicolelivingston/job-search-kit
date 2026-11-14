@@ -10,7 +10,7 @@ service grounds); the email is the source.
 
 Each card in the plain-text body looks like:
 
-    Principal Product Manager, Platform Tools
+    Senior Data Analyst, Platform Tools
     Maple Learning
     United States
 

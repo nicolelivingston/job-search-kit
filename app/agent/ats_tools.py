@@ -458,7 +458,7 @@ def _slug_display(slug):
 
 # Portfolio companies (one shared ATS board covering several distinct
 # brands) whose job titles embed the real brand as a " | Brand" suffix, e.g.
-# "Director of Product Management | Example Brand". Splitting on these matters:
+# "Director of Customer Success | Example Brand". Splitting on these matters:
 # brands under one parent can have different remote postures and team
 # cultures, so lumping them under the parent's name would apply one brand's
 # risk profile to another. Settings: {"Parent name": ["Brand", ...]}.
