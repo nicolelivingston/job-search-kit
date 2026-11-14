@@ -120,12 +120,13 @@ dl.defs{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px 18px;mar
 </head>
 <body>
 <header><p class="brand">Job Search Kit<span class="beta">Beta</span></p>
-<nav aria-label="Main"><a href="#tracker" id="n-tracker">Applications</a><a href="#companies" id="n-companies">Companies</a><a href="#profile" id="n-profile">My search profile</a><a href="#contacts" id="n-contacts">Contacts</a><a href="#privacy" id="n-privacy">Privacy</a><a href="#help" id="n-help">Help</a><a href="#suggest" id="n-suggest">Suggest an idea</a>
+<nav aria-label="Main"><a href="#tracker" id="n-tracker">Applications</a><a href="#companies" id="n-companies">Companies</a><a href="#skills" id="n-skills">Skills</a><a href="#profile" id="n-profile">My search profile</a><a href="#contacts" id="n-contacts">Contacts</a><a href="#privacy" id="n-privacy">Privacy</a><a href="#help" id="n-help">Help</a><a href="#suggest" id="n-suggest">Suggest an idea</a>
 <label for="theme" class="sr">Color theme</label><select id="theme"><option value="auto">Theme: match system</option><option value="light">Theme: light</option><option value="dark">Theme: dark</option></select></nav></header>
 <main>
 <section id="setup" hidden></section>
 <section id="tracker" hidden></section>
 <section id="companies" hidden></section>
+<section id="skills" hidden></section>
 <section id="profile" hidden></section>
 <section id="contacts" hidden></section>
 <section id="advanced" hidden></section>
@@ -164,16 +165,16 @@ window.addEventListener("storage", e => { if (e.key === "kit-theme") { try { app
 
 const STEPS = [
  {key:"work", title:"The work you want", sub:"What you're looking for, in your own words.", fields:[
-  ["titles","Job titles you're looking for","One per line, e.g. senior product manager","list"],
-  ["field","What do you call your field?","e.g. product management, customer success, analytics","text"],
+  ["titles","Job titles you're looking for","One per line, e.g. senior data analyst","list"],
+  ["field","What do you call your field?","e.g. customer success, analytics, nursing","text"],
   ["never_titles","Words in a title that make it never right","One per line, e.g. intern, sales","list"],
   ["skip_title_words","Other title words to skip","e.g. vice president, intern","list"],
   ["ask_title_words","Title words that should ask you first","e.g. platform, head of","list"],
-  ["level_at","Titles at your level","e.g. senior product manager, lead product manager","list"],
+  ["level_at","Titles at your level","e.g. senior data analyst, lead data analyst","list"],
   ["level_below","Titles a step below that are still OK","","list"],
   ["level_junior","Titles that are too junior","e.g. associate, intern","list"],
   ["years","Years of experience in your field you can claim","","number"],
-  ["years_words","How postings name that experience","e.g. product management, product manager","list"]]},
+  ["years_words","How postings name that experience","e.g. data analysis, data analyst","list"]]},
  {key:"where", title:"Where and how you work", sub:"Remote, hybrid, or onsite, and your limits.", custom:"where"},
  {key:"rules", title:"Rules that rule a job out", sub:"Things that make a job a no for you.", custom:"rules"},
  {key:"pay", title:"Pay", sub:"Base pay, before bonus or equity.", fields:[
@@ -182,7 +183,7 @@ const STEPS = [
   ["rank_no_pay_lower","Rank postings with no posted pay lower","","bool"]]},
  {key:"fields", title:"Fields and companies", sub:"What interests you, and where you'd love to work.", custom:"fields"},
  {key:"resume", title:"Your resume", sub:"Format and abbreviations. Words to never use are in step 8, How Claude works for you. Your stories come from the Start Here interviews with Claude.", fields:[
-  ["name","Your name as it appears on your resume","","text"],["headline","Your resume headline","e.g. Senior Product Manager | Patient Scheduling","text"],
+  ["name","Your name as it appears on your resume","","text"],["headline","Your resume headline","e.g. Senior Data Analyst | Retail Pricing","text"],
   ["font","Font","","text"],["body_pt","Body size (points)","","number"],["name_pt","Name size","","number"],["heading_pt","Heading size","","number"],
   ["margin_in","Margins (inches)","","number"],["line_spacing","Line spacing","","number"],
   ["abbreviations","Abbreviations to spell out","","list"],
@@ -787,6 +788,55 @@ async function renderContacts() {
   el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const cur = read(); cur.splice(Number(b.dataset.del),1); api("/api/contacts", cur).then(renderContacts); });
 }
 
+const SKILL_PILL = {"Skilled":"p-green","Partial gap":"p-yellow","Gap":"p-red"};
+let SKILLS_GAPS_ONLY = false;
+function chg(v, pts) { if (v === null || v === undefined) return '<span class="muted">new</span>'; const n = pts ? Math.round(v*100) : v;
+  return n > 0 ? `<span class="green">+${n}</span>` : n < 0 ? `<span class="red">${n}</span>` : "0"; }
+async function renderSkills() {
+  const v = await api("/api/skills"); const el = $("#skills"); const L = v.latest;
+  const rows = (L && L.rows) || []; const counted = new Set(rows.map(r=>r.name));
+  const waiting = v.skills.filter(s=>s.track && !counted.has(s.name));
+  const shown = rows.filter(r => !SKILLS_GAPS_ONLY || r.status !== "Skilled");
+  const pill = s => `<span class="pill ${SKILL_PILL[s]||"p-gray"}">${esc(s)}</span>`;
+  const head = L ? `Week of ${esc(L.date)}: ${L.matched} ${L.matched===1?"posting":"postings"} matched your search${L.previous ? `, changes since ${esc(L.previous)}` : ""}.`
+                 : `No ranking yet. The morning run builds it within a day of your first skills, then every ${v.refresh_days} days.`;
+  el.innerHTML = `<div class="card"><h2>Skills watch</h2>
+   <p class="sub">What the postings in your search keep asking for, most asked first, and where you stand on each. ${head}</p>
+   <p class="hint"><b>Skilled</b>: your evidence bank backs it with real examples. <b>Partial gap</b>: some examples, not the full ask. <b>Gap</b>: no example yet. A gap high on the list is where to collect more examples or build more experience.</p>
+   <div class="seg" role="group" aria-label="Which skills to show" style="width:max-content;margin:8px 0 12px"><button id="sk-all" class="${SKILLS_GAPS_ONLY?"":"on"}">All skills</button><button id="sk-gaps" class="${SKILLS_GAPS_ONLY?"on":""}">Gaps and partial gaps</button></div>
+   <div class="scroll"><table><thead><tr><th>Rank</th><th>Skill</th><th>Status</th><th>Share of postings</th><th>Change (points)</th><th>Rank change</th><th>In your ${L ? L.applications_total : 0} saved postings</th><th>Closest evidence</th></tr></thead><tbody>
+   ${shown.map(r=>`<tr><td>${r.rank}</td><td class="role">${esc(r.name)}</td><td>${pill(r.status)}</td><td>${Math.round(r.share*100)}% <span class="muted">(${r.postings})</span></td><td>${chg(r.share_change,true)}</td><td>${chg(r.rank_change,false)}</td><td>${r.applications ?? ""}</td><td>${esc(r.evidence)}</td></tr>`).join("") || `<tr><td colspan="8" class="muted">Nothing to show yet.</td></tr>`}
+   ${waiting.map(s=>`<tr><td class="muted">–</td><td class="role">${esc(s.name)}</td><td>${pill(s.status)}</td><td colspan="5" class="muted">Counted on the next morning run.</td></tr>`).join("")}
+   </tbody></table></div></div>
+   <div class="card"><h2>Your skills list</h2>
+   <p class="sub">${v.source === "evidence bank" ? "These start from your evidence bank's keyword groups. Change anything and save to make the list your own." : v.source === "none" ? "Add the skills your target roles ask for." : "Change a status when you gain an example: your bank backs it, or you've built the experience."}
+   Keywords are the words postings use for the skill, separated by commas. A posting counts when it uses any of them. A keyword that starts with ~ is an advanced pattern.</p>
+   <div class="scroll"><table><thead><tr><th>Skill</th><th>Keywords</th><th>Status</th><th>Closest evidence</th><th>In ranking</th><th></th></tr></thead><tbody>
+   ${v.skills.map((r,i)=>`<tr><td><input type="text" aria-label="Skill name" data-i="${i}" data-k="name" value="${esc(r.name)}"></td>
+     <td><input type="text" aria-label="Keywords for ${esc(r.name)}" data-i="${i}" data-k="keywords" value="${esc(r.keywords.join(", "))}"></td>
+     <td><select aria-label="Status for ${esc(r.name)}" data-i="${i}" data-k="status">${v.statuses.map(s=>`<option ${s===r.status?"selected":""}>${s}</option>`).join("")}</select></td>
+     <td><input type="text" aria-label="Closest evidence for ${esc(r.name)}" data-i="${i}" data-k="evidence" value="${esc(r.evidence)}"></td>
+     <td><input type="checkbox" aria-label="Show ${esc(r.name)} in the ranking" data-i="${i}" data-k="track" ${r.track?"checked":""}></td>
+     <td><button data-del="${i}">Remove</button></td></tr>`).join("")}</tbody></table></div>
+   <p><button id="adds">Add a skill</button> <button class="primary" id="saves">Save</button> <span id="smsg" class="ok" role="status"></span></p></div>`;
+  const read = () => v.skills.map((r,i)=>{ const g = k => el.querySelector(`[data-i="${i}"][data-k="${k}"]`);
+    return {name: g("name")?.value || "", keywords: (g("keywords")?.value || "").split(",").map(x=>x.trim()).filter(Boolean),
+            status: g("status")?.value || "Gap", evidence: g("evidence")?.value || "", track: !!g("track")?.checked}; });
+  const save = async (list, msg) => { const r = await api("/api/skills", {skills: list}); const m = $("#smsg");
+    if (r.ok) { if (msg) { await renderSkills(); $("#smsg").textContent = msg; } } else { m.className = "err"; m.textContent = r.error; } return r.ok; };
+  $("#sk-all").onclick = () => { SKILLS_GAPS_ONLY = false; renderSkills(); };
+  $("#sk-gaps").onclick = () => { SKILLS_GAPS_ONLY = true; renderSkills(); };
+  $("#adds").onclick = () => { v.skills = read(); v.skills.push({name:"",keywords:[],status:"Gap",evidence:"",track:true}); const keep = v; renderSkillsList(keep); };
+  $("#saves").onclick = () => save(read(), "Saved. The ranking updates on the next morning run.");
+  el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const cur = read(); cur.splice(Number(b.dataset.del),1); save(cur, "Removed."); });
+  function renderSkillsList(keep) { const tb = el.querySelectorAll("table")[1].querySelector("tbody"); const i = keep.skills.length - 1;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input type="text" aria-label="Skill name" data-i="${i}" data-k="name" value=""></td><td><input type="text" aria-label="Keywords" data-i="${i}" data-k="keywords" value=""></td>
+      <td><select aria-label="Status" data-i="${i}" data-k="status">${keep.statuses.map(s=>`<option ${s==="Gap"?"selected":""}>${s}</option>`).join("")}</select></td>
+      <td><input type="text" aria-label="Closest evidence" data-i="${i}" data-k="evidence" value=""></td><td><input type="checkbox" aria-label="Show in the ranking" data-i="${i}" data-k="track" checked></td><td></td>`;
+    tb.appendChild(tr); tr.querySelector("input").focus(); }
+}
+
 const ADV = {"agent.FRESH_DAYS":"Days a posting counts as fresh","agent.FRESH_ALERT_DAYS":"How new a top posting must be to alert you (days)",
  "agent.EVERGREEN_AGE_DAYS":"Days open before a posting is flagged as likely evergreen","agent.AGE_NOTE_DAYS":"Days open before a posting gets an age note","agent.REPOST_WINDOW_DAYS":"How far back to catch reposts (days)",
  "agent.GHOST_FLAG_IDS":"Reposts under new IDs before a posting is flagged","agent.GHOST_FLAG_LOCATIONS":"Locations for one role before it's flagged","agent.GHOST_SKIP_IDS":"Reposts before it's skipped"};
@@ -855,7 +905,7 @@ async function route() {
   let page = (location.hash || "#tracker").slice(1);
   const anchor = page === "suggest" ? "suggest" : "";
   if (anchor) page = "help";
-  const PAGES = ["setup","tracker","companies","profile","contacts","advanced","privacy","help"];
+  const PAGES = ["setup","tracker","companies","skills","profile","contacts","advanced","privacy","help"];
   if (!PAGES.includes(page)) page = "tracker";
   closeDrawer();
   ST = await api("/api/status");
@@ -864,13 +914,14 @@ async function route() {
   if (page !== "setup" && page !== "privacy" && page !== "help" && (ST.needs_folder || ST.needs_ack || !ST.configured)) page = "setup";
   PAGES.forEach(p => { $("#"+p).hidden = p !== page; const n = $("#n-"+p); if (n) n.classList.toggle("on", p === page && !anchor); });
   $("#n-suggest").classList.toggle("on", !!anchor);
-  $("main").classList.toggle("narrow", !["tracker","companies"].includes(page));
+  $("main").classList.toggle("narrow", !["tracker","companies","skills"].includes(page));
   if (page==="setup") { if (ST.needs_folder) { if (!privacyRead()) { renderPrivacy(route); return; } renderFolder(); return; }
     if (ST.needs_ack) { renderPrivacy(route); return; } if (!A) A = await api("/api/answers"); renderSetup(); }
   if (page==="privacy") renderPrivacy();
   if (page==="tracker") renderTracker();
   if (page==="companies") renderCompanies();
   if (page==="profile") renderProfile();
+  if (page==="skills") renderSkills();
   if (page==="contacts") renderContacts();
   if (page==="advanced") renderAdvanced();
   if (page==="help") { renderHelp(); if (anchor) $("#suggest").scrollIntoView(); else window.scrollTo(0,0); }

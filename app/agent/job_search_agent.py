@@ -83,10 +83,13 @@ PHONE_GATEWAY_EMAIL = os.environ.get("PHONE_GATEWAY_EMAIL", "")  # e.g. 55555512
 SEEN_JOBS_FILE = DATA_DIR / "seen_jobs.json"
 STALE_MISS_FILE = DATA_DIR / "stale_posting_misses.json"
 
-# Only these phrases count as a PM-level title -- matched as whole-word
-# phrases (see _phrase_pattern) so "Productivity"/"Production" etc. can't
-# match on "product" the way naive substring matching would.
+# Only these phrases count as a title on the user's list -- matched as
+# whole-word phrases (see _phrase_pattern) so a longer word that starts the
+# same way can't match the way naive substring matching would.
 TITLE_KEYWORDS = _S("agent.TITLE_KEYWORDS")
+# Remotive search words. Empty (the default) reads every Remotive posting and
+# lets the title filter keep the ones on the user's list.
+REMOTIVE_SEARCH = _S("agent.REMOTIVE_SEARCH", default="")
 
 # Titles containing any of these are rejected outright, even if they also
 # contain one of the TITLE_KEYWORDS phrases above (e.g. "Head of Product
@@ -104,7 +107,7 @@ US_LOCATION_KEYWORDS = _S("agent.US_LOCATION_KEYWORDS")
 NON_US_REGION_KEYWORDS = _S("agent.NON_US_REGION_KEYWORDS")
 
 # Reject if the title or description prominently features these -- signals
-# the role is really an infra/security/observability role wearing a PM title.
+# the role is really a different kind of role wearing a title on the list.
 DOMAIN_REJECT_KEYWORDS = _S("agent.DOMAIN_REJECT_KEYWORDS")
 
 # Keywords that auto-exclude a posting, UNLESS one of the user's exception
@@ -136,7 +139,7 @@ def fetch_remotive():
         resp = request_with_retry(
             requests.get,
             "https://remotive.com/api/remote-jobs",
-            params={"search": "product manager"},
+            params={"search": REMOTIVE_SEARCH} if REMOTIVE_SEARCH else None,
             timeout=60,
         )
         resp.raise_for_status()
@@ -250,7 +253,7 @@ def location_rejection_reason(location):
 
 
 def role_type_rejection_reason(title):
-    """None if the title is an acceptable PM-level role, else a reason."""
+    """None if the title is an acceptable role on the user's list, else a reason."""
     for kw, pattern in ROLE_REJECT_PATTERNS:
         if pattern.search(title):
             return f"title {title!r} contains rejected role keyword {kw!r}"
@@ -2233,7 +2236,7 @@ def screen_candidates(today):
     lines = ["## Candidate company screen (zero-token ATS probe)"]
     remaining = {}
     for name, spec in candidates.items():
-        rec = {"ats": None, "slug": None, "total": 0, "pm": [], "sample": [], "screened": today.isoformat()}
+        rec = {"ats": None, "slug": None, "total": 0, "matches": [], "sample": [], "screened": today.isoformat()}
         for platform in ("greenhouse", "ashby", "lever"):
             for slug in spec.get("slugs", []):
                 try:
@@ -2246,7 +2249,7 @@ def screen_candidates(today):
                     for j in jobs:
                         t = j.get("title", "")
                         if ROLE_TITLE_RE.search(t) and not ROLE_BAD_RE.search(t):
-                            rec["pm"].append({"title": t, "location": j.get("location", ""),
+                            rec["matches"].append({"title": t, "location": j.get("location", ""),
                                               "url": j.get("url", ""), "published": j.get("published", "")})
                     break
             if rec["ats"]:
@@ -2259,7 +2262,7 @@ def screen_candidates(today):
                          "ashby": f"https://jobs.ashbyhq.com/{rec['slug']}",
                          "lever": f"https://jobs.lever.co/{rec['slug']}"}[rec["ats"]]
                 ats_text = (f"{rec['ats']} / {rec['slug']} (unverified probe {today.isoformat()}: "
-                            f"{rec['total']} postings, {len(rec['pm'])} PM; sample: "
+                            f"{rec['total']} postings, {len(rec['matches'])} matching your titles; sample: "
                             + "; ".join(rec["sample"][:3]) + ")")
                 props = {"ATS": {"rich_text": [{"text": {"content": ats_text[:1900]}}]},
                          "Job Board URL": {"url": board},
@@ -2271,9 +2274,9 @@ def screen_candidates(today):
             if not patch_page(page_id, props):
                 remaining[name] = spec  # retry next run
         if rec["ats"]:
-            pm_lines = "".join(f"\n    - {j['title']} ({j['location']}) {j['url']}" for j in rec["pm"][:6])
+            match_lines = "".join(f"\n    - {j['title']} ({j['location']}) {j['url']}" for j in rec["matches"][:6])
             lines.append(f"- **{name}**: {rec['ats']} / {rec['slug']}, {rec['total']} postings, "
-                         f"{len(rec['pm'])} PM-titled. Sample: {'; '.join(rec['sample'][:3])}{pm_lines}")
+                         f"{len(rec['matches'])} matching your titles. Sample: {'; '.join(rec['sample'][:3])}{match_lines}")
         else:
             lines.append(f"- **{name}**: no board found on greenhouse/ashby/lever (slugs tried: "
                          f"{', '.join(spec.get('slugs', []))}). Manual check.")
@@ -2625,7 +2628,7 @@ def main(quick=False):
     already_tracked = 0
     seen_company_title = set()
     for job in all_jobs:
-        # History sees every PM-titled posting, including ones the location
+        # History sees every posting with a title on the list, including ones the location
         # filter rejects: the city-sprayed variants of a remote role are
         # exactly the evergreen signal we're counting.
         key = None
@@ -2727,7 +2730,7 @@ def main(quick=False):
     #   * open rows get Posted Date backfilled and Last Verified stamped when
     #     today's fetch still shows the posting,
     #   * candidate companies from candidates.json get their ATS probed so
-    #     only the ones with live PM postings ever cost research tokens.
+    #     only the ones with live postings for the user's titles ever cost research tokens.
     with STATS.stage("migrate_verdict_names"):
         renamed = migrate_verdict_names(today)                            # v3.6 one-time carry-over
         if renamed:
@@ -2833,23 +2836,31 @@ def write_tracker_snapshot():
 
 
 def maybe_refresh_market_snapshot(today):
-    """Regenerate the market snapshot when the newest one is over 28 days old
-    (or missing), so the user always has a current read on their market worth
-    without remembering to run market_report.py."""
-    here = DATA_DIR   # the user's data folder, never the install folder
-    snapshots = sorted(here.glob("Market_Snapshot_*.md"))
+    """Regenerate the market snapshot and the Skills page ranking when the
+    newest snapshot is market_report.REFRESH_DAYS old (7 by default) or
+    missing, or the morning after the user changes their skills list, so the
+    Skills page builds a weekly trend."""
+    snapshots = sorted(DATA_DIR.glob("Market_Snapshot_*.md"))   # the user's data folder
     if snapshots:
         stamp = snapshots[-1].stem.replace("Market_Snapshot_", "")
-        if _within_days(stamp, today, 28):
+        try:
+            import market_report
+            fresh = _within_days(stamp, today, max(1, market_report.REFRESH_DAYS) - 1)
+            changed = market_report.skills_changed()
+        except Exception as e:   # noqa: BLE001  (a bad skills list never stops the daily run)
+            logger.warning(f"Could not read the skills list: {e}")
+            fresh, changed = _within_days(stamp, today, 6), False
+        if fresh and not changed:
             return
-    print("Market snapshot is stale or missing; regenerating...")
+    print("Market snapshot is due; refreshing...")
     try:
         result = subprocess.run(
-            [sys.executable, str(here / "market_report.py")],
-            capture_output=True, text=True, timeout=900)
+            [sys.executable, str(Path(__file__).resolve().parent / "market_report.py")],   # beside this script
+            capture_output=True, text=True, timeout=900,
+            env={**os.environ, **({"AGENT_DRY_RUN": "1"} if run_stats.DRY_RUN else {})})
         if result.returncode == 0:
-            notify("Job agent", "Monthly market snapshot refreshed. "
-                   "See Market_Snapshot files in Job Search.")
+            notify("Job agent", "Weekly skills watch refreshed. "
+                   "See the Skills page.")
         else:
             logger.warning(f"market_report.py failed: {result.stderr[-400:]}")
     except (subprocess.SubprocessError, OSError) as e:

@@ -821,8 +821,8 @@ def run_gate(path: Path, index):
         for a in ABBREVIATIONS:
             ab = a.strip()
             if re.search(rf"(?<![A-Za-z]){re.escape(ab)}s?(?![a-z])", line):
-                if ab == "PM" and "(PM)" in line:
-                    continue
+                if f"({ab})" in line:
+                    continue   # the spelled-out name with its abbreviation in parentheses
                 flags.append(f"[2 abbreviation] line {i}: '{ab}' (spell out on paper) -> {line[:140]}")
         if FLAG_EM_DASH and "—" in line:
             flags.append(f"[11 em-dash] line {i}: em dash -> {line[:140]}")

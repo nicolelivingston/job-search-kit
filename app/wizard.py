@@ -20,6 +20,7 @@ a public link can't bounce to a private one.
 import argparse
 import ipaddress
 import json
+import re
 import secrets
 import socket
 import sys
@@ -408,6 +409,72 @@ def contacts_put(rows):
     return {"ok": True}
 
 
+# ---------------------------------------------------------------- skills
+# The Skills page: what the postings in the user's search keep asking for,
+# ranked, with the user's own status on each skill (Skilled, Partial gap,
+# Gap). The ranking is written weekly by agent/market_report.py into the data
+# folder; the skills list itself lives in criteria.json, market_report.SKILLS.
+MAX_SKILLS = 100
+
+
+def skills_get():
+    import market_report as mr
+    kit_settings._cache.clear()
+    skills, source = mr.load_skills()
+    rows = []
+    for sk in skills:
+        kws = sk["keywords"] or ["~" + sk["pattern"]]   # an older pattern-only entry shows as one raw expression
+        rows.append({"name": sk["name"], "keywords": kws, "status": sk["status"],
+                     "evidence": sk["evidence"], "track": sk["track"]})
+    try:
+        latest = json.loads(mr.latest_file().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        latest = None
+    return {"source": source, "skills": rows, "latest": latest, "statuses": list(mr.STATUSES),
+            "refresh_days": mr.REFRESH_DAYS}
+
+
+def skills_save(body):
+    """Save the user's skills list. Names must be unique, each skill needs at
+    least one keyword, and a keyword starting with ~ must be a valid regular
+    expression. Nothing is saved unless every row passes."""
+    import market_report as mr
+    if not (settings_dir() / "paths.json").exists():
+        return {"ok": False, "error": "Finish setup first."}
+    items = body.get("skills") if isinstance(body, dict) else body
+    if not isinstance(items, list) or len(items) > MAX_SKILLS:
+        return {"ok": False, "error": f"Send a list of up to {MAX_SKILLS} skills."}
+    out, seen = [], set()
+    for i, it in enumerate(items, 1):
+        name = str((it or {}).get("name") or "").strip()[:80]
+        kws = it.get("keywords") or []
+        if isinstance(kws, str):
+            kws = kws.split(",")
+        kws = [str(k).strip()[:120] for k in kws if str(k).strip()][:40]
+        if not name and not kws:
+            continue   # an empty new row
+        if not name:
+            return {"ok": False, "error": f"Row {i} needs a skill name."}
+        if name.lower() in seen:
+            return {"ok": False, "error": f"'{name}' is listed twice."}
+        if not kws:
+            return {"ok": False, "error": f"'{name}' needs at least one keyword."}
+        try:
+            status = mr.normalize_status(it.get("status") or "Gap")
+            re.compile(mr.phrases_pattern(kws), re.I)
+        except (ValueError, re.error) as e:
+            return {"ok": False, "error": f"'{name}': {e}"}
+        seen.add(name.lower())
+        out.append({"name": name, "keywords": kws, "status": status,
+                    "evidence": str(it.get("evidence") or "").strip()[:500], "track": it.get("track", True) is not False})
+    f = settings_dir() / "criteria.json"
+    c = json.loads(f.read_text(encoding="utf-8"))
+    c.setdefault("market_report", {})["SKILLS"] = out
+    f.write_text(json.dumps(c, indent=2, ensure_ascii=False), encoding="utf-8")
+    kit_settings._cache.clear()
+    return {"ok": True, "count": len(out)}
+
+
 # ---------------------------------------------------------------- companies
 # The Companies table. Rows live in the built-in tracker's companies file (the
 # daily check makes a stub row for each new company). Research fields are typed
@@ -779,6 +846,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, tracker_rows())
             if path == "/api/contacts":
                 return self._send(200, contacts_get())
+            if path == "/api/skills":
+                return self._send(200, skills_get())
             if path == "/api/companies":
                 return self._send(200, companies_rows())
             if path == "/api/ui":
@@ -852,6 +921,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, tracker_add(b))
             if path == "/api/contacts":
                 return self._send(200, contacts_put(b))
+            if path == "/api/skills":
+                return self._send(200, skills_save(b))
             if path == "/api/companies/save":
                 return self._send(200, company_save(b))
             if path == "/api/companies/add":

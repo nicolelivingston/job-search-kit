@@ -2,14 +2,15 @@
 """Daily backups of the user's own records, kept on this computer.
 
 Once a day (after the full daily run) the kit zips the built-in tracker, the
-contacts list, the evidence bank folder, and the settings folder into
+contacts list, the skills watch history, the evidence bank folder, and the
+settings folder into
 `<data folder>/backups/backup-YYYY-MM-DD.zip` and keeps the last 14 days.
 Nothing leaves the computer. A restore first takes a fresh backup of what's
 there now, so a restore can itself be undone.
 
     python backup.py now            # back up today (replaces today's file)
     python backup.py list           # the backups on hand, newest first
-    python backup.py restore <file> [--only tracker|contacts|bank|settings ...]
+    python backup.py restore <file> [--only tracker|contacts|skills|bank|settings ...]
 """
 import argparse
 import json
@@ -37,14 +38,15 @@ def sources():
     """(name in the zip, folder or file on disk) for each part that is backed up."""
     data = kit_settings.data_dir()
     parts = {"tracker": data / "tracker", "contacts": data / "contacts.json",
-             "settings": kit_settings.settings_dir()}
+             "skills": data / "market_history.jsonl", "settings": kit_settings.settings_dir()}
     bank = kit_settings.bank_dir()
     if bank:
         parts["bank"] = bank
     return parts
 
 
-ARC = {"tracker": "tracker", "contacts": "contacts.json", "bank": "Evidence Bank", "settings": "settings"}
+ARC = {"tracker": "tracker", "contacts": "contacts.json", "skills": "market_history.jsonl",
+       "bank": "Evidence Bank", "settings": "settings"}
 
 
 def backup(today=None, tag=""):

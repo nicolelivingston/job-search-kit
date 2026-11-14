@@ -4,7 +4,7 @@ The kit reads public job boards on the user's own computer, a few times a day, f
 
 | Source | What is read | Terms the kit follows | Re-check |
 |---|---|---|---|
-| Remotive | public jobs API (`remotive.com/api/remote-jobs`) | Remotive asks that listings link back to the Remotive job page; the kit keeps the original link on every row and never republishes listings | their API page |
+| Remotive | public jobs API (`remotive.com/api/remote-jobs`), every listing unless `agent.REMOTIVE_SEARCH` names search words; your title filter keeps the ones on your list | Remotive asks that listings link back to the Remotive job page; the kit keeps the original link on every row and never republishes listings | their API page |
 | Remote OK | public jobs API (`remoteok.com/api`) | Remote OK asks for a link back to Remote OK and credit as the source on anything shown; rows carry the link and "Source: Remote OK"; no republishing | the terms at the top of the API response |
 | We Work Remotely | public RSS feeds by category | personal use of the public feed; links kept | their site terms |
 | Himalayas | public jobs API | personal use; links kept | their API page |
