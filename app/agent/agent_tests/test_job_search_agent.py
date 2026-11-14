@@ -35,9 +35,26 @@ import job_search_agent as jsa   # noqa: E402
 import fit_scoring as fs         # noqa: E402
 
 RESULTS = []
+SKIPPED = []
+
+# The same checks run as every example person (KIT_SETTINGS_DIR). Most hold
+# for anyone. A check that depends on one of a person's own answers (product
+# titles and years, a remote-only search, an on-call rule) runs where that
+# answer holds and is listed as skipped where it doesn't; each example
+# person's own postings are scored in test_personas.py.
+PM_PERSON = "product manager" in [t.lower() for t in jsa.TITLE_KEYWORDS]
+PM_WHY = "written for a product-manager search"
+REMOTE_ONLY = fs.WORK_MODE == "remote"
+REMOTE_WHY = "this person's search isn't remote-only"
+ON_CALL_RULE = any(rule[0] == "on-call" for rule in fs.HARD_RULES)
+ON_CALL_WHY = "this person has no on-call rule"
 
 
-def check(name, ok, detail=""):
+def check(name, ok, detail="", when=True, why=""):
+    if not when:
+        SKIPPED.append(name)
+        print("  [SKIP] %s (%s)" % (name, why))
+        return
     RESULTS.append((name, ok))
     print("  [%s] %s" % ("PASS" if ok else "FAIL", name))
     if detail and not ok:
@@ -76,7 +93,7 @@ APPLICATIONS_SCHEMA = {
     "Traceability": {"type": "relation"},
     "Base Salary": {"type": "number"},
     "Pay Basis": {"type": "select", "options": {"Base", "Total Compensation", "Not posted"}},
-    "Posting Health": {"type": "select", "options": {"Suspected evergreen", "Verified real"}},
+    "Posting Health": {"type": "select", "options": {"Suspected evergreen", "Verified real", "Unlisted"}},
     "Posting Snapshot": {"type": "rich_text"},
     "Domain Tier": {"type": "select", "options": {
         "Tier 1 - same domain", "Tier 2 - adjacent regulated", "Tier 3 - outside domain"}},
@@ -288,7 +305,8 @@ check("hybrid posting -> Skip, Tier C", hybrid["verdict"] == "Poor fit" and hybr
 check("Skip reason quotes the posting", any("hybrid" in x.lower() for x in hybrid["reasons"]))
 
 choice = fs.score_posting("Senior Product Manager", "You can work fully remote or hybrid from one of our hubs, your choice.")
-check("'remote or hybrid' asks instead of skipping", choice["ask"] and not choice["hard_skip"], choice["reasons"])
+check("'remote or hybrid' asks instead of skipping", choice["ask"] and not choice["hard_skip"], choice["reasons"],
+      when=REMOTE_ONLY, why=REMOTE_WHY)
 
 
 mgr = fs.score_posting("Director of Product", "You will manage a team of product managers and own their performance reviews.")
@@ -296,14 +314,17 @@ check("people-manager language -> Skip", mgr["verdict"] == "Poor fit", mgr["reas
 
 
 oncall = fs.score_posting("Senior Product Manager", "Participates in an on-call rotation for production incidents.")
-check("on-call -> Skip and Heavy schedule", oncall["verdict"] == "Poor fit" and oncall["schedule"] == "Heavy / on-call")
+check("on-call -> Skip and Heavy schedule", oncall["verdict"] == "Poor fit" and oncall["schedule"] == "Heavy / on-call",
+      when=ON_CALL_RULE, why=ON_CALL_WHY)
 benefit = fs.score_posting("Senior Product Manager", "Benefits: private medical, 24/7 GP access, and a wellness stipend. Requirements: 8 years of product management.")
 check("'24/7' in a benefits line is not on-call duty", not benefit["hard_skip"] and not any("24/7" in r for r in benefit["reasons"]), str(benefit["reasons"]))
 duty = fs.score_posting("Senior Product Manager", "You will be available 24/7 for incident escalation during launches.")
-check("'24/7' with duty wording still Skips", duty["verdict"] == "Poor fit" and any("24/7" in r for r in duty["reasons"]))
+check("'24/7' with duty wording still Skips", duty["verdict"] == "Poor fit" and any("24/7" in r for r in duty["reasons"]),
+      when=ON_CALL_RULE, why=ON_CALL_WHY)
 
 devtool = fs.score_posting("Senior Product Manager, Developer Platform", "Build SDKs and APIs for developers.", salary_min=180000)
-check("dev tooling title -> Ask me first, not Skip", devtool["ask"] and not devtool["hard_skip"], devtool["reasons"])
+check("dev tooling title -> Ask me first, not Skip", devtool["ask"] and not devtool["hard_skip"], devtool["reasons"],
+      when=PM_PERSON, why=PM_WHY)
 
 travel = fs.score_posting("Senior Product Manager", "Remote. Travel up to 40% to customer sites.")
 check("travel 40% -> Skip", travel["verdict"] == "Poor fit" and any("40%" in x for x in travel["reasons"]))
@@ -312,7 +333,8 @@ check("travel 10% -> Ask (flag with number)", travel2["ask"] and not travel2["ha
 
 # Countable minimums (2026-10-21): required items the user can't claim cap the score.
 yrs = fs.score_posting("Senior Staff Product Manager", "Required qualifications: 9+ years of Product Management experience. Remote US. $203,000.", salary_min=203000)
-check("9+ years PM required -> one missing minimum, Tier B cap (v3.8: 8+ is met)", yrs["score"] <= 69 and any("9+ years" in m for m in yrs["missing_minimums"]), yrs["breakdown"])
+check("9+ years PM required -> one missing minimum, Tier B cap (v3.8: 8+ is met)", yrs["score"] <= 69 and any("9+ years" in m for m in yrs["missing_minimums"]), yrs["breakdown"],
+      when=PM_PERSON, why=PM_WHY)
 ok5 = fs.score_posting("Senior Product Manager", "Required: 5+ years of product management experience. Remote US. $180,000.", salary_min=180000)
 check("5+ years PM is claimable", not ok5["missing_minimums"], ok5["breakdown"])
 pref = fs.score_posting("Senior Product Manager", "Remote US. Nice to have: familiarity with card products. $180,000.", salary_min=180000)
@@ -329,13 +351,15 @@ check("suspected evergreen costs 5 points", evergreen["score"] == r["score"] - 5
 hyco = fs.score_posting("Senior Product Manager", "Fully remote role.", salary_min=170000,
                         company={"remote_posture": "Hybrid / RTO risk"})
 check("hybrid company but the posting says remote -> Ask me first (v2.2 rule)",
-      hyco["ask"] and not hyco["hard_skip"] and any("posting says remote" in x for x in hyco["reasons"]))
+      hyco["ask"] and not hyco["hard_skip"] and any("posting says remote" in x for x in hyco["reasons"]),
+      when=REMOTE_ONLY, why=REMOTE_WHY)
 hyco2 = fs.score_posting("Senior Product Manager", "Requirements: 8 years of product management.", salary_min=170000,
                          company={"remote_posture": "Hybrid / RTO risk"})
 check("hybrid company and the posting says nothing about remote -> Skip", hyco2["verdict"] == "Poor fit")
 hyco3 = fs.score_posting("Senior Product Manager", "Requirements: 8 years of product management.", salary_min=170000,
                          company={"remote_posture": "Hybrid / RTO risk"}, remote_hint=True)
-check("hybrid company, remote known from the location field -> Ask me first", hyco3["ask"] and not hyco3["hard_skip"])
+check("hybrid company, remote known from the location field -> Ask me first", hyco3["ask"] and not hyco3["hard_skip"],
+      when=REMOTE_ONLY, why=REMOTE_WHY)
 hyco4 = fs.score_posting("Senior Product Manager", "Remote-first team. This role is hybrid, 3 days per week in Austin.",
                          salary_min=170000, company={"remote_posture": "Hybrid / RTO risk"})
 check("hybrid company and hybrid wording in the posting -> Skip even with remote words", hyco4["verdict"] == "Poor fit")
@@ -352,8 +376,8 @@ weak1ok = fs.score_posting("Senior Product Manager", "Fully remote role.", salar
                            company={"remote_posture": "Structurally remote (no HQ)", "pto": "Weak", "health": "Strong"})
 check("one Weak + base over the pay target -> not a hard Skip", not weak1ok["hard_skip"], weak1ok["reasons"])
 
-check("level: Principal = 15", fs.level_score("Principal Product Manager") == 15)
-check("level: PM II = 5", fs.level_score("Product Manager II, Payments") == 5)
+check("level: Principal = 15", fs.level_score("Principal Product Manager") == 15, when=PM_PERSON, why=PM_WHY)
+check("level: PM II = 5", fs.level_score("Product Manager II, Payments") == 5, when=PM_PERSON, why=PM_WHY)
 check("pay: none posted = 6 with note", fs.pay_score(None)[0] == 6)
 check("label_reason stamps the rubric version", fs.RUBRIC_VERSION in fs.label_reason(r, date(2026, 10, 21)))
 check("Workday 'Posted 30+ Days Ago' is approximate", fs.workday_posted_to_date("Posted 30+ Days Ago", date(2026, 10, 21)) == ("2026-09-21", True))
@@ -504,11 +528,15 @@ p = rescore_with([_page("Ask me first", "No screenable qualifications. Screened 
 check("machine-labelled row is re-decided (hybrid -> Skip)", p.get("Overall Verdict", {}).get("select", {}).get("name") == "Poor fit")
 p = rescore_with([_page(None, "", snapshot="")])[0]
 check("no snapshot: breakdown says so", p["Score Breakdown"]["rich_text"][0]["text"]["content"].startswith("NO SNAPSHOT"))
-p = rescore_with([_page(None, "", snapshot="", salary=100000)])[0]
+p = rescore_with([_page(None, "", snapshot="", salary=fs.PAY_HARD_FLOOR - 1000)])[0]
 check("no snapshot but base under floor still Skips", p.get("Overall Verdict", {}).get("select", {}).get("name") == "Poor fit")
 for pr in rescore_with([_page(None, "")]):
     probs = schema_problems(pr, APPLICATIONS_SCHEMA)
     check("rescore patch matches schema", not probs, "; ".join(probs))
+# Nov 13, 2026: the Unlisted mark (a posting off its board's public list that still answers)
+ok, sent = capture(jsa.mark_unlisted, "page-1", date(2026, 11, 13))
+probs = schema_problems(sent[0]["json"]["properties"], APPLICATIONS_SCHEMA) if sent else ["nothing sent"]
+check("Unlisted mark matches schema", ok is True and not probs, "; ".join(probs))
 
 # ---------------------------------------------------------------------------
 print("\n6. Optional: live schema check (read-only GET)")
@@ -569,7 +597,8 @@ check("refresh forces a rescore when it replaces a snapshot", "SNAPSHOT_REFRESHE
 print("\n7. v2.5: stamps protected, Ask on Tier A only, 48-hour rule, Skip rows closed, aggregators, years")
 check("RUBRIC_VERSION is v2.5 or later so the 8am run rescores", fs.RUBRIC_VERSION >= "v2.5")
 nine = fs.score_posting("Senior Product Manager", "Requirements: 9+ years of product management experience. Fully remote.", salary_min=180000)
-check("9+ years PM still counts as a miss", any("9+ years" in m for m in nine["missing_minimums"]), str(nine["missing_minimums"]))
+check("9+ years PM still counts as a miss", any("9+ years" in m for m in nine["missing_minimums"]), str(nine["missing_minimums"]),
+      when=PM_PERSON, why=PM_WHY)
 
 # v3.3 (Nov 1, 2026): every row gets a verdict. The bug: strong
 # near-misses (one missing minimum, capped at 69) sat blank at the top of the list.
@@ -579,7 +608,8 @@ near = fs.score_posting("Senior Product Manager, Clinic Operations",
     "Requirements: 9+ years of product management experience. Fully remote. Base $190,000. "
     "Benefits: medical, dental, 401(k).",  # v3.7: no benefits plus one flat figure is a staffing signal
     salary_min=190000, company={"remote_posture": "Structurally remote (no HQ)", "risk": "Low", "pto": "Strong", "health": "Strong", "domains": ["Wellness"]})
-check("a strong fit missing one minimum names it in the label", "Missing 1 required" in fs.label_reason(near, date(2026, 11, 1)), fs.label_reason(near))
+check("a strong fit missing one minimum names it in the label", "Missing 1 required" in fs.label_reason(near, date(2026, 11, 1)), fs.label_reason(near),
+      when=PM_PERSON, why=PM_WHY)
 for title, text, sal in [("Product Manager", "Remote.", None), ("Senior Product Manager", "Fully remote. Base $170,000.", 170000),
                          ("Associate Product Manager", "Remote-friendly; must be based in the United States.", None), STRONG + (160000,)]:
     rr = fs.score_posting(title, text, salary_min=sal)
@@ -594,7 +624,8 @@ catch_a = fs.score_posting("Senior Product Manager, Clinic Operations",
     "Remote-friendly, must be based in the US. Clinic scheduling and intake workflows for outpatient practices; "
     "discovery with front desk staff; evidence-based prioritization; cross-functional leadership; "
     "launch readiness. Fully remote.", salary_min=190000, company={"remote_posture": "Structurally remote (no HQ)", "risk": "Low", "pto": "Strong", "health": "Strong", "domains": ["Wellness"]})
-check("Tier A row with an ask reason carries the reason in its label", "Needs your call:" in fs.label_reason(catch_a), fs.label_reason(catch_a))
+check("Tier A row with an ask reason carries the reason in its label", "Needs your call:" in fs.label_reason(catch_a), fs.label_reason(catch_a),
+      when=PM_PERSON and REMOTE_ONLY, why=PM_WHY)
 
 # Rescore keeps the refresh's screening text; the verdict is the agent's
 screened = ("Tier A, 78/100. Clinic scheduling tools [E03]. Scored 2026-10-22 by agent v2.4. "
@@ -666,7 +697,8 @@ check("close_skipped_rows closes hard Skips and Pass, leaves a soft Skip open", 
 import lead_resolver as lr2
 check("Jobgether is an aggregator", lr2.is_aggregator("Jobgether") and lr2.is_aggregator("jobs via Dice"))
 check("Bluefin Labs is not", not lr2.is_aggregator("Bluefin Labs"))
-check("get_rejection_reason rejects aggregator 'companies'", "aggregator" in (jsa.get_rejection_reason(make_job("Remote (US)", company="Jobgether")) or ""))
+check("get_rejection_reason rejects aggregator 'companies'", "aggregator" in (jsa.get_rejection_reason(make_job("Remote (US)", company="Jobgether")) or ""),
+      when=PM_PERSON, why=PM_WHY)
 r = lr2.resolve("Jobgether", "Principal Product Manager", index={}, today=date(2026, 10, 24), cache={}, probe=False)
 check("lead_resolver never probes an aggregator board", r["status"] == "none" and "aggregator" in r["note"], r["note"])
 check("Pathmark and Bankbridge are out of CONFIRMED_COMPANIES", not [c for c in __import__("ats_tools").CONFIRMED_COMPANIES if c["name"] in ("Pathmark", "Bankbridge")])
@@ -713,7 +745,8 @@ check("rescore_tracker picks up rows still waiting on company research", "UNRESE
 
 # ---------------------------------------------------------------------------
 failed = [n for n, ok in RESULTS if not ok]
-print("\n%d checks, %d failures" % (len(RESULTS), len(failed)))
+print("\n%d checks, %d failures" % (len(RESULTS), len(failed))
+      + (", %d skipped (they depend on another person's answers)" % len(SKIPPED) if SKIPPED else ""))
 if failed:
     print("FAILED: " + "; ".join(failed))
     sys.exit(1)

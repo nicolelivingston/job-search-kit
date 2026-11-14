@@ -34,7 +34,10 @@ wizard writes their settings and installs the schedule.
 3. Writes new matches to the tracker and never sets Applying or Passed; those
    decisions are the user's and are never overwritten.
 4. Full runs only: rescores open rows, re-checks that postings are still live,
-   and closes a posting after it's gone from its board on two runs.
+   and closes a posting after it's gone from its board on two runs. A posting
+   that has only left the board's public list is not gone: before closing,
+   the kit asks the board about that one posting (Greenhouse and Lever), and
+   one that still answers stays open, marked Unlisted.
 5. Writes the digest and the tracker snapshot, and records run stats.
 
 ## Schedule

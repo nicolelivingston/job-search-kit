@@ -14,15 +14,14 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import person                    # noqa: E402
 import job_search_agent as jsa   # noqa: E402
 import run_stats                 # noqa: E402
 import invariants                # noqa: E402
 import notion_q                  # noqa: E402
 
-JOB = {"id": "smoke-1", "title": "Senior Product Manager", "company": "Acme",
-       "url": "https://job-boards.greenhouse.io/acme/jobs/1234567890", "location": "Remote (US)",
-       "description": "Fully remote. Requirements: 5+ years product management. Base salary $170,000 to $200,000.",
-       "salary_text": "$170,000 - $200,000", "source": "Company Site", "published": "2026-10-28"}
+JOB = person.sample_job()   # a posting the test person these tests run as would want
 
 
 def _fake_http(name):

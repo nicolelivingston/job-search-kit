@@ -96,6 +96,7 @@ def row(page):
         "breakdown": jsa._rt(p, "Score Breakdown"),
         "posted": jsa._date(p, "Posted Date"),
         "verified": jsa._date(p, "Last Verified"),
+        "health": jsa._sel(p, "Posting Health"),
         "applied": jsa._date(p, "Date Applied"),
         "drafting_started": jsa._date(p, "Drafting Started"),
         "resume_versions": p.get("Resume Versions", {}).get("number"),
@@ -170,7 +171,10 @@ def check_rows(open_rows, applied_rows, closed_today, today, fetched_keys=None, 
         if fetched_keys is not None and r["verified"] == today_iso and r["url"]:
             k = jsa.posting_key(r["url"])
             scope = jsa._board_scope(r["url"])
-            if k and scope in (covered_boards or set()) and k not in fetched_keys:
+            # Nov 13, 2026: an Unlisted row is verified by asking its board about
+            # that one posting, so it is expected to be absent from the fetch.
+            if k and scope in (covered_boards or set()) and k not in fetched_keys \
+                    and r.get("health") != "Unlisted":
                 out.append((F, f"stamped Last Verified today but absent from today's fetch: {_name(r)}"))
 
     # 11. the agent must never close a posting that is in today's fetch (Oct 27-28 bug class)

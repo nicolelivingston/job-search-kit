@@ -128,13 +128,25 @@ Version notes
         or veteran status") no longer counts. Excluding an industry such as
         defense was closing nearly every US posting on arrival, because the
         statement names veterans and military service.
+  v4.2  Two cases that hid a requirement or a catch. (1) A required-section
+        heading with more words on its own line ("What You Bring To The
+        Team", "What you'll need in this role") no longer ends its own
+        section: the end of the section is looked for after the heading's
+        line, so its items are read. Before, such a heading returned no
+        items, and a requirement the user can't claim went unseen.
+        (2) Remote with a catch also covers "not remote-only", in-person
+        working sessions, and quarterly get-togethers (new phrases in the
+        remote-catch rule; older settings folders get them on the next run).
+        The stored posting text also keeps any sentence a remote rule would
+        quote from the part of the intro it cuts
+        (job_search_agent.make_snapshot), so a rescore still sees it.
 """
 
 import html
 import re
 from datetime import date, datetime, timedelta
 
-RUBRIC_VERSION = "v4.1"
+RUBRIC_VERSION = "v4.2"
 
 # Verdicts (v3.3). The agent writes AGENT_VERDICTS on every row;
 # HUMAN_VERDICTS are the user's alone and are never overwritten.
@@ -245,6 +257,11 @@ REQ_END_RE = re.compile(
     r"|#LI|(?:\b[A-Z]{3,}\b[ ,]+){2,}[A-Z]{3,}\b")   # an all-caps heading (WHAT TO EXPECT IN THE INTERVIEW PROCESS)
 REQ_BLOCK_MAX = 3000
 
+# v4.2: more words on a heading's own line ("What You Bring To The Team",
+# "What you'll need in this role"). They are part of the heading, not the end
+# of its section, even when they spell an end marker such as "The Team".
+_HEAD_TAIL_RE = re.compile(r" (?i:to|for|in|on|as|at|with|of|and|&)(?: [A-Za-z'’&/-]+){0,5}\s*(?=•|:|\n|$)")
+
 
 def required_spans(text):
     """(start, end) character spans of the posting's required sections."""
@@ -253,7 +270,8 @@ def required_spans(text):
         start = h.start()
         if spans and start < spans[-1][1]:
             continue
-        e = REQ_END_RE.search(text, h.end())
+        tail = _HEAD_TAIL_RE.match(text, h.end())
+        e = REQ_END_RE.search(text, tail.end() if tail else h.end())
         end = min(e.start() if e else len(text), start + REQ_BLOCK_MAX)
         spans.append((start, end))
     return spans

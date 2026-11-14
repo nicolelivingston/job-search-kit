@@ -24,10 +24,14 @@ jobs:
         with: { python-version: "3.12" }
       - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-ci.txt'
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils
-      - name: Kit tests against a synthetic test person (includes the leak test)
+      - name: Kit tests as each made-up test person (includes the leak test)
         run: |
           cd app/agent
-          KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python agent_tests/run_all.py
+          for person in priya-healthtech-pm dana-retail-analytics marcus-customer-success; do
+            echo "::group::Tests as $person"
+            KIT_SETTINGS_DIR=../../examples/$person/settings python agent_tests/run_all.py
+            echo "::endgroup::"
+          done
       - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-security.txt'
       - name: No known vulnerabilities in the installer's packages, and its bill of materials
         run: |

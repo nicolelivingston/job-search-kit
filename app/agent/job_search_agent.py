@@ -32,6 +32,7 @@ from dotenv import load_dotenv
 import requests
 
 from ats_tools import fetch_all_confirmed, request_with_retry, run_concurrently, FETCHERS
+from ats_tools import HEADERS as FETCH_HEADERS
 from board_feeds import fetch_board_feeds, FEED_HOSTS
 from linkedin_alerts import fetch_linkedin_alerts
 import lead_resolver
@@ -696,6 +697,18 @@ def clean_posting_text(desc):
     return fit_scoring._clean(desc)
 
 
+def _remote_sentences(skipped, cap=600):
+    """Sentences in a cut stretch of posting text that a remote hard rule would
+    quote, joined, at most `cap` characters."""
+    rules = [r[1] for r in fit_scoring.HARD_RULES if r[0] in ("remote-hybrid", "remote-catch")]
+    out = []
+    for s in re.split(r"(?<=[.!?])\s+|\s•\s", skipped or ""):
+        s = s.strip()
+        if s and any(rx.search(s) for rx in rules):
+            out.append(s)
+    return " ".join(out)[:cap]
+
+
 def make_snapshot(desc):
     """A snapshot of the posting: short intro plus the text from the first
     qualifications-style heading onward, so stated minimums survive the cut."""
@@ -704,7 +717,12 @@ def make_snapshot(desc):
         return ""
     m = SNAP_MARKERS.search(text)
     if m and m.start() > 250:
-        return (text[:230] + " [...] " + text[m.start():m.start() + SNAPSHOT_MAX - 240])[:SNAPSHOT_MAX]
+        # v4.2 (Nov 13, 2026): a remote-rule sentence in the part of the intro
+        # that gets cut ("remote-first, but not remote-only") is kept, so a
+        # rescore or a screen on the snapshot still sees it.
+        kept = _remote_sentences(text[230:m.start()])
+        head = text[:230] + " [...] " + (kept + " [...] " if kept else "")
+        return (head + text[m.start():m.start() + SNAPSHOT_MAX - len(head) - 3])[:SNAPSHOT_MAX]
     return text[:SNAPSHOT_MAX]
 
 
@@ -967,7 +985,8 @@ def save_miss_counts(miss_counts):
 
 
 def fetch_interested_rows():
-    """Returns [(page_id, job_posting_url), ...] for every Notion row with Status == Interested."""
+    """Returns [(page_id, job_posting_url, posting_health), ...] for every tracker row
+    with Status == Interested. posting_health is the Posting Health select, or None."""
     if not NOTION_TOKEN:
         return []
     url = f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query"
@@ -991,7 +1010,7 @@ def fetch_interested_rows():
         for page in data.get("results", []):
             posting_url = page.get("properties", {}).get("Job Posting", {}).get("url")
             if posting_url:
-                rows.append((page["id"], posting_url))
+                rows.append((page["id"], posting_url, _sel(page.get("properties", {}), "Posting Health")))
         if not data.get("has_more"):
             break
         payload["start_cursor"] = data["next_cursor"]
@@ -1042,6 +1061,80 @@ def _board_scope(url):
     return (host, "")
 
 
+# What a board says when asked about one posting (ask_the_board).
+LIVE, GONE, UNCLEAR = "live", "gone", "unclear"
+STALE_GIVE_UP_AT = 6   # misses in a row at which a row closes even though its board keeps giving no clear answer
+
+
+_BOARD_SLUG_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")   # a board's name in its address
+_JOB_NUMBER_RE = re.compile(r"[0-9]+")
+
+
+def _url_host(url):
+    """Hostname of a URL, lowercased, or ""."""
+    try:
+        return (urlparse((url or "").strip()).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
+def single_posting_api(posting_url, host_boards=None):
+    """The address that answers for this one posting on its board, or None when
+    the board can't be asked about one job (Ashby, Workday, a careers site that
+    maps to no board in the day's fetch). host_boards maps a careers-site host
+    to ("gh", board slug). Only the two board APIs the fetchers already use are
+    ever asked, and only with a board name and job ID of the expected shape."""
+    host = _url_host(posting_url)
+    if not host:
+        return None
+    segs = [s for s in urlparse(posting_url.strip()).path.split("/") if s]
+    if (host == "greenhouse.io" or host.endswith(".greenhouse.io")) and len(segs) >= 3 and segs[1] == "jobs" \
+            and _BOARD_SLUG_RE.fullmatch(segs[0]) and _JOB_NUMBER_RE.fullmatch(segs[2]):
+        return f"https://boards-api.greenhouse.io/v1/boards/{segs[0]}/jobs/{segs[2]}"
+    if host == "jobs.lever.co" and len(segs) >= 2 and _BOARD_SLUG_RE.fullmatch(segs[0]) \
+            and re.fullmatch(r"[0-9a-fA-F-]{36}", segs[1]):
+        return f"https://api.lever.co/v0/postings/{segs[0]}/{segs[1]}"
+    key = posting_key(posting_url)
+    board = (host_boards or {}).get(host)
+    if board and board[0] == "gh" and _BOARD_SLUG_RE.fullmatch(board[1]) and key and _JOB_NUMBER_RE.fullmatch(key):
+        return f"https://boards-api.greenhouse.io/v1/boards/{board[1]}/jobs/{key}"
+    return None
+
+
+def ask_the_board(posting_url, host_boards=None, get=None):
+    """Ask a board about one posting. LIVE: its own address still answers with
+    the job, so it is off the public list, not gone. GONE: the board says there
+    is no such job. UNCLEAR: asked, no clear answer (an error, a timeout, a
+    page that isn't a job). None: this board can't be asked about one job.
+
+    Why (Nov 13, 2026): a posting can leave a board's public list and stay
+    open. Greenhouse and Lever still answer for a single job by its ID. Rows
+    for postings like that were being closed while the user could still apply."""
+    api = single_posting_api(posting_url, host_boards)
+    if not api:
+        return None
+    try:
+        resp = request_with_retry(get or requests.get, api, attempts=2, headers=FETCH_HEADERS, timeout=20)
+    except requests.RequestException:
+        return UNCLEAR
+    if resp.status_code in (404, 410):
+        return GONE
+    if resp.status_code != 200:
+        return UNCLEAR
+    try:
+        body = resp.json()
+    except ValueError:
+        return UNCLEAR
+    return LIVE if isinstance(body, dict) and body.get("id") else UNCLEAR
+
+
+def mark_unlisted(page_id, today=None):
+    """Posting Health -> Unlisted and Last Verified -> today, for a posting that
+    is off its board's public list while its own address still answers."""
+    return patch_page(page_id, {"Posting Health": {"select": {"name": "Unlisted"}},
+                                "Last Verified": {"date": {"start": (today or date.today()).isoformat()}}})
+
+
 def close_stale_postings(all_jobs):
     """Returns the number of rows newly marked Closed this run."""
     if not NOTION_TOKEN:
@@ -1063,11 +1156,21 @@ def close_stale_postings(all_jobs):
     # runs regardless of whether the posting was still open.
     covered_boards = {_board_scope(u) for u in current_urls}
     covered_boards.discard(None)
+    # Nov 13, 2026: careers-site hosts mapped to their Greenhouse board, so a
+    # posting behind a wrapper link can be asked about by job ID.
+    host_boards = {}
+    for job in all_jobs:
+        gh = re.match(r"^gh-(.+)-[0-9]+$", str(job.get("id") or ""))
+        host = _url_host(job.get("url"))
+        if gh and host and host != "greenhouse.io" and not host.endswith(".greenhouse.io"):
+            host_boards[host] = ("gh", gh.group(1))
+    unlisted = unclear = 0
     miss_counts = load_miss_counts()
     new_miss_counts = {}
     closed_count = 0
 
-    for page_id, posting_url in fetch_interested_rows():
+    for page_id, posting_url, *more in fetch_interested_rows():
+        health = more[0] if more else None
         key = posting_key(posting_url)
         if posting_url in current_urls or (key and key in current_keys):
             continue  # still live in today's fetch -- nothing to track
@@ -1084,13 +1187,31 @@ def close_stale_postings(all_jobs):
         miss_id = key or posting_url
         count = miss_counts.get(miss_id, 0) + 1
         if count >= 2:
-            if update_status(page_id, "Closed"):
+            # Nov 13, 2026: off the public list is not the same as gone. Ask
+            # the board about this one posting first.
+            answer = ask_the_board(posting_url, host_boards)
+            if answer == LIVE:
+                # Still open: keep the row and mark it Unlisted. A row that
+                # carries another Posting Health mark keeps it and is left as
+                # it is: Suspected evergreen has a score deduction, and
+                # Verified real is set by hand.
+                if health not in (None, "Unlisted") or mark_unlisted(page_id):
+                    unlisted += 1
+            elif answer == UNCLEAR and count < STALE_GIVE_UP_AT:
+                # A hiccup must not close a row: ask again next run.
+                new_miss_counts[miss_id] = count
+                unclear += 1
+            elif update_status(page_id, "Closed"):
                 closed_count += 1
             # resolved either way -- don't carry it forward in the miss file
         else:
             new_miss_counts[miss_id] = count
 
     save_miss_counts(new_miss_counts)
+    if unlisted:
+        print(f"{unlisted} posting(s) off the public list but still live; kept open.")
+    if unclear:
+        print(f"{unclear} missing posting(s) got no clear answer from the board; asking again next run.")
     return closed_count
 
 
@@ -1889,6 +2010,9 @@ def refresh_open_rows(all_jobs, history, today):
             days_ago = _days_since(last_verified, today) if last_verified else None
             if days_ago is None or days_ago >= VERIFY_STAMP_DAYS:
                 props["Last Verified"] = {"date": {"start": today_iso}}
+            if _sel(p, "Posting Health") == "Unlisted":
+                # Nov 13, 2026: back on the board's public list, so clear the mark
+                props["Posting Health"] = {"select": None}
             stored = _rt(p, "Posting Snapshot")
             snap = make_snapshot(job.get("description", ""))
             if snapshot_is_stale(stored, snap):

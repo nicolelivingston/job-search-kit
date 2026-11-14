@@ -9,7 +9,7 @@ The kit reads public job boards on the user's own computer, a few times a day, f
 | We Work Remotely | public RSS feeds by category | personal use of the public feed; links kept | their site terms |
 | Himalayas | public jobs API | personal use; links kept | their API page |
 | Working Nomads | public exposed-jobs API | personal use; links kept | their API page |
-| Greenhouse, Lever, Ashby, Workday | each target company's own public job board API or careers page, for companies the user chose | one request per company per run; the user chose each company; links point at the company's own page | each board's public API terms |
+| Greenhouse, Lever, Ashby, Workday | each target company's own public job board API or careers page, for companies the user chose | one request per company per run; the user chose each company; links point at the company's own page. Greenhouse and Lever only: when a posting already in the user's tracker has left the board's public list on two full runs, one more request asks the same public API about that single posting before its row is closed (at most once per full run for that posting) | each board's public API terms |
 | LinkedIn | nothing is fetched; the user pastes a link or text into Add a Posting | the kit never scrapes LinkedIn or reads a LinkedIn account | n/a |
 
 Before each release the maintainer re-reads the terms of any source whose fetch code changed. If a source objects, it is removed from the defaults.

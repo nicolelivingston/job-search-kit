@@ -26,7 +26,7 @@ listed here.
 ### 2. Where and how you work
 | Question | Settings | Notes |
 |---|---|---|
-| Remote only, remote or hybrid, or any (including onsite)? | `fit_scoring.WORK_ARRANGEMENT.mode` (`remote`, `remote_or_hybrid`, `any`) | `remote` keeps the strict fully-remote rules |
+| Remote only, remote or hybrid, or any (including onsite)? | `fit_scoring.WORK_ARRANGEMENT.mode` (`remote`, `remote_or_hybrid`, `any`) | `remote` keeps the strict fully-remote rules: in `fit_scoring.HARD_RULES`, `remote-hybrid` (hybrid or office wording, a Poor fit) and `remote-catch` (remote with a catch, your call). Settings version 4 added "not remote-only", in-person working sessions, and quarterly get-togethers to `remote-catch`; the kit adds them to an older folder on its next run |
 | Where do you live, and which cities or areas could you commute to? | `fit_scoring.WORK_ARRANGEMENT.home`, `.commute_areas` | Hybrid and onsite only |
 | Most office days a week you'd accept? | `fit_scoring.WORK_ARRANGEMENT.max_office_days` | Blank means no limit |
 | Would you work fully onsite? | `fit_scoring.WORK_ARRANGEMENT.onsite_ok` | Only with mode `any` |

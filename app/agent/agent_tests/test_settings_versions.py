@@ -74,8 +74,9 @@ class OldSettings(unittest.TestCase):
 
     def test_update_brings_a_v0_folder_forward(self):
         """v0.1.0 folders reach the current version: the v2 step removes the two
-        retired 48-hour-rule settings and the v3 step the unused remote.co feed
-        (after one backup), and nothing else changes."""
+        retired 48-hour-rule settings, the v3 step the unused remote.co feed,
+        and the v4 step adds the new remote-with-a-catch phrases (after one
+        backup), and nothing else changes."""
         for which in ("template", "priya"):
             s = self.folder(which)
             before = {f.name: f.read_bytes() for f in s.iterdir()}
@@ -84,15 +85,19 @@ class OldSettings(unittest.TestCase):
             with self.subTest(settings=which):
                 self.assertIsNone(warning)
                 self.assertEqual(calls, [1])
-                self.assertEqual(len(changes), 3, changes)
-                self.assertTrue(all(any(k in c for k in ("ASK_EXPIRY_DAYS", "NO_DECISION_VERDICT", "REMOTE_CO_FEEDS"))
-                                    for c in changes))
+                self.assertEqual(len(changes), 4, changes)
+                self.assertTrue(all(any(k in c for k in ("ASK_EXPIRY_DAYS", "NO_DECISION_VERDICT", "REMOTE_CO_FEEDS",
+                                                         "remote-with-a-catch")) for c in changes))
                 after = {f.name: f.read_bytes() for f in s.iterdir()}
                 self.assertEqual({n for n in before if before[n] != after.get(n)}, {"criteria.json", "app.json"})
                 agent = json.loads((s / "criteria.json").read_text())["agent"]
                 self.assertFalse(set(kit_settings.RETIRED_V2) & set(agent))
                 feeds = json.loads((s / "criteria.json").read_text())["board_feeds"]
                 self.assertNotIn("REMOTE_CO_FEEDS", feeds)
+                # the remote-with-a-catch rule now reads the same as a new folder's
+                rule = lambda folder: next(h["$tuple"] for h in json.loads((Path(folder) / "criteria.json").read_text())
+                                           ["fit_scoring"]["HARD_RULES"] if h["$tuple"][0] == "remote-catch")
+                self.assertEqual(rule(s), rule(KIT / "templates" / "settings"))
                 self.assertEqual(kit_settings.folder_settings_version(s), kit_settings.SETTINGS_VERSION)
                 # a second run changes nothing
                 changes, warning = kit_settings.migrate(s, backup=lambda: self.fail("no backup expected"))
@@ -109,6 +114,30 @@ class Versions(unittest.TestCase):
         self.assertEqual(files["criteria.json"], {"board_feeds": {"WWR_FEEDS": ["x"]}, "fit_scoring": {"WORK_CAP": 30}})
         self.assertEqual(kit_settings.MIGRATIONS[2](files), [])
 
+    def test_v4_adds_the_remote_catch_phrases(self):
+        mine = ["remote-friendly", "my own phrase", "not remote only"]
+        files = {"criteria.json": {"fit_scoring": {"HARD_RULES": [
+            {"$tuple": ["remote-hybrid", {"$rx": ["hybrid"]}, "skip", "Fails fully-remote rule"]},
+            {"$tuple": ["remote-catch", {"$rx": list(mine)}, "ask", "Remote with a catch; check wording"]}]}}}
+        changes = kit_settings.MIGRATIONS[3](files)
+        self.assertEqual(len(changes), 1)
+        self.assertIn(f"added {len(kit_settings.REMOTE_CATCH_V4) - 1} phrases", changes[0])   # one was already there
+        rules = {h["$tuple"][0]: h["$tuple"][1]["$rx"] for h in files["criteria.json"]["fit_scoring"]["HARD_RULES"]}
+        self.assertEqual(rules["remote-catch"][:3], mine)   # the folder's own phrases, in order
+        self.assertEqual(set(rules["remote-catch"]), set(mine) | set(kit_settings.REMOTE_CATCH_V4))
+        self.assertEqual(rules["remote-hybrid"], ["hybrid"])
+        self.assertEqual(kit_settings.MIGRATIONS[3](files), [])   # a second run changes nothing
+        # a folder without the rule (or without hard rules at all) is left alone
+        for other in ({"criteria.json": {"fit_scoring": {"HARD_RULES": [{"$tuple": ["contract", {"$rx": ["1099"]}, "skip", "x"]}]}}},
+                      {"criteria.json": {"fit_scoring": {}}}, {}):
+            before = json.dumps(other, sort_keys=True)
+            self.assertEqual(kit_settings.MIGRATIONS[3](other), [])
+            self.assertEqual(json.dumps(other, sort_keys=True), before)
+        # every phrase is a pattern the scorer can build
+        import re
+        for p in kit_settings.REMOTE_CATCH_V4:
+            re.compile(p[1:] if p.startswith("~") else re.escape(p))
+
     def test_template_carries_the_current_version(self):
         self.assertEqual(kit_settings.folder_settings_version(KIT / "templates" / "settings"),
                          kit_settings.SETTINGS_VERSION)
@@ -120,7 +149,7 @@ class Versions(unittest.TestCase):
         # Renaming or removing a setting breaks older folders unless a migration
         # moves it. Bump SETTINGS_VERSION, add the step, then update this baseline.
         gone = keys(OLD / "template") - keys(KIT / "templates" / "settings")
-        if kit_settings.SETTINGS_VERSION == 3:
+        if kit_settings.SETTINGS_VERSION == 4:
             self.assertEqual(gone, {f"criteria.json:agent.{k}" for k in kit_settings.RETIRED_V2}
                              | {"criteria.json:board_feeds.REMOTE_CO_FEEDS"},
                              "settings removed or renamed since v0.1.0 without a migration")

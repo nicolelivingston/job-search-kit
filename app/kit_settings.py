@@ -87,11 +87,12 @@ def app_settings():
 
 # Settings format version (settings_version in app.json; a folder without it
 # is version 0, which is every folder made by v0.1.0). Bump SETTINGS_VERSION
-# only when a change renames or removes a setting or changes what a value
-# means, and add a step to MIGRATIONS that brings the previous version
-# forward. A brand-new setting needs no bump: read it with a default
+# only when a change renames or removes a setting, changes what a value
+# means, or adds to a list the kit wrote into the folder (a rule's phrases),
+# and add a step to MIGRATIONS that brings the previous version forward. A
+# brand-new setting needs no bump: read it with a default
 # (setting(..., default=...)) so older folders keep working unchanged.
-SETTINGS_VERSION = 3
+SETTINGS_VERSION = 4
 
 
 def _v0_to_v1(files):
@@ -135,9 +136,43 @@ def _v2_to_v3(files):
     return out
 
 
+REMOTE_CATCH_V4 = (
+    "not remote-only", "not remote only", "~\\bin[- ]person working sessions?\\b",
+    "~\\bquarterly (in[- ]person|off[- ]?sites?|gatherings?|meet-?ups?|retreats?)\\b",
+    "~\\b(gets? together|travels?)( in person)? (quarterly|(every|each|once a) quarter)\\b",
+    "~\\b(gathers?|meets?) in person (quarterly|(every|each|once a) quarter)\\b",
+    # meet or gather quarterly counts only with an in-person word in the same sentence
+    # ("meet quarterly targets" is not a catch); \\u2022 is the bullet that separates items
+    "~\\b(gathers?|meets?) (quarterly|(every|each|once a) quarter)\\b[^.;\\u2022]{0,80}?"
+    "\\b(in[- ]person|off[- ]?sites?|retreats?|face[- ]to[- ]face|headquarters|hq|office)\\b")
+
+
+def _v3_to_v4(files):
+    """Fit scoring v4.2: the remote-with-a-catch rule also covers "not
+    remote-only", in-person working sessions, and quarterly get-togethers
+    (get together or travel quarterly; meet or gather quarterly in person). A
+    folder keeps its own copy of the rule, so the new phrases are added to
+    it. The folder's own phrases stay as they are, and a folder without the
+    rule is left alone."""
+    rules = files.get("criteria.json", {}).get("fit_scoring", {}).get("HARD_RULES", [])
+    for h in rules if isinstance(rules, list) else []:
+        t = h.get("$tuple") if isinstance(h, dict) else None
+        if not (isinstance(t, list) and len(t) > 1 and t[0] == "remote-catch"):
+            continue
+        phrases = t[1].get("$rx") if isinstance(t[1], dict) else None
+        if not isinstance(phrases, list):
+            continue
+        new = [p for p in REMOTE_CATCH_V4 if p not in phrases]
+        if new:
+            phrases.extend(new)
+            return [f"added {len(new)} phrases to the remote-with-a-catch rule "
+                    "(not remote-only, in-person working sessions, quarterly get-togethers)"]
+    return []
+
+
 # from_version: step(files) -> list of plain-words changes. A step edits
 # `files` ({"criteria.json": {...}, ...}, the folder's JSON files) in memory.
-MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2, 2: _v2_to_v3}
+MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2, 2: _v2_to_v3, 3: _v3_to_v4}
 
 
 def folder_settings_version(folder=None):

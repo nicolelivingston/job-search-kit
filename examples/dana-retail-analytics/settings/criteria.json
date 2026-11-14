@@ -149,7 +149,14 @@
               "commutable",
               "~within \\d+ miles",
               "~must (be )?(located|based|reside|live) (in|within|near)",
-              "~(located|based) (in|near) (the )?(greater )?[A-Z][a-z]+(,| area| metro)"
+              "~(located|based) (in|near) (the )?(greater )?[A-Z][a-z]+(,| area| metro)",
+              "not remote-only",
+              "not remote only",
+              "~\\bin[- ]person working sessions?\\b",
+              "~\\bquarterly (in[- ]person|off[- ]?sites?|gatherings?|meet-?ups?|retreats?)\\b",
+              "~\\b(gets? together|travels?)( in person)? (quarterly|(every|each|once a) quarter)\\b",
+              "~\\b(gathers?|meets?) in person (quarterly|(every|each|once a) quarter)\\b",
+              "~\\b(gathers?|meets?) (quarterly|(every|each|once a) quarter)\\b[^.;\\u2022]{0,80}?\\b(in[- ]person|off[- ]?sites?|retreats?|face[- ]to[- ]face|headquarters|hq|office)\\b"
             ]
           },
           "ask",

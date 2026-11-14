@@ -171,10 +171,10 @@ class Coverage(unittest.TestCase):
             self.skipTest("no keyword groups in these settings")
         self.assertEqual(fs.classify_required_item(f"Experience with {words[0]} across several teams and launches"), "vouched")
         self.assertEqual(fs.classify_required_item("Strong written communication and collaboration with stakeholders"), "vouched")
-        self.assertEqual(fs.classify_required_item("Experience with reinsurance treaty pricing models and bordereaux files"), "unvouched")
+        self.assertEqual(fs.classify_required_item("Experience with reinsurance treaty wording and bordereaux files"), "unvouched")
 
     def test_unvouched_items_cap_and_are_quoted(self):
-        req = ("Experience with reinsurance treaty pricing models</li>"
+        req = ("Experience with reinsurance treaty wording and endorsements</li>"
                "<li>Knowledge of bordereaux file reconciliation across cedants</li>"
                "<li>Background in actuarial reserving methods and triangles</li>"
                "<li>Familiarity with catastrophe modeling software suites</li>")
@@ -187,7 +187,7 @@ class Coverage(unittest.TestCase):
         self.assertIn("uncapped", r["breakdown"])
 
     def test_two_unvouched_items_cap_at_possible_fit(self):
-        req = ("Experience with reinsurance treaty pricing models</li>"
+        req = ("Experience with reinsurance treaty wording and endorsements</li>"
                "<li>Knowledge of bordereaux file reconciliation across cedants</li>"
                "<li>Strong written communication skills and stakeholder management")
         r = fs.score_posting("Senior Product Manager", posting(req), salary_min=190000, company=GOOD_COMPANY, age_days=2)
@@ -199,7 +199,7 @@ class Coverage(unittest.TestCase):
         old = fs.REQUIRED_COVERAGE
         fs.REQUIRED_COVERAGE = False
         try:
-            cov = fs.required_coverage(fs._clean("<p>Requirements</p><ul><li>Experience with reinsurance treaty pricing models</li></ul>"))
+            cov = fs.required_coverage(fs._clean("<p>Requirements</p><ul><li>Experience with reinsurance treaty wording and endorsements</li></ul>"))
             self.assertIsNone(cov["cap"])
             self.assertEqual(cov["unvouched"], [])
         finally:
