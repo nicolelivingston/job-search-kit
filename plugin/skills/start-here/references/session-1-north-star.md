@@ -2,7 +2,7 @@
 
 Goal: by the end, `Evidence Bank/North Star.md` has no line containing `<fill in` (each one answered, or an Open line where the user wasn't sure), the Rules File has the user's voice (section 2), target level (section 9), and confirmed gaps (section 11), and the user has heard their own pitch read back.
 
-Open by saying what this session is for and that nothing goes on a resume today.
+Open by saying what this session is for and that nothing goes on a resume today. If `Evidence Bank/resume-intake.md` holds a resume's facts (the resume intake ran), use them so the user isn't asked what the resume already says: confirm the current title and employer in a sentence in Part 1, and in Part 2 read back the resume's summary line, if it has one, as a starting point ("Your resume says ... Is that how you'd say it to a friend?"). Their spoken answer wins over the resume's wording.
 
 ## Part 1. The role (10 minutes)
 
@@ -25,7 +25,7 @@ Draft the one-paragraph pitch from their words only. Read it back. Edit until th
 
 Start from `settings/preferences.json`: read back what they chose in setup step 8 (habits to avoid, Oxford comma, contractions, keep my wording, tone, and what bugged them about AI drafts) in one or two sentences and ask if it still holds. Then:
 
-8. Ask for two or three things they wrote themselves (an email they were happy with, a note to their team, a message to a friend). They can paste them in. If they have none to hand, read their voice from how they've talked in this session and write an Open line for punctuation. Read for: sentence length, punctuation habits, words they use and words they'd never use, whether they use contractions, how they join clauses.
+8. Ask for two or three things they wrote themselves (an email they were happy with, a note to their team, a message to a friend). Their old resume doesn't count unless they say they wrote it themselves and like how it reads; resumes are rarely how people write. They can paste them in. If they have none to hand, read their voice from how they've talked in this session and write an Open line for punctuation. Read for: sentence length, punctuation habits, words they use and words they'd never use, whether they use contractions, how they join clauses.
 9. Say what you noticed in three to five plain phrases and ask if that's right ("long sentences, lots of dashes, you'd never say 'synergy'").
 10. "Any words or phrases you can't stand on a resume?" These go in Rules File section 2 as "not my voice".
 11a. Note any habit they name or you hear that drafts should correct ("I round my numbers down"). It goes in section 2's habits line, and every later session asks "who did it?" when it shows up.

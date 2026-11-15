@@ -4,9 +4,9 @@ Stays on this computer
 Your settings, evidence bank, resumes, cover letters, applications, contacts, and tracker are plain files in a folder you choose. The job checks, the scoring, and the pre-send gate run here. The kit connects to no email account and no other account of yours.
 
 Goes out
-- Requests to the job boards you pick. They see a request from this computer and the kit's name, nothing about you.
+- Requests to the job sites the kit reads and to the job boards of the companies you follow, including boards the kit finds for companies whose postings fit you. They see a request from this computer and the kit's name, nothing about you.
 - Once a day, a check of this project's GitHub releases page for updates. GitHub sees your computer's internet address, nothing else. You can turn this off in the setup wizard under How it runs, and use Check for updates in the Start menu instead.
-- When you use the Claude plugin, whatever you put in front of Claude. That goes to Anthropic under your own Claude plan's terms.
+- When you use the Claude plugin, whatever you put in front of Claude. That goes to Anthropic under your own Claude plan's terms. When you ask Claude to research a company, Claude searches the web for that company by name; nothing about you goes into the search.
 - An error report, only if you press Send in your own mail app. It holds a scrubbed run log, never your settings, postings, resumes, or tracker.
 
 Nothing else is sent anywhere, and there is no telemetry. Uninstalling leaves your folder alone.

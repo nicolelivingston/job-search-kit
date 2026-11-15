@@ -10,7 +10,7 @@ Goal: the bank's Part A filled, `master-selection.json` at the root of the Job S
 
 ## Part 1. Part A: profile and fixed facts (10 minutes)
 
-Fill these lines in `Evidence Bank/Evidence Bank.md`, Part A, keeping the exact `- ID [primary]: text` shape:
+Fill these lines in `Evidence Bank/Evidence Bank.md`, Part A, keeping the exact `- ID [primary]: text` shape. With a resume intake, start each role, education, credential, and tools line from the intake file's "Fixed facts" and confirm it against the user's records ("Your resume says Senior Analyst, March 2021 to now. Is that exactly what your records show?"); anything the intake listed under "To check" gets asked. The headline, profile, and scope lines are written fresh from sessions 1 to 3, never copied from the old resume.
 
 - `A.headline`: their title plus a theme, agreed in session 3 (the North Star's "Decided on" line). Then set Rules File section 6's headline line to "Headline: see the bank's A.headline". The theme is what their stories add up to, in three to six words. AI tools don't lead the headline unless the role is an AI role.
 - `A.profile`: two or three sentences from the session 1 pitch. Lead with what they own and for whom, then how they work, then the differentiating skill. Never repeat a bullet's words; never open by naming a tool. Read it back; it must sound like them. Put the user's main scale figure in the profile or in the scope line, not both.

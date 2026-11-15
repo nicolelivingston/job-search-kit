@@ -36,6 +36,7 @@ from ats_tools import HEADERS as FETCH_HEADERS
 from board_feeds import fetch_board_feeds, FEED_HOSTS
 from linkedin_alerts import fetch_linkedin_alerts
 import lead_resolver
+import company_follow
 import fit_scoring
 import run_stats
 from run_stats import STATS
@@ -1061,7 +1062,7 @@ def _board_scope(url):
     if not host:
         return None
     segs = [seg for seg in parts.path.split("/") if seg]
-    board_hosts = ("greenhouse.io", "lever.co", "ashbyhq.com", "myworkdayjobs.com")
+    board_hosts = ("greenhouse.io", "lever.co", "ashbyhq.com", "myworkdayjobs.com", "smartrecruiters.com")
     if host.endswith(board_hosts) and segs:
         return (host, segs[0])
     return (host, "")
@@ -1284,15 +1285,20 @@ def is_near_miss(result):
     return True
 
 
+def is_watched_company(job):
+    """A company the user follows closely (setup, or the Companies page)."""
+    return company_follow.is_watched(job.get("company") or "")
+
+
 def fresh_alert_candidates(written, history=None, today=None):
-    """Written matches that earn an alert: Tier A (not Poor fit) or a near miss
-    (is_near_miss), posted within FRESH_ALERT_DAYS, and not flagged evergreen.
-    Unknown age never alerts."""
+    """Written matches that earn an alert: Tier A (not Poor fit), a near miss
+    (is_near_miss), or any row at a company the user follows closely, posted
+    within FRESH_ALERT_DAYS, and not flagged evergreen. Unknown age never alerts."""
     today = today or datetime.now().date()
     out = []
     for job, result, flag, salary_min in written:
         strong = result["tier"] == "A" and result.get("verdict") != "Poor fit"
-        if not strong and not is_near_miss(result):
+        if not strong and not is_near_miss(result) and not is_watched_company(job):
             continue
         age = posting_age_days(job, history, today)
         if age is None or age > FRESH_ALERT_DAYS:
@@ -1311,11 +1317,17 @@ def _age_words(age):
     return "posted today" if age == 0 else f"posted {age} day{'s' if age != 1 else ''} ago"
 
 
+def _watched_only(job, result):
+    """True when a row earns its alert only because the user follows the company."""
+    strong = result["tier"] == "A" and result.get("verdict") != "Poor fit"
+    return is_watched_company(job) and not strong and not is_near_miss(result)
+
+
 def fresh_alert_message(fresh):
-    """(subject, body) for one email covering every fresh Tier A row."""
+    """(subject, body) for one email covering every fresh row that earned an alert."""
     job, result, _, age = fresh[0]
     near = is_near_miss(result) and result["tier"] != "A"
-    tag = "[Fresh near-miss]" if near else "[Fresh Tier A]"
+    tag = "[Followed company]" if _watched_only(job, result) else "[Fresh near-miss]" if near else "[Fresh Tier A]"
     shown = result.get("score_uncapped", result["score"]) if near else result["score"]
     subject = f"{tag} {job['company']} – {job['title']}, {shown} fit, {_age_words(age)}"
     if len(fresh) > 1:
@@ -1328,10 +1340,12 @@ def fresh_alert_message(fresh):
         score_line = (f"near miss: {result.get('score_uncapped', result['score'])}/100 before the cap "
                       f"({_near_miss_why(result)}), {_age_words(age)}, {salary}{verdict}") if near else \
                      f"{result['score']}/100 fit, {_age_words(age)}, {salary}{verdict}"
+        if _watched_only(job, result):
+            score_line += " (sent because you follow this company closely)"
         lines += [f"{job['company']} – {job['title']}", score_line,
                   result.get("evidence", "")[:200],
                   job["url"], ""]
-    lines.append("Rows are in your Notion Applications tracker.")
+    lines.append("Rows are in your Applications tracker.")
     return subject[:200], "\n".join(lines)
 
 
@@ -2434,8 +2448,8 @@ def rescore_board_matched(today, limit=40):
 def _job_id_from_url(url):
     """The trailing posting id in a board URL (Greenhouse numeric id, Ashby or
     Lever uuid), lowercased; '' when there isn't one."""
-    m = re.search(r"/jobs/(\d+)|/([0-9a-f]{8}-[0-9a-f-]{8,})", url or "", re.I)
-    return (m.group(1) or m.group(2) or "").lower() if m else ""
+    m = re.search(r"/jobs/(\d+)|/([0-9a-f]{8}-[0-9a-f-]{8,})|smartrecruiters\.com/[^/]+/(\d{6,})", url or "", re.I)
+    return (m.group(1) or m.group(2) or m.group(3) or "").lower() if m else ""
 
 
 def find_board_posting(url, title):
@@ -2713,6 +2727,12 @@ def main(quick=False):
         print("DRY RUN: fresh Tier A alert email skipped.")
     else:
         send_fresh_alerts(written_matches, history, today)
+        # A fitting posting at a company the kit doesn't read yet: queue it, and
+        # the next full run looks for that company's own job board (company_follow.py).
+        try:
+            company_follow.enqueue(written_matches, today)
+        except Exception as e:   # noqa: BLE001  (never breaks a run)
+            logger.warning(f"company follow queue failed: {e}")
     if quick:
         if written_count and not run_stats.DRY_RUN:
             notify("Job agent", f"{written_count} new match(es) in your Applications tracker.")
@@ -2758,6 +2778,21 @@ def main(quick=False):
         print(f"{len(eeo_reopened)} row(s) reopened: closed before v4.1 over equal-opportunity wording.")
     with STATS.stage("screen_candidates"):
         candidate_report = screen_candidates(today)
+    # Company boards the kit finds on its own (zero tokens): look up a board for
+    # the companies queued by fitting postings, and drop found boards that have
+    # gone quiet. Newly followed boards are read from the next run on.
+    follow_report = None
+    if not run_stats.DRY_RUN:
+        with STATS.stage("company_follow"):
+            try:
+                newly_followed = company_follow.process_queue(today)
+                dropped = company_follow.note_matches(all_jobs, matches_title, today)
+                follow_report = company_follow.digest_section(newly_followed, dropped)
+                STATS.extra["boards_followed"] = len(newly_followed)
+                if newly_followed:
+                    print(f"{len(newly_followed)} company board(s) found and followed: {', '.join(newly_followed)}.")
+            except Exception as e:   # noqa: BLE001  (never breaks a run)
+                logger.warning(f"company follow failed: {e}")
     STATS.extra.update({"rescored": rescored, "verified": verified, "dated": dated,
                         "closed_skips": closed_skips})
     print(f"{rescored} row(s) rescored with {fit_scoring.RUBRIC_VERSION}, "
@@ -2788,6 +2823,13 @@ def main(quick=False):
                      + "\n".join(f"- {c}, {r}" for c, r in eeo_reopened))
     if candidate_report:
         extra.append(candidate_report)
+    if follow_report:
+        extra.append(follow_report)
+    watched_new = [(job, result) for job, result, _f, _s in written_matches if is_watched_company(job)]
+    if watched_new:
+        extra.insert(0, "## New at companies you follow closely\n" + "\n".join(
+            f"- **{job['title']}** at {job['company']} - {result['score']}/100"
+            f"{' | ' + result['verdict'] if result.get('verdict') else ''}\n  {job['url']}" for job, result in watched_new))
     if run_stats.DRY_RUN:
         print("DRY RUN: digest, market snapshot, and text digest skipped.")
     else:

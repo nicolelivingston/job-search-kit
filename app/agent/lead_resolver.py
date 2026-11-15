@@ -14,10 +14,12 @@ pass with one web search each.
 Where boards come from, in order, all cached for the run:
   1. postings already fetched this run (CONFIRMED_COMPANIES, feeds), by company
   2. CONFIRMED_COMPANIES entries, matched by normalised company name
-  3. candidate_results.json (the zero-token probe of new companies)
+  3. candidate_results.json (the zero-token probe of new companies) and
+     found_boards.json (boards the daily check found and follows)
   4. board_lookup_cache.json (boards this module found or ruled out before;
      a miss is retried after 14 days)
-  5. slug guesses from the company name on greenhouse / ashby / lever
+  5. slug guesses from the company name on greenhouse / ashby / lever /
+     smartrecruiters
 
 Title matching is deliberately strict, because a wrong swap is worse than no
 swap: level words (senior, staff, principal...) and role nouns (manager,
@@ -42,7 +44,7 @@ from ats_tools import CONFIRMED_COMPANIES, FETCHERS, STATIC_PATTERNS
 CANDIDATE_RESULTS_FILE = _ks_data_dir() / "candidate_results.json"
 BOARD_CACHE_FILE = _ks_data_dir() / "board_lookup_cache.json"
 MISS_RETRY_DAYS = 14
-PROBE_PLATFORMS = ("greenhouse", "ashby", "lever")
+PROBE_PLATFORMS = ("greenhouse", "ashby", "lever", "smartrecruiters")
 
 BOARD_STAMP = "Board lookup"          # Notes stamp prefix the agent and the refresh filter on
 WEB_STAMP = "Web lookup"              # the daily research step's stamp (second pass)
@@ -160,7 +162,7 @@ def company_slug_guesses(name, website=None):
 
 
 def board_from_url(url):
-    """(platform, slug) from a greenhouse / lever / ashby board URL, else None."""
+    """(platform, slug) from a greenhouse / lever / ashby / smartrecruiters board URL, else None."""
     for platform in PROBE_PLATFORMS:
         m = re.search(STATIC_PATTERNS[platform], url or "")
         if m:
@@ -219,6 +221,10 @@ def known_boards(company, job_board_url=None):
     for name, rec in _load_json(CANDIDATE_RESULTS_FILE, {}).items():
         if rec.get("ats") and rec.get("slug") and norm_company(name) == key:
             out.append((rec["ats"], rec["slug"], "candidate probe", name))
+    import ats_tools
+    for b in ats_tools.load_found_boards()["boards"]:
+        if b.get("status", "on") == "on" and b.get("platform") in PROBE_PLATFORMS and norm_company(b["name"]) == key:
+            out.append((b["platform"], b["slug"], "found by the daily check", b["name"]))
     if job_board_url:
         found = board_from_url(job_board_url)
         if found:
@@ -346,7 +352,7 @@ def resolve(company, title, index=None, job_board_url=None, website=None, today=
         try:
             if (today - datetime.strptime(checked, "%Y-%m-%d").date()).days < MISS_RETRY_DAYS:
                 result.update(status="no_board",
-                              note=f"{BOARD_STAMP}: no greenhouse/ashby/lever board (checked {checked}).")
+                              note=f"{BOARD_STAMP}: no board found on the job-board sites the kit reads (checked {checked}).")
                 return result
         except ValueError:
             pass
@@ -375,7 +381,7 @@ def resolve(company, title, index=None, job_board_url=None, website=None, today=
             # wrong company entirely, so keep probing other guesses.
     cache[key] = {"platform": None, "slug": None, "name": company, "checked": today.isoformat()}
     result.update(status="no_board",
-                  note=f"{BOARD_STAMP}: none found {today} (no greenhouse/ashby/lever board under "
+                  note=f"{BOARD_STAMP}: none found {today} (no greenhouse/ashby/lever/smartrecruiters board under "
                        f"{', '.join(company_slug_guesses(company, website))}).")
     return result
 

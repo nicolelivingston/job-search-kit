@@ -1,6 +1,7 @@
-"""The Job Search folder carries Claude's permissions file: web fetch and
-search off, download commands refused, every command asks, approval-skipping
-modes off, the kit folder readable; an existing file is never replaced. The
+"""The Job Search folder carries Claude's permissions file: web fetch off,
+web search asks first (for company research), download commands refused, every
+command asks, approval-skipping modes off, the kit folder readable; a file the
+user changed is never replaced, and an untouched older one is updated. The
 kit's posting fetch writes only .md files under Applications/. No network.
     python3 app/agent/agent_tests/test_claude_permissions.py
 """
@@ -37,9 +38,10 @@ class ClaudePermissions(unittest.TestCase):
     def test_file_written_with_the_rules(self):
         f = self.root / ".claude" / "settings.json"
         p = json.loads(f.read_text())["permissions"]
-        self.assertEqual(p["ask"], ["Bash", "PowerShell"])
-        for rule in ("WebFetch", "WebSearch", "Bash(curl *)", "Bash(wget *)", "PowerShell(Invoke-WebRequest *)"):
+        self.assertEqual(p["ask"], ["Bash", "PowerShell", "WebSearch"])   # a search asks the user every time
+        for rule in ("WebFetch", "Bash(curl *)", "Bash(wget *)", "PowerShell(Invoke-WebRequest *)"):
             self.assertIn(rule, p["deny"])
+        self.assertNotIn("WebSearch", p["deny"])
         self.assertEqual((p["disableBypassPermissionsMode"], p["disableAutoMode"]), ("disable", "disable"))
         self.assertEqual(p["additionalDirectories"], [str(self.fr.KIT)])
         self.assertNotIn("allow", p)   # nothing runs without the user's OK
@@ -49,6 +51,17 @@ class ClaudePermissions(unittest.TestCase):
         f.write_text('{"mine": true}')
         self.assertFalse(self.fr.write_claude_settings(self.root))
         self.assertEqual(json.loads(f.read_text()), {"mine": True})
+
+    def test_untouched_older_file_is_updated(self):
+        f = self.root / ".claude" / "settings.json"
+        f.write_text(json.dumps(self.fr._claude_settings_v1(self.fr.KIT), indent=2) + "\n")
+        self.assertTrue(self.fr.write_claude_settings(self.root))
+        self.assertEqual(json.loads(f.read_text()), self.fr.claude_settings(self.fr.KIT))
+        changed = self.fr._claude_settings_v1(self.fr.KIT)
+        changed["permissions"]["deny"].append("Bash(rm *)")   # the user added a rule: theirs now
+        f.write_text(json.dumps(changed))
+        self.assertFalse(self.fr.write_claude_settings(self.root))
+        self.assertEqual(json.loads(f.read_text()), changed)
 
     def test_fetch_writes_only_under_applications(self):
         os.environ["KIT_SETTINGS_DIR"] = str(self.root / "settings")

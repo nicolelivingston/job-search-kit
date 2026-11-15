@@ -6,7 +6,9 @@ Read `bullet-format.md` and `confidentiality.md` (in the kit-basics skill's refe
 
 ## Picking the stories
 
-Ask for the list first, then go deep one at a time:
+**With a resume intake** (`Evidence Bank/resume-intake.md` lists story candidates): start from it instead of a blank list. Read the candidates back as one numbered list and ask which four to six they'd most want a hiring manager to know about, and what's missing that isn't on the resume (the work people are proudest of is often not on it). Then steer for range (step 2 below) and order (step 3). For each card, read the resume's bullets for that story aloud first, then ask the questions below, skipping any part the resume already answers plainly and always asking the ones the intake marked missing. Every figure and internal name on the resume still goes through the Figures and Sensitivity questions: being on an old resume doesn't clear it.
+
+**Without one**, ask for the list first, then go deep one at a time:
 
 1. "Name the four to six pieces of work from the last few years you'd want a hiring manager to know about. One line each." Write them as a numbered list and read it back.
 2. Steer toward range: one thing they shipped, one decision they made under constraint, one time they changed what leaders decided, one time something went wrong and what they did, one thing that shows how they work with other teams. If the list is all one kind, ask for the missing kind.
@@ -28,6 +30,7 @@ For each story, ask in this order and write their answers as said:
 Then draft the bullets:
 
 - One to three bullets per card, three parts each (what, what it caused, why it mattered), in the user's voice from Rules File section 2, using only what they said. Read each one back. Yes, edit, or no.
+- When the story came from the resume intake, start from the user's own resume wording and show the change: the bullet as it was, then the proposed one, with what was added (from their answers today) or cut. If the intake marked it "strong as written", propose it unchanged. They pick; their edit wins. When a bullet is approved into the bank, write its ID on that R line's "Carded" field in `resume-intake.md`.
 - Approved bullets get `[primary]`. A second angle on the same story gets `[alternate: <angle>]`. A wording that fits only one situation gets `[variant: <when>]`. Something they want to keep but not put on a resume gets `[interview-only]`.
 - A bullet they want to think about gets a `P-` ID and the `[proposed]` tag (`- P-E01.2 [proposed]: ...`) and a row in `approval-queue.md`. On approval the approval session gives it the next free `E01.N` ID and its real tag. The gate refuses proposed bullets on anything that may be sent, so there is no harm in parking one.
 - Never write a result the user didn't say. If part 2 or 3 is missing, ask once more; if it's still missing, write the bullet with the parts they have and put the missing part in the card's "To find out" line.
@@ -41,6 +44,7 @@ Cards are `E01`, `E02`, ... in the order agreed. Bullets are `E01.1`, `E01.2`. N
 - `Evidence Bank/Evidence Bank.md`: replace the template card with the real cards in Part B, keep the exact line shapes. Fill Part C with every figure the user allowed to be written (paper, prep only, or not yet cleared, with the story); a withheld one appears only as "(amount withheld by the user)". Leave Part A's placeholders for session 4; the index marks them as placeholders, never paper. Add a dated Part D line: "Session 2: cards E01 to E0N added."
 - `Evidence Bank/Prep File.md`: one section per card with exact figures, dates, people and teams, internal names, and the likely interview questions the story raises. Answers to those questions come from the user, in a later session if not now; never draft them.
 - `Evidence Bank/approval-queue.md`: any proposed bullets.
+- `Evidence Bank/resume-intake.md` (when there is one): the "Carded" field on each resume bullet that made it into the bank, and any answers the user gave to its questions.
 - Rebuild the index: `bank_index.py`. If it reports a line it couldn't read, fix the line shape and run it again.
 
 ## Close

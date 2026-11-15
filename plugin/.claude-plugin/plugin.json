@@ -1,7 +1,7 @@
 {
   "name": "job-search-kit",
   "version": "0.2.0",
-  "description": "Claude skills for the Job Search Kit: Start Here interviews that build your evidence bank and master resume, tailored application materials that select from the bank and pass the pre-send gate, evidence interviews, and approval sessions.",
+  "description": "Claude skills for the Job Search Kit: Start Here interviews that build your evidence bank and master resume (starting from the resume you have), tailored application materials that select from the bank and pass the pre-send gate, evidence interviews, approval sessions, and company research you approve.",
   "author": {
     "name": "Job Search Kit"
   },

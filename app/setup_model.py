@@ -116,7 +116,9 @@ def read_answers(settings_dir):
         },
         "pay": {"floor": fs["PAY_HARD_FLOOR"], "target": fs["PAY_TARGET"], "rank_no_pay_lower": fs["NO_PAY_CAP"] < NO_CAP},
         "fields": {"domains": domains, "current_field": next(iter(fs.get("SAME_DOMAINS") or []), ""), "feed": feed,
-                   "boards": co["ats_tools"]["CONFIRMED_COMPANIES"], "custom_sites": co["ats_tools"]["CUSTOM_SITE_COMPANIES"]},
+                   "boards": co["ats_tools"]["CONFIRMED_COMPANIES"], "custom_sites": co["ats_tools"]["CUSTOM_SITE_COMPANIES"],
+                   "watched": _words(co["ats_tools"].get("WATCHED_COMPANIES") or []),
+                   "auto_follow": ag.get("AUTO_FOLLOW", True) is not False},
         "resume": {"font": b["FONT"], "body_pt": b["BODY_PT"], "name_pt": b["NAME_PT"], "heading_pt": b["HEADING_PT"],
                    "margin_in": b["MARGIN_IN"], "line_spacing": b["LINE_SPACING"],
                    "avoid_words": g["VOCAB_TERMS"], "abbreviations": g["ABBREVIATIONS"], "retired": g["RETIRED_PHRASES"],
@@ -257,6 +259,12 @@ def apply_answers(settings, a):
     c["board_feeds"] = {"WWR_FEEDS": [FEEDS.get(fi.get("feed", "product"), FEEDS["product"])]}
     co["ats_tools"]["CONFIRMED_COMPANIES"] = fi["boards"]
     co["ats_tools"]["CUSTOM_SITE_COMPANIES"] = fi["custom_sites"]
+    # Companies to follow closely, and whether the daily check may follow the
+    # boards it finds on its own. An older page that doesn't send them changes nothing.
+    if "watched" in fi:
+        co["ats_tools"]["WATCHED_COMPANIES"] = _words(fi["watched"])
+    if "auto_follow" in fi:
+        ag["AUTO_FOLLOW"] = bool(fi["auto_follow"])
 
     for k, v in (("FONT", "font"), ("BODY_PT", "body_pt"), ("NAME_PT", "name_pt"), ("HEADING_PT", "heading_pt"),
                  ("MARGIN_IN", "margin_in"), ("LINE_SPACING", "line_spacing")):
@@ -292,6 +300,62 @@ def _default_rule(code):
         if h["$tuple"][0] == code:
             return h
     return {"$tuple": [code, {"$rx": ["~^$"]}, "skip", code]}
+
+
+def _phrase_hit(phrases, title):
+    """The first phrase found in the title as whole words, any capitalization
+    (the same rule the daily check uses), or None. A phrase starting with ~ is
+    a regular expression."""
+    for ph in phrases or []:
+        ph = str(ph).strip()
+        if not ph:
+            continue
+        try:
+            pat = ph[1:] if ph.startswith("~") else r"\b" + re.escape(ph).replace(r"\ ", r"\s+") + r"\b"
+            if re.search(pat, title, re.I):
+                return ph
+        except re.error:
+            continue
+    return None
+
+
+def check_title(answers, title):
+    """What the daily check would do with a job title, given the setup
+    answers as they stand on the page (saved or not). Plain words for the
+    "Try a title" box in setup step 1. Returns {"kept", "level", "lines"}."""
+    w = (answers or {}).get("work") or {}
+    title = str(title or "").strip()
+    if not title:
+        return {"kept": False, "level": "", "lines": ["Type a job title to try it."]}
+    titles = [t for t in (w.get("titles") or []) if str(t).strip()]
+    if not titles:
+        return {"kept": False, "level": "", "lines": ["Add at least one job title above first."]}
+    hit = _phrase_hit(titles, title)
+    never = _phrase_hit(w.get("never_titles"), title)
+    if never:
+        return {"kept": False, "level": "", "lines": [f'Left out: the title has "{never}", which is on your never list. It won\'t be added to your tracker.']}
+    if not hit:
+        return {"kept": False, "level": "", "lines": [
+            "Left out: none of your job titles appear in it as whole words.",
+            "If you want titles like this, add the words they share (for example, the two or three words every version of the title has)."]}
+    lines = [f'Picked up: it has "{hit}".']
+    skip = _phrase_hit(w.get("skip_title_words"), title)
+    ask = _phrase_hit(w.get("ask_title_words"), title)
+    level = ""
+    if skip:
+        lines.append(f'Marked Poor fit and closed: the title has "{skip}", which is on your skip list.')
+    elif ask:
+        lines.append(f'Marked Possible fit so you decide: the title has "{ask}", which is on your ask-me-first list.')
+    for key, label in (("level_at", "At your level"), ("level_below", "A step below your level (still OK, scores a little lower)"),
+                       ("level_junior", "Too junior (scores lowest on level)")):
+        lv = _phrase_hit(w.get(key), re.sub(r"\bsr\.?(?=\s)", "senior", title, flags=re.I))
+        if lv:
+            level = key
+            lines.append(f'{label}: it has "{lv}".')
+            break
+    if not level:
+        lines.append("Level: none of your level words are in it, so it scores low on level.")
+    return {"kept": not skip, "level": level, "lines": lines}
 
 
 def write_answers(settings_dir, answers):

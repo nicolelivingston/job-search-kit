@@ -9,8 +9,9 @@ board client-side, so the ATS link isn't in the initial page source).
 detect_ats() now has two stages:
   Stage 1 -- scan the page HTML for known ATS URL patterns (fast, exact)
   Stage 2 -- if stage 1 finds nothing, guess likely company slugs from the
-             domain name and probe the Greenhouse/Lever/Ashby public APIs
-             directly. A slug that returns real job postings is a match.
+             domain name and probe the Greenhouse/Lever/Ashby/SmartRecruiters
+             public APIs directly. A slug that returns real job postings is a
+             match.
 
 This catches most JS-rendered sites. It still won't catch companies on a
 truly custom portal (e.g. Example Clearing, which self-hosts a Laravel careers
@@ -26,7 +27,8 @@ USAGE:
     python3 ats_tools.py greenhouse example-slug
     python3 ats_tools.py lever example-slug
     python3 ats_tools.py ashby example-slug
-    python3 ats_tools.py all          # pull from every confirmed company
+    python3 ats_tools.py smartrecruiters ExampleSlug
+    python3 ats_tools.py all          # pull from every followed company
 """
 
 import hashlib
@@ -164,6 +166,49 @@ CONFIRMED_COMPANIES = _S("ats_tools.CONFIRMED_COMPANIES")
 # Confirmed to have NO third-party ATS -- don't waste time re-probing these.
 CUSTOM_SITE_COMPANIES = _S("ats_tools.CUSTOM_SITE_COMPANIES")
 
+# Companies the user follows closely (setup, or the Companies page): any new
+# posting there that passes the user's filters is called out, whatever its fit.
+WATCHED_COMPANIES = _S("ats_tools.WATCHED_COMPANIES", default=[]) or []
+
+# Boards the daily check found on its own (company_follow.py). They live in the
+# data folder, not the settings folder: the user's settings stay the user's
+# own answers, and the kit never writes to them during a run.
+from kit_settings import data_dir as _ks_data_dir
+FOUND_BOARDS_FILE = _ks_data_dir() / "found_boards.json"
+
+
+def load_found_boards():
+    """{"boards": [...], "queue": [...]} from the data folder; empty when the
+    file is missing or unreadable (a damaged file never stops a run)."""
+    try:
+        data = json.loads(FOUND_BOARDS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    data["boards"] = [b for b in data.get("boards") or [] if isinstance(b, dict) and b.get("name") and b.get("platform")]
+    data["queue"] = [q for q in data.get("queue") or [] if isinstance(q, dict)]
+    return data
+
+
+def followed_companies():
+    """Every board the daily check reads: the user's own picks first, then the
+    boards the kit found that are still on. A found board never shadows one of
+    the user's picks (same board, or same company name)."""
+    out = list(CONFIRMED_COMPANIES)
+    boards = {(c.get("platform"), json.dumps(c.get("slug"), sort_keys=True).lower()) for c in out}
+    names = {(c.get("name") or "").strip().lower() for c in out}
+    for b in load_found_boards()["boards"]:
+        key = (b.get("platform"), json.dumps(b.get("slug"), sort_keys=True).lower())
+        name = (b.get("name") or "").strip().lower()
+        if (b.get("status", "on") != "on" or b.get("platform") not in FETCHERS or b.get("platform") == "workday"
+                or key in boards or name in names):   # Workday is opt-in per company, never followed on its own
+            continue
+        boards.add(key)
+        names.add(name)
+        out.append({"name": b["name"], "platform": b["platform"], "slug": b["slug"], "found": True})
+    return out
+
 
 # ---------------------------------------------------------------------------
 # DETECTION
@@ -185,6 +230,7 @@ SOFT_HINTS = {
     "ashby": [r"useAshbyData", r"ashbyhq"],
     "greenhouse": [r"greenhouse", r"grnhse"],
     "lever": [r"lever\.co", r"leverJobs"],
+    "smartrecruiters": [r"smartrecruiters"],
 }
 
 
@@ -229,7 +275,15 @@ def probe_slug(platform, slug):
                 jobs = r.json().get("jobs", [])
                 if jobs:
                     return len(jobs), [j.get("title", "") for j in jobs[:3]]
-    except (requests.RequestException, ValueError):
+        elif platform == "smartrecruiters":
+            # An unknown company answers 200 with no postings, not 404.
+            r = requests.get(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings?limit=10",
+                             headers=HEADERS, timeout=10)
+            if r.ok:
+                jobs = r.json().get("content", [])
+                if jobs:
+                    return int(r.json().get("totalFound") or len(jobs)), [j.get("name", "") for j in jobs[:3]]
+    except (requests.RequestException, ValueError, TypeError):
         pass
     return None
 
@@ -259,7 +313,7 @@ def detect_ats(url, html=None):
 
     hinted = [p for p, pats in SOFT_HINTS.items()
               if any(re.search(pat, html, re.I) for pat in pats)]
-    platforms = hinted + [p for p in ("greenhouse", "lever", "ashby") if p not in hinted]
+    platforms = hinted + [p for p in ("greenhouse", "lever", "ashby", "smartrecruiters") if p not in hinted]
 
     for platform in platforms:
         for slug in guess_slugs(url):
@@ -429,11 +483,93 @@ def fetch_workday(tenant, instance, board):
     return jobs
 
 
+# A SmartRecruiters board lists titles only, so each posting whose title is on
+# the user's list gets one more call for its detail page (the description, with
+# the pay range in it). Other titles stay as listings: they never pass the
+# title filter anyway, and a large board has hundreds of them.
+DETAIL_TITLE_RE = _S("agent.ROLE_TITLE_RE", default=None)
+DETAIL_CAP = int(os.environ.get("DETAIL_CAP", "40"))
+DETAIL_WORKERS = 4
+
+
+def _fetch_details(jobs, fetch_one, label):
+    """Fill description and link on the jobs whose title is on the user's list,
+    at most DETAIL_CAP of them, DETAIL_WORKERS at a time. A failed detail leaves
+    the listing as it was (title-only), never drops it."""
+    from concurrent.futures import ThreadPoolExecutor
+    if DETAIL_TITLE_RE is None:
+        return jobs
+    want = [j for j in jobs if DETAIL_TITLE_RE.search(j.get("title", ""))][:DETAIL_CAP]
+    if not want:
+        return jobs
+
+    def fill(job):
+        try:
+            job.update({k: v for k, v in (fetch_one(job) or {}).items() if v})
+        except Exception as e:   # noqa: BLE001
+            print(f"  [warn] {label} detail for {job.get('title', '')!r} failed: {e}", file=sys.stderr)
+    with ThreadPoolExecutor(max_workers=DETAIL_WORKERS) as pool:
+        list(pool.map(fill, want))
+    return jobs
+
+
+def fetch_smartrecruiters(slug):
+    """SmartRecruiters' public Posting API (documented, no key needed):
+    https://api.smartrecruiters.com/v1/companies/{slug}/postings
+    A posting's page is https://jobs.smartrecruiters.com/{slug}/{id}."""
+    api = f"https://api.smartrecruiters.com/v1/companies/{slug}/postings"
+    jobs, offset, limit = [], 0, 100
+    while True:
+        resp = request_with_retry(requests.get, f"{api}?limit={limit}&offset={offset}",
+                                  headers=HEADERS, timeout=FETCH_TIMEOUT, attempts=FETCH_ATTEMPTS)
+        resp.raise_for_status()
+        data = resp.json()
+        content = data.get("content", []) or []
+        for job in content:
+            loc = job.get("location", {}) or {}
+            where = ", ".join(x for x in (loc.get("city"), loc.get("region"), loc.get("country")) if x)
+            if loc.get("remote"):
+                where = f"Remote, {where}" if where else "Remote"
+            jobs.append({
+                "source": f"SmartRecruiters:{slug}",
+                "id": f"sr-{slug}-{job.get('id', '')}",
+                "title": job.get("name", ""),
+                "company": slug,
+                "url": f"https://jobs.smartrecruiters.com/{slug}/{job.get('id', '')}",
+                "location": where,
+                "published": (job.get("releasedDate") or "")[:10],
+                "salary_text": "",
+                "description": "",
+            })
+        offset += len(content)
+        if not content or offset >= int(data.get("totalFound", 0) or 0):
+            break
+
+    def detail(job):
+        pid = job["id"].rsplit("-", 1)[-1]
+        r = request_with_retry(requests.get, f"{api}/{pid}", headers=HEADERS,
+                               timeout=FETCH_TIMEOUT, attempts=FETCH_ATTEMPTS)
+        r.raise_for_status()
+        data = r.json()
+        sections = ((data.get("jobAd") or {}).get("sections") or {})
+        text = "\n".join((sections.get(k) or {}).get("text", "") for k in
+                         ("companyDescription", "jobDescription", "qualifications", "additionalInformation"))
+        # The detail carries the posting's own page link; it replaces the
+        # built one when it is a SmartRecruiters address.
+        link = data.get("postingUrl") or ""
+        h = _host(link)
+        if not (h == "smartrecruiters.com" or h.endswith(".smartrecruiters.com")):
+            link = ""
+        return {"description": re.sub("<[^<]+?>", " ", html.unescape(text)).strip(), "url": link}
+    return _fetch_details(jobs, detail, f"SmartRecruiters:{slug}")
+
+
 FETCHERS = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
     "ashby": fetch_ashby,
     "workday": lambda params: fetch_workday(**params) if params else [],
+    "smartrecruiters": fetch_smartrecruiters,
 }
 
 
@@ -497,19 +633,21 @@ def _fetch_company(company):
 
 
 def fetch_all_confirmed():
-    """Pull postings from every company in CONFIRMED_COMPANIES, concurrently
-    (run_concurrently), in CONFIRMED_COMPANIES order. Failed and abandoned
-    boards are warned about and skipped; the slowest boards are named."""
+    """Pull postings from every followed company (the user's picks, then the
+    boards the daily check found), concurrently (run_concurrently), in that
+    order. Failed and abandoned boards are warned about and skipped; the
+    slowest boards are named."""
     def _on(c):
         # The kit reads a Workday board only when its entry has workday_ok (see SOURCES.md).
         return not (c.get("platform") == "workday" and c.get("workday_ok") is not True)
-    for company in CONFIRMED_COMPANIES:
+    companies = followed_companies()
+    for company in companies:
         if not _on(company):
             print(f"  {company['name']}: skipped (Workday board is off; turn it on in Setup if you want it read)", file=sys.stderr)
-    results = run_concurrently([(c["name"], (lambda c=c: _fetch_company(c))) for c in CONFIRMED_COMPANIES if _on(c)],
+    results = run_concurrently([(c["name"], (lambda c=c: _fetch_company(c))) for c in companies if _on(c)],
                                label="board")
     all_jobs, failed, slow = [], [], []
-    for company in CONFIRMED_COMPANIES:
+    for company in companies:
         if not _on(company):
             continue
         jobs, seconds, err = results[company["name"]]
@@ -548,7 +686,7 @@ if __name__ == "__main__":
     elif command == "all":
         jobs = fetch_all_confirmed()
         print(f"\n{len(jobs)} total postings across "
-              f"{len(CONFIRMED_COMPANIES)} confirmed companies.")
+              f"{len(followed_companies())} followed companies.")
     else:
         print(f"Unknown command: {command}")
         print(__doc__)
