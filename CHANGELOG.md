@@ -2,6 +2,12 @@
 
 Plain-words notes for each release, newest first. A kit that's already installed updates itself; your Job Search folder, settings, evidence bank, and tracker are never changed by an update, except where a note below says a setting is updated (after a backup).
 
+## Next release
+(Rename this heading to the version number when you tag the release.)
+
+**Behind the scenes**
+- Company names are tidied up in a way that can't stall on a very long, odd name typed into setup. Which names match each other is unchanged.
+
 ## 0.3.0
 
 **New**

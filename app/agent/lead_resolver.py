@@ -53,10 +53,10 @@ BOARD_STAMP = "Board lookup"          # Notes stamp prefix the agent and the ref
 WEB_STAMP = "Web lookup"              # the daily research step's stamp (second pass)
 
 # Suffixes that never help identify a company (dropped for both matching and slugs)...
-_LEGAL_RE = re.compile(r"[,.]?\s*\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|gmbh)\b\.?", re.I)
+_LEGAL = frozenset("inc incorporated llc ltd limited corp corporation co company plc gmbh".split())
 # ...and descriptive tails that vary between a board and an alert ("Quillco
 # Labs" vs "Quillco"), dropped for matching only; slugs try both forms.
-_TAIL_RE = re.compile(r"\b(holdings|group|technologies|technology|labs)\b\.?", re.I)
+_TAILS = frozenset("holdings group technologies technology labs".split())
 _STOP = {"the", "of", "and", "a", "an", "for", "to", "in", "at", "on", "with", "our", "team", "remote", "us", "usa"}
 _SYNONYM = {"sr": "senior", "jr": "junior", "mgr": "manager", "mgmt": "management", "assoc": "associate",
             "2": "ii", "3": "iii", "4": "iv", "1": "i"}
@@ -73,13 +73,77 @@ _RUN_CACHE = {}  # (platform, slug) -> list of job dicts ([] when the board fail
 # normalisation
 # ---------------------------------------------------------------------------
 
+# A company name can come straight from the setup page, so the three steps
+# below read the name once, left to right, instead of using patterns whose
+# running time can blow up on a long, odd name. They give exactly what the
+# patterns gave (test_company_names.py checks them against the old ones).
+_FOLD = {0x131: "i", 0x17F: "s"}   # letters the old case-blind patterns also read as i and s
+
+
+def _is_word(ch):
+    return ch.isalnum() or ch == "_"
+
+
+def _drop_parens(s):
+    """'acme (formerly x) labs' -> 'acme   labs'. An opening parenthesis with
+    no closing one on the same line stays (it is stripped later)."""
+    out, pos, n = [], 0, len(s)
+    i, close, nl = s.find("("), -1, -1
+    while i != -1:
+        if close < i:
+            close = s.find(")", i)
+            if close == -1:
+                break
+        if nl < i:
+            nl = s.find("\n", i)
+            if nl == -1:
+                nl = n
+        if nl < close:                       # a line break sits in between
+            i = s.find("(", nl + 1)
+            continue
+        out.append(s[pos:i])
+        out.append(" ")
+        pos = close + 1
+        i = s.find("(", pos)
+    out.append(s[pos:])
+    return "".join(out)
+
+
+def _drop_words(s, words, lead):
+    """Each whole word on the list becomes one space, with a full stop right
+    after it. With lead, the spaces before it go too, and one comma or full
+    stop before those (', Inc.')."""
+    out, pos, i, n = [], 0, 0, len(s)
+    while i < n:
+        if not _is_word(s[i]):
+            i += 1
+            continue
+        j = i
+        while j < n and _is_word(s[j]):
+            j += 1
+        if s[i:j].translate(_FOLD) in words:
+            start = i
+            if lead:
+                while start > pos and s[start - 1].isspace():
+                    start -= 1
+                if start > pos and s[start - 1] in ",.":
+                    start -= 1
+            end = j + 1 if j < n and s[j] == "." else j
+            out.append(s[pos:start])
+            out.append(" ")
+            pos = end
+            j = end
+        i = j
+    out.append(s[pos:])
+    return "".join(out)
+
+
 def _clean_company(name, drop_tails):
-    s = re.sub(r"\(.*?\)", " ", (name or "").lower())
-    s = _LEGAL_RE.sub(" ", s)
+    s = _drop_parens((name or "").lower())
+    s = _drop_words(s, _LEGAL, True)
     if drop_tails:
-        s = _TAIL_RE.sub(" ", s)
-    s = re.sub(r"[^a-z0-9 ]+", "", s)
-    return re.sub(r"\s+", " ", s).strip()
+        s = _drop_words(s, _TAILS, False)
+    return " ".join("".join(ch for ch in s if ch == " " or "a" <= ch <= "z" or "0" <= ch <= "9").split())
 
 
 def norm_company(name):
