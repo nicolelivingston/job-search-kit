@@ -178,7 +178,7 @@ def summarize(rows, contacts, today, cfg, tracking_starts=None):
         if st == "Interested" and r.get("Overall Verdict") == "Strong fit":
             fit = _num(r.get("Role Fit Score"))
             attention.append({**base, "kind": "Your call", "level": "mute", "order": 5, "fit": fit or 0,
-                              "what": "Strong fit" + (f", scored {_round(fit)}" if fit is not None else "") + ". Applying or Passed?"})
+                              "what": "Strong fit" + (f", scored {round(fit * 10)}" if fit is not None else "") + ". Applying or Passed?"})
     attention.sort(key=lambda a: (a["order"], -a.get("fit", 0), a["company"].lower()))
     more = max(0, len(attention) - ATTENTION_MAX)
     attention = attention[:ATTENTION_MAX]

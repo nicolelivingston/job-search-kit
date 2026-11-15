@@ -29,6 +29,13 @@ A job-search system you install on your own computer. It watches the job boards 
 
 *The skills watch for a made-up retail analyst. Machine learning is a gap that moved up a place this week.*
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/health-dark.png">
+  <img alt="The Health page with six headline numbers, a list of what needs attention today, applications sent by week against a target of three, and a note that drafts are taking fewer rounds" src="docs/images/health-light.png">
+</picture>
+
+*The Health page for a made-up senior software engineer, with every company made up too.*
+
 ## Layout
 - `app/` the code: `agent/` (job board agent, fit scoring, built-in tracker, tests), `resume/` (bank index, resume builder, pre-send gate, reviewer prompts), `kit_settings.py` (loads a user's settings), `first_run.py` (chooses and creates the user's folder), `wizard.py` and `wizard_page.html` (setup wizard and tracker page), `schedule.py` (daily runs), `tracker_cli.py` (tracker access for the plugin), `error_report.py` (scrubbed error reports), `updater.py` (auto-update), `platform_support.py` (notifications, LibreOffice lookup)
 - `plugin/` the Claude plugin: `start-here`, `application-materials`, `evidence-interview`, `approval-session`, `kit-basics`, and two reviewer agents

@@ -60,17 +60,18 @@ class Summary(unittest.TestCase):
         self.assertIsNone(s["headline"]["weeks_hit"])
 
     def test_attention_order_and_kinds(self):
-        rows = [row(1, "Interested", **{"Overall Verdict": "Strong fit", "Role Fit Score": 81}),
+        rows = [row(1, "Interested", **{"Overall Verdict": "Strong fit", "Role Fit Score": 8.1}),
                 row(2, "Applied", "2026-02-01"),
                 row(3, "Applied", "2026-03-10", **{"Follow-up Date": "2026-03-17"}),
                 row(4, "Interviewing", "2026-03-01", **{"Next Step": "Second round Friday"}),
                 row(5, "Drafting Resume", **{"Drafting Started": "2026-03-15", "Resume Versions": 3}),
                 row(6, "Interested", **{"Overall Verdict": "Applying"}),
                 row(7, "Applied", "2026-02-01", **{"Outcome Type": "Rejected"}),
-                row(8, "Interested", **{"Overall Verdict": "Possible fit", "Role Fit Score": 75})]
+                row(8, "Interested", **{"Overall Verdict": "Possible fit", "Role Fit Score": 7.5})]
         a = health.summarize(rows, [], TODAY, CFG)["attention"]
         self.assertEqual([x["kind"] for x in a], ["Interview", "Follow-up due", "No reply", "Draft open", "Not sent yet", "Your call"])
         self.assertEqual(a[0]["what"], "Second round Friday")
+        self.assertEqual(a[-1]["what"], "Strong fit, scored 81. Applying or Passed?")   # 0 to 100, like the tracker
         self.assertIn("45 days", a[2]["what"])
         self.assertEqual(a[3]["what"], "Draft in progress (started 2026-03-15, resume at version 3). Send it or close it.")
         self.assertNotIn("Example Co 7", [x["company"] for x in a])   # has an outcome, so it isn't waiting
