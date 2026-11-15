@@ -8,10 +8,10 @@ A job-search system you install on your own computer. It watches the job boards 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tracker-dark.png">
-  <img alt="The tracker page with six example postings, each with a fit score from 0 to 100, a Possible fit or Poor fit label, base pay, and status" src="docs/images/tracker-light.png">
+  <img alt="The tracker page with six postings, each with a fit score from 0 to 100, a Possible fit or Poor fit label, base pay, work arrangement, company verdict, and Glassdoor rating" src="docs/images/tracker-light.png">
 </picture>
 
-*The tracker for a made-up retail analyst, with six example postings from made-up companies. The three Poor fits closed on their own.*
+*The tracker for a made-up retail analyst, with six postings from made-up companies. The three Poor fits closed on their own.*
 
 ## What it does
 - **Setup in plain words.** A wizard walks you through eight short steps: the work you want, where and how you work, rules that rule a job out, pay, fields and companies, your resume, how it runs, and how Claude works for you (your tools, resume format, writing voice, what Claude can do or must ask first, and what stays private). Every answer is a setting you can change later, and none of the defaults assume a field.
