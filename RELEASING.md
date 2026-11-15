@@ -13,7 +13,9 @@ can't be moved or deleted).
 - [ ] No open bug report says the current release lost or damaged data.
 - [ ] `UPDATES_PAUSED` is not on `main` (unless this release is the fix and
       the pause stays until it has been checked).
-- [ ] What changed is written down for the release notes, in plain words.
+- [ ] What changed is written down in plain words, in `CHANGELOG.md` under a
+      heading for this version (`## X.Y.Z`). The Release workflow stops if
+      the heading is missing.
 
 ## Test before it reaches anyone
 Three places to catch a problem, each before the next:

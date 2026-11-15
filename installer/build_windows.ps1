@@ -43,6 +43,11 @@ Copy-Item (Join-Path $root "SETTINGS.md"), (Join-Path $root "README.md"), (Join-
 Get-ChildItem $stage -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
 Get-ChildItem $stage -Recurse -Directory -Filter "agent_tests" | Remove-Item -Recurse -Force
 $Version.TrimStart("v") | Set-Content (Join-Path $stage "app\VERSION")
+# The plugin carries the release's version too (the installed copy and the
+# packaged .plugin below), so it never has to be bumped by hand.
+$pluginJson = Join-Path $stage "plugin\.claude-plugin\plugin.json"
+$stamped = [IO.File]::ReadAllText($pluginJson) -replace '("version"\s*:\s*")[^"]*(")', "`${1}$($Version.TrimStart('v'))`${2}"
+[IO.File]::WriteAllText($pluginJson, $stamped)
 
 # 2b. The Claude plugin, packaged for the release page too
 $pluginZip = Join-Path $dist "job-search-kit.plugin.zip"

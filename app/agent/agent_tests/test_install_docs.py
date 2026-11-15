@@ -98,5 +98,23 @@ class ReadmeInstallSection(unittest.TestCase):
         self.assertIn(REPO_URL + "#install-on-windows", release)  # the release page sends people back to these steps
 
 
+class ReleaseHousekeeping(unittest.TestCase):
+    def test_plugin_version_comes_from_the_release(self):
+        import json
+        version = json.loads(read("plugin/.claude-plugin/plugin.json"))["version"]
+        self.assertRegex(version, r"^\d+\.\d+\.\d+$")
+        self.assertIn("plugin.json", read("installer/build_windows.ps1"))        # stamped with the tag at build time
+        self.assertIn("plugin.json", read("installer/smoke_test_windows.ps1"))   # and the install check compares the two
+
+    def test_whats_new_is_written_down_and_checked(self):
+        changelog = read("CHANGELOG.md")
+        sections = re.findall(r"^## (\d+\.\d+\.\d+)$", changelog, re.M)
+        self.assertTrue(sections, "CHANGELOG.md has no '## X.Y.Z' section")
+        self.assertEqual(sections, sorted(sections, key=updater.parse, reverse=True), "newest release first")
+        release = read(".github/workflows/release.yml")
+        self.assertIn('grep -qxF "## $v" CHANGELOG.md', release)                 # a tag with no section stops the release
+        self.assertIn("CHANGELOG.md", read("RELEASING.md"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -77,7 +77,7 @@ Team roles (a one-person project):
 Privacy: see [Privacy](#privacy). This program sends no information to other networked systems except the job boards the user picks, the daily update check (which the user can turn off), and what the user chooses to share with Claude or in an error report they send themselves.
 
 ## Help
-`SUPPORT.md` says how to report a problem and how to go back to the previous version. `CONTRIBUTING.md` says how to suggest an idea or send a change, and `CODE_OF_CONDUCT.md` is how everyone taking part treats each other. `SECURITY.md` says how to report a security problem privately. `RELEASING.md` is the go or no-go checklist for every release. `SOURCES.md` lists the job sources and how the kit reads them. `THIRD_PARTY_NOTICES.md` lists the bundled software.
+`SUPPORT.md` says how to report a problem and how to go back to the previous version. `CONTRIBUTING.md` says how to suggest an idea or send a change, and `CODE_OF_CONDUCT.md` is how everyone taking part treats each other. `SECURITY.md` says how to report a security problem privately. `CHANGELOG.md` says what's new in each release, in plain words. `RELEASING.md` is the go or no-go checklist for every release. `SOURCES.md` lists the job sources and how the kit reads them. `THIRD_PARTY_NOTICES.md` lists the bundled software.
 
 ## Running the tests
     cd app/agent && KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python3 agent_tests/run_all.py

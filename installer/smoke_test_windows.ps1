@@ -27,6 +27,8 @@ $menu = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Job Search Kit"
 foreach ($l in "Open my job tracker","Change my settings","Send an error report","Check for updates") {
   if (-not (Test-Path "$menu\$l.lnk")) { throw "missing Start menu item $l" } }
 Write-Host "Installed version $(Get-Content "$app\app\VERSION")"
+$pluginVersion = (Get-Content "$app\plugin\.claude-plugin\plugin.json" -Raw | ConvertFrom-Json).version
+if ($pluginVersion -ne (Get-Content "$app\app\VERSION" -Raw).Trim()) { throw "the plugin says version $pluginVersion, not the installed version" }
 
 # First run: choose a local-only folder (as the wizard's first step does)
 $env:KIT_CONFIG_DIR = "$env:TEMP\kitcfg"
