@@ -89,11 +89,29 @@ jobs:
           Write-Host "VirusTotal: malicious=$($s.malicious) suspicious=$($s.suspicious) undetected=$($s.undetected)"
           $flagged = @($a.data.attributes.results.PSObject.Properties | Where-Object { $_.Value.category -eq "malicious" } | ForEach-Object { $_.Name })
           if ($flagged) { Write-Host "Flagged by: $($flagged -join ', ')" }
+          # What each one called it, and where the full report is: both are
+          # needed for a false-positive report.
+          foreach ($e in $a.data.attributes.results.PSObject.Properties) {
+            if ($e.Value.category -eq "malicious") { Write-Host "  $($e.Name): $($e.Value.result)" }
+          }
+          Write-Host "Report: https://www.virustotal.com/gui/file/$((Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower())"
           # Microsoft's verdict is what Windows users get, so it alone stops the
           # release. Other engines' machine-learning guesses often hit new,
           # unsigned installers, so it takes three of them to stop it.
           if ($flagged -contains "Microsoft") { throw "Microsoft flagged the installer; submit it as a false positive before releasing" }
           if ($flagged.Count -ge 3) { throw "VirusTotal: $($flagged.Count) engines flagged the installer" }
+      # A scan that stops the release still keeps the installer on this run's
+      # page, so the maintainer can send that exact file to Microsoft as a
+      # false positive. Nothing downstream reads it: clean-install and publish
+      # only run when this job passes, and only ever take "dist".
+      - name: Keep the installer a scan stopped (for a false-positive report)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stopped-installer
+          path: dist/
+          retention-days: 14
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
