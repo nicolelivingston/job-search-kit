@@ -20,9 +20,9 @@ That's the whole install. To come back later, open the Start menu and look for J
 
 If Windows says it found a virus or a threat, stop there, leave your antivirus on, and report it (see [SUPPORT.md](SUPPORT.md)).
 
-**For resumes and cover letters** (not needed for the daily job checks or the tracker), two more things:
-- [LibreOffice](https://www.libreoffice.org/download/) (free). The kit uses it in the background to count your resume's pages.
-- The Claude desktop app on a paid plan, with the kit's plugin: **[download the plugin](https://github.com/nicolelivingston/job-search-kit/releases/latest/download/job-search-kit.plugin)**, then in Claude open Customize, Plugins, Add plugin, Upload plugin, and choose that file (the buttons may be named a little differently). Then open your Job Search folder in Claude and type `/start-here`.
+**For resumes and cover letters** (not needed for the daily job checks or the tracker), you need the Claude desktop app on a paid plan, with the kit's plugin: **[download the plugin](https://github.com/nicolelivingston/job-search-kit/releases/latest/download/job-search-kit.plugin)**, then in Claude open Customize, Plugins, Add plugin, Upload plugin, and choose that file (the buttons may be named a little differently). Then open your Job Search folder in Claude and type `/start-here`.
+
+**Optional:** [LibreOffice](https://www.libreoffice.org/download/) (free) lets the kit count your resume's pages by itself. Having Word doesn't replace it for that, because the kit can't run Word in the background. Without LibreOffice, your resume and cover letter are still built and checked; open them in Word to see how many pages they run.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tracker-dark.png">
