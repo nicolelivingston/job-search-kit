@@ -60,10 +60,8 @@ Three places to catch a problem, each before the next:
 - [ ] Install it by hand on one Windows computer: the folder is kept, the
       tracker opens, a daily run finishes, Send an error report works.
 - [ ] Click **Download the installer** in the README: it downloads this
-      release. (Once, for the first release after v0.1.1: the installer is
-      now named `JobSearchKit-Setup.exe` every release, so change that link to
-      `https://github.com/nicolelivingston/job-search-kit/releases/latest/download/JobSearchKit-Setup.exe`
-      in a pull request. It never needs changing again.)
+      release. (The link never changes; the installer has the same name in
+      every release.)
 
 ## Never
 - Never move, delete, or re-use a tag.

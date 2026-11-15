@@ -8,7 +8,7 @@ A job-search system you install on your own computer. It watches the job boards 
 
 ## Install on Windows
 
-**[Download the installer](https://github.com/nicolelivingston/job-search-kit/releases/download/v0.1.1/JobSearchKit-Setup-0.1.1.exe)** (one file, about 37 MB, for Windows 10 or 11). That link is the only thing you need from this page. The green Code button gives you the source code, which isn't the installer.
+**[Download the installer](https://github.com/nicolelivingston/job-search-kit/releases/latest/download/JobSearchKit-Setup.exe)** (one file, about 37 MB, for Windows 10 or 11). It's always the newest version, and that link is the only thing you need from this page. The green Code button gives you the source code, which isn't the installer.
 
 1. Click **Download the installer** above. If your browser says the file isn't commonly downloaded, choose Keep (you may need to click Show more or the ... button first).
 2. Open the file. It's in your Downloads folder, and its name starts with JobSearchKit-Setup.
