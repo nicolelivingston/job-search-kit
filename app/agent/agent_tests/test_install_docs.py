@@ -23,10 +23,6 @@ import updater    # noqa: E402
 REPO_URL = "https://github.com/nicolelivingston/job-search-kit"
 # The same address works for every release, because the file name never changes.
 FIXED_LINK = REPO_URL + "/releases/latest/download/JobSearchKit-Setup.exe"
-# v0.1.1 came out before the fixed name, so until the next release the README
-# links straight to that release's file. RELEASING.md says when to switch; take
-# this line out then.
-LAST_VERSIONED_LINK = REPO_URL + "/releases/download/v0.1.1/JobSearchKit-Setup-0.1.1.exe"
 
 
 def read(rel):
@@ -79,7 +75,7 @@ class ReadmeInstallSection(unittest.TestCase):
     def test_one_link_downloads_the_installer_itself(self):
         links = re.findall(r"\]\((https://[^)\s]+\.exe)\)", self.section)
         self.assertEqual(len(links), 1, "exactly one installer link, so there is nothing to choose between")
-        self.assertIn(links[0], (FIXED_LINK, LAST_VERSIONED_LINK))
+        self.assertEqual(links[0], FIXED_LINK)
         self.assertTrue(self.section.lstrip().startswith("**[Download the installer]("), "the link is the first thing in the section")
 
     def test_steps_cover_what_windows_shows_a_new_program(self):
