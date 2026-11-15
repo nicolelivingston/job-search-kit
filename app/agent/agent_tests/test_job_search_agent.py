@@ -723,10 +723,10 @@ new = fs.score_posting("Senior Product Manager, Operations", ftext, 180000, comp
 old = fs.score_posting("Senior Product Manager, Operations", ftext, 180000, company_name="Acme", remote_hint=True, age_days=80)
 check("a 3-day-old posting outscores the same posting with unknown age", new["score"] == min(100, base["score"] + 5), (base["score"], new["score"]))
 check("an 80-day-old posting scores 10 lower", old["score"] == max(0, base["score"] - 10), (base["score"], old["score"]))
-check("freshness shows in the breakdown", "freshness" in new["breakdown"] and "freshness" in old["breakdown"])
+check("freshness shows in the breakdown", "freshness" in new["breakdown"] and "stale 10 after caps" in old["breakdown"])   # v4.3 wording
 check("freshness bands: 14 days +3, 30 days 0, 45 days -5", [fs.freshness_points(d)[0] for d in (14, 30, 45)] == [3, 0, -5])
 check("rescore_page passes the row's Posted Date age", "age_days=_row_age_days(p, today)" in inspect.getsource(jsa.rescore_page))
-check("rows crossing a freshness band edge are rescored daily", jsa.freshness_edge_days() == [8, 9, 15, 16, 31, 32, 61, 62], jsa.freshness_edge_days())
+check("rows crossing a freshness band edge are rescored daily", jsa.freshness_edge_days() == [8, 9, 15, 16, 31, 32, 61, 62, 91, 92], jsa.freshness_edge_days())
 check("rescore_tracker queries the freshness edges", "freshness_edge_filters(today)" in inspect.getsource(jsa.rescore_tracker))
 check("evaluate_job passes the posting age", "age_days=posting_age_days(" in inspect.getsource(jsa.evaluate_job))
 

@@ -92,7 +92,7 @@ def app_settings():
 # and add a step to MIGRATIONS that brings the previous version forward. A
 # brand-new setting needs no bump: read it with a default
 # (setting(..., default=...)) so older folders keep working unchanged.
-SETTINGS_VERSION = 4
+SETTINGS_VERSION = 5
 
 
 def _v0_to_v1(files):
@@ -170,9 +170,26 @@ def _v3_to_v4(files):
     return []
 
 
+STALE_BAND_V4 = {"$tuple": [None, -10, "open over 2 months"]}
+STALE_BANDS_V5 = [{"$tuple": [90, -10, "open over 2 months"]}, {"$tuple": [None, -15, "open over 3 months"]}]
+
+
+def _v4_to_v5(files):
+    """Fit scoring v4.3: a posting open more than 90 days loses 15 points
+    (10 between 61 and 90 days). A folder keeps its own copy of the age
+    bands, so the last band the kit wrote ("over 2 months, -10, no upper
+    limit") is split in two. Bands the user changed are left as they are."""
+    fs = files.get("criteria.json", {}).get("fit_scoring", {})
+    bands = fs.get("FRESHNESS_BANDS") if isinstance(fs, dict) else None
+    if not (isinstance(bands, list) and bands and bands[-1] == STALE_BAND_V4):
+        return []
+    fs["FRESHNESS_BANDS"] = bands[:-1] + [json.loads(json.dumps(b)) for b in STALE_BANDS_V5]
+    return ["postings open more than 90 days now lose 15 points for age (10 between 61 and 90 days)"]
+
+
 # from_version: step(files) -> list of plain-words changes. A step edits
 # `files` ({"criteria.json": {...}, ...}, the folder's JSON files) in memory.
-MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2, 2: _v2_to_v3, 3: _v3_to_v4}
+MIGRATIONS = {0: _v0_to_v1, 1: _v1_to_v2, 2: _v2_to_v3, 3: _v3_to_v4, 4: _v4_to_v5}
 
 
 def folder_settings_version(folder=None):

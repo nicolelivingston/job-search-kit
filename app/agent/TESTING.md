@@ -41,6 +41,8 @@ install on a fresh machine) and a beta release. See `RELEASING.md`,
 - fetched postings under 60% of the 7-day median
 - WARN: tracker calls over twice the 7-day median
 - WARN: a board that returned 0 postings after returning some last run
+- a board that listed 5 or more postings and has shown none for 3 days (it has likely moved to another job site), or that has failed on every run for 3 days. The user is told once per board, with a notification and a banner on the tracker page
+- WARN: a board that has never returned a posting in 7 days of runs. After checking the company's careers page by hand, `"zero_ok": "YYYY-MM-DD"` on its entry in `settings/companies.json` quiets it for 30 days, then it is asked about again
 
 Add one whenever a bug shows a rule the system was quietly assuming.
 

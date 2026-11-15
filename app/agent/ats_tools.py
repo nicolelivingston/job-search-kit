@@ -305,6 +305,14 @@ def detect_ats(url, html=None):
         m = re.search(pattern, html)
         if m:
             matches[platform] = m.group(1)
+    if "workday" in matches:
+        # A Workday board is read by tenant, instance, and board name; the
+        # tenant alone can't be read, so without the full address it is left out.
+        params = workday_params_from_url(html)
+        if params:
+            matches["workday"] = params
+        else:
+            matches.pop("workday")
     if matches:
         return {"result": "ATS detected (static HTML)", "matches": matches}
 
@@ -436,12 +444,56 @@ def fetch_ashby(slug):
 
 
 
+# Workday and SmartRecruiters boards list titles only, so each posting whose
+# title is on the user's list gets one more call for its detail page (the
+# description, with the pay range in it, and on Workday the real posted date).
+# Other titles stay as listings: they never pass the title filter anyway, and a
+# large board has hundreds of them.
+DETAIL_TITLE_RE = _S("agent.ROLE_TITLE_RE", default=None)
+DETAIL_CAP = int(os.environ.get("DETAIL_CAP", "40"))
+DETAIL_WORKERS = 4
+
+
+def _fetch_details(jobs, fetch_one, label):
+    """Fill description, link, and posted date on the jobs whose title is on the user's list,
+    at most DETAIL_CAP of them, DETAIL_WORKERS at a time. A failed detail leaves
+    the listing as it was (title-only), never drops it."""
+    from concurrent.futures import ThreadPoolExecutor
+    if DETAIL_TITLE_RE is None:
+        return jobs
+    want = [j for j in jobs if DETAIL_TITLE_RE.search(j.get("title", ""))][:DETAIL_CAP]
+    if not want:
+        return jobs
+
+    def fill(job):
+        try:
+            job.update({k: v for k, v in (fetch_one(job) or {}).items() if v})
+        except Exception as e:   # noqa: BLE001
+            print(f"  [warn] {label} detail for {job.get('title', '')!r} failed: {e}", file=sys.stderr)
+    with ThreadPoolExecutor(max_workers=DETAIL_WORKERS) as pool:
+        list(pool.map(fill, want))
+    return jobs
+
+
+def workday_params_from_url(url):
+    """{'tenant', 'instance', 'board'} from any Workday address, else None:
+    https://exampleco.wd5.myworkdayjobs.com/en-US/Exampleco_External/job/Remote-USA/..."""
+    m = re.search(r"https?://([a-zA-Z0-9\-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}-[A-Z]{2}/)?([A-Za-z0-9_\-]+)",
+                  url or "")
+    if not m or m.group(3).lower() in ("wday", "job", "details", "en-us"):
+        return None
+    return {"tenant": m.group(1), "instance": m.group(2), "board": m.group(3)}
+
+
 def fetch_workday(tenant, instance, board):
     """Workday's CXS API (undocumented publicly, but stable and widely used
     for exactly this purpose). URL shape:
     https://{tenant}.{instance}.myworkdayjobs.com/wday/cxs/{tenant}/{board}/jobs
 
     e.g. tenant="exampleco", instance="wd5", board="Exampleco_External".
+    Postings whose title is on the user's list then get their detail page
+    (/wday/cxs/{tenant}/{board}{externalPath}): the full description, where
+    the pay range sits, and startDate, the real posted date.
     """
     base = f"https://{tenant}.{instance}.myworkdayjobs.com"
     url = f"{base}/wday/cxs/{tenant}/{board}/jobs"
@@ -478,38 +530,23 @@ def fetch_workday(tenant, instance, board):
                 "posted_text": job.get("postedOn", ""),
                 "salary_text": "",
                 "description": "",
+                "_path": path,
             })
         offset += limit
-    return jobs
 
-
-# A SmartRecruiters board lists titles only, so each posting whose title is on
-# the user's list gets one more call for its detail page (the description, with
-# the pay range in it). Other titles stay as listings: they never pass the
-# title filter anyway, and a large board has hundreds of them.
-DETAIL_TITLE_RE = _S("agent.ROLE_TITLE_RE", default=None)
-DETAIL_CAP = int(os.environ.get("DETAIL_CAP", "40"))
-DETAIL_WORKERS = 4
-
-
-def _fetch_details(jobs, fetch_one, label):
-    """Fill description and link on the jobs whose title is on the user's list,
-    at most DETAIL_CAP of them, DETAIL_WORKERS at a time. A failed detail leaves
-    the listing as it was (title-only), never drops it."""
-    from concurrent.futures import ThreadPoolExecutor
-    if DETAIL_TITLE_RE is None:
-        return jobs
-    want = [j for j in jobs if DETAIL_TITLE_RE.search(j.get("title", ""))][:DETAIL_CAP]
-    if not want:
-        return jobs
-
-    def fill(job):
-        try:
-            job.update({k: v for k, v in (fetch_one(job) or {}).items() if v})
-        except Exception as e:   # noqa: BLE001
-            print(f"  [warn] {label} detail for {job.get('title', '')!r} failed: {e}", file=sys.stderr)
-    with ThreadPoolExecutor(max_workers=DETAIL_WORKERS) as pool:
-        list(pool.map(fill, want))
+    def detail(job):
+        r = request_with_retry(requests.get, f"{base}/wday/cxs/{tenant}/{board}{job['_path']}",
+                               headers=headers, timeout=FETCH_TIMEOUT, attempts=FETCH_ATTEMPTS)
+        r.raise_for_status()
+        info = r.json().get("jobPostingInfo", {}) or {}
+        locs = [info.get("location", "")] + (info.get("additionalLocations") or [])
+        text = re.sub("<[^<]+?>", " ", html.unescape(info.get("jobDescription", "") or ""))
+        return {"description": re.sub(r"[ \t]+", " ", text).strip(),
+                "published": (info.get("startDate") or "")[:10],
+                "location": ", ".join(x for x in locs if x) or job["location"]}
+    _fetch_details([j for j in jobs if j["_path"]], detail, f"Workday:{tenant}")
+    for j in jobs:
+        j.pop("_path", None)
     return jobs
 
 

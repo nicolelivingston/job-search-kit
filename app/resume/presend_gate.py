@@ -4,7 +4,7 @@
 Runs the scriptable parts of the pre-send gate (Rules File section 8) against
 a .docx, .md, or .txt file.
 
-Usage: python3 presend_gate.py <document> [<document> ...] [--index bank-index.json] [--selection selection.json]
+Usage: python3 presend_gate.py <document> [<document> ...] [--index bank-index.json] [--selection selection.json] [--resume resume.docx]
 
 What changed in v2:
 - Bank trace. Every bullet paragraph on a .docx page is matched against the
@@ -30,6 +30,13 @@ evidence bank folder (set in settings/paths.json). Since Oct 24, 2026
 the gate reads quoted wording out of Retired Claims Log.md itself and adds it
 to the hand list below, and a cover letter is checked for a `letter_sources`
 map in the selection file beside it (one source per body paragraph).
+
+Two more checks read what sits beside the document:
+- Item 15: a cover letter is compared with the newest version of its resume in
+  the same folder, and any run of four or more words the two share is flagged
+  (the letter says why; the resume says what).
+- An abbreviation on the user's spell-out list is kept, with a note, when the
+  saved posting (posting.md in the same folder) uses it too.
 """
 
 import argparse
@@ -635,6 +642,87 @@ def page_rules(pages, fill, is_master, limit=None, fill_limit=None):
     return flags, notes
 
 
+# Gate item 15: the letter says why; the resume says what. Any run of
+# LETTER_OVERLAP_WORDS or more words that a cover letter shares with the resume
+# beside it is flagged, so resume bullets don't get copied into the letter. The
+# resume is the highest-numbered version of the letter's own resume in the same
+# folder (or --resume). The letter's body word count is a note only: there is
+# no cap, but every sentence should add something the resume doesn't.
+LETTER_OVERLAP_WORDS = int(_S("presend_gate.LETTER_OVERLAP_WORDS", default=4) or 0)   # 0 turns the check off
+_FUNC = set("""a an the and or of to in on for with at by from as is are was were be been it its this that
+these those my our your their i we you they he she so but into than then over who what when how""".split())
+
+
+def _vnum(p):
+    m = re.search(r"_v(\d+)", p.stem)
+    return int(m.group(1)) if m else 0
+
+
+def resume_beside(path: Path):
+    """The newest resume version that goes with a letter: the same file name
+    with Resume in place of CoverLetter, else any Word file in the folder with
+    "resume" in its name. None when there isn't one."""
+    stem = re.sub(r"_v\d+$", "", path.stem).replace("_CoverLetter", "_Resume", 1)
+    docs = [p for p in path.parent.glob("*.docx") if p != path and not is_letter(p) and not p.name.startswith("~")]
+    own = [p for p in docs if re.sub(r"_v\d+$", "", p.stem) == stem]
+    cands = own or [p for p in docs if "resume" in p.name.lower()]
+    return sorted(cands, key=_vnum)[-1] if cands else None
+
+
+def letter_overlap_check(path: Path, paras, resume=None):
+    flags, notes = [], []
+    n = LETTER_OVERLAP_WORDS
+    if not is_letter(path) or n < 2:
+        return flags, notes
+    body = [t for t in letter_body(paras) if len(t.split()) >= 12]
+    words_n = sum(len(t.split()) for t in body)
+    notes.append(f"[15 letter] body is {words_n} words in {len(body)} paragraph(s); no cap, but cut any detail the resume already carries")
+    resume = Path(resume) if resume else resume_beside(path)
+    if resume is None or not resume.exists():
+        notes.append("[15 letter] no resume beside the letter, so the check for wording repeated from the resume did not run (pass --resume)")
+        return flags, notes
+    try:
+        rparas = [t for t, _ in docx_paragraphs(resume) if not _REPEAT_SKIP.search(t)]
+    except Exception as e:   # noqa: BLE001  (a damaged file: say so, don't stop the gate)
+        notes.append(f"[15 letter] couldn't read {resume.name} ({type(e).__name__}), so the repeated-wording check did not run")
+        return flags, notes
+
+    def ws(text):
+        return re.findall(r"[a-z0-9'+-]+", text.lower())
+    rgrams = set()
+    for t in rparas:
+        w = ws(t)
+        rgrams.update(" ".join(w[k:k + n]) for k in range(len(w) - n + 1))
+    hits = []
+    for i, t in enumerate(body):
+        w = ws(t)
+        k = 0
+        while k <= len(w) - n:
+            g = " ".join(w[k:k + n])
+            if g in rgrams and sum(x in _FUNC for x in w[k:k + n]) < n - 1:
+                j = k + n
+                while j < len(w) and " ".join(w[j - n + 1:j + 1]) in rgrams:
+                    j += 1
+                hits.append((i + 1, " ".join(w[k:j])))
+                k = j
+            else:
+                k += 1
+    for para, run in hits[:15]:
+        flags.append(f"[15 letter] paragraph {para} repeats the resume word for word: '{run}' (say what it means for this team instead)")
+    if not hits:
+        notes.append(f"[15 letter] no runs of {n} or more words shared with {resume.name}")
+    return flags, notes
+
+
+def posting_text_beside(path: Path):
+    """The saved posting in the document's folder (posting.md), or ""."""
+    f = path.parent / "posting.md"
+    try:
+        return f.read_text(encoding="utf8", errors="replace") if f.exists() else ""
+    except OSError:
+        return ""
+
+
 def posting_map_check(path: Path, paras):
     """Gate item 14: the page's group order follows the posting's own order of
     emphasis, and the first group answers one of the posting's top two themes.
@@ -687,7 +775,7 @@ def posting_map_check(path: Path, paras):
     return flags, notes
 
 
-def run_gate(path: Path, index):
+def run_gate(path: Path, index, resume=None):
     global CURRENT_MASTER
     CURRENT_MASTER = False
     flags, notes = [], []
@@ -717,6 +805,12 @@ def run_gate(path: Path, index):
     rf, rn = repetition_check(paras)
     flags.extend(rf)
     notes.extend(rn)
+    if path.suffix.lower() == ".docx":
+        of, on = letter_overlap_check(path, paras, resume)
+        flags.extend(of)
+        notes.extend(on)
+    # An abbreviation the posting itself uses is fine as the posting writes it.
+    posting_text = posting_text_beside(path)
 
     # ---- bank trace (docx bullets, plus md/txt list lines)
     if index is not None:
@@ -823,6 +917,9 @@ def run_gate(path: Path, index):
             if re.search(rf"(?<![A-Za-z]){re.escape(ab)}s?(?![a-z])", line):
                 if f"({ab})" in line:
                     continue   # the spelled-out name with its abbreviation in parentheses
+                if posting_text and re.search(rf"(?<![A-Za-z]){re.escape(ab)}s?(?![A-Za-z])", posting_text):
+                    notes.append(f"[2 abbreviation] line {i}: '{ab}' kept, the posting uses it")
+                    continue
                 flags.append(f"[2 abbreviation] line {i}: '{ab}' (spell out on paper) -> {line[:140]}")
         if FLAG_EM_DASH and "—" in line:
             flags.append(f"[11 em-dash] line {i}: em dash -> {line[:140]}")
@@ -891,6 +988,7 @@ def main():
     ap.add_argument("documents", nargs="+")
     ap.add_argument("--index")
     ap.add_argument("--selection", help="the selection file that built the document, when its output name differs")
+    ap.add_argument("--resume", help="the resume to compare a cover letter against (default: the newest version of its resume in the letter's folder)")
     args = ap.parse_args()
     global SELECTION_OVERRIDE
     SELECTION_OVERRIDE = Path(args.selection) if args.selection else None
@@ -906,7 +1004,7 @@ def main():
         print(f"retired log: {lpath} ({len(added)} phrase(s) added to the hand list)")
     rc = 0
     for arg in args.documents:
-        rc |= run_gate(Path(arg), index)
+        rc |= run_gate(Path(arg), index, args.resume)
     sys.exit(rc)
 
 

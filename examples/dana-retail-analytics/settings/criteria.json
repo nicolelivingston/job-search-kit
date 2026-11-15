@@ -370,9 +370,16 @@
       },
       {
         "$tuple": [
-          null,
+          90,
           -10,
           "open over 2 months"
+        ]
+      },
+      {
+        "$tuple": [
+          null,
+          -15,
+          "open over 3 months"
         ]
       }
     ],
