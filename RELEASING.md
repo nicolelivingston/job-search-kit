@@ -8,8 +8,8 @@ can't be moved or deleted).
 - [ ] Every Checks and CodeQL run on `main` is green, including the security job
       (bandit, pip-audit, gitleaks).
 - [ ] The maintainer's private checks pass on their own computer: the full
-      test suite with their own settings, the scoring equivalence check, the
-      full-history leak scan, and the pending-ports check.
+      test suite with their own settings, the full-history leak scan, and the
+      pending-ports check.
 - [ ] No open bug report says the current release lost or damaged data.
 - [ ] `UPDATES_PAUSED` is not on `main` (unless this release is the fix and
       the pause stays until it has been checked).
@@ -41,7 +41,10 @@ Three places to catch a problem, each before the next:
 - [ ] **Stop** if Microsoft flags the installer on VirusTotal, or three or
       more engines do. Submit a false-positive report and wait.
 - [ ] The publish job waits for approval (the `release` environment). Approve
-      it on GitHub only after every line above is checked.
+      it on GitHub only after every line above is checked. If publish fails
+      at once with "Tag is not allowed to deploy", the environment's settings
+      need a Tag rule `v*` (a branch rule doesn't cover tags) and the
+      maintainer as a required reviewer; fix that, then re-run the failed job.
 - [ ] The release has `JobSearchKit-Setup.exe`, `job-search-kit.plugin`,
       `SHA256SUMS.txt`, and `job-search-kit-sbom.cdx.json`.
 
