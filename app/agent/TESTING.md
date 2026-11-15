@@ -1,6 +1,6 @@
 # Testing
 
-Bugs are cheaper to catch with a script than by poking around. Four pieces:
+Bugs are cheaper to catch with a script than by poking around. Three pieces:
 
 1. **Regression tests**, `agent_tests/`. Plain `unittest` scripts, no extra
    tools. Run everything:
@@ -19,9 +19,6 @@ Bugs are cheaper to catch with a script than by poking around. Four pieces:
    line and appends to `run_stats.jsonl`. `AGENT_DRY_RUN=1` runs the whole
    pipeline with tracker writes recorded to `dry_run_writes.jsonl` instead of
    made.
-4. **Equivalence check** (builders only), `dev/equivalence_check.py`: runs
-   thousands of real postings through scoring and filtering and prints a hash.
-   It proves a refactor changed nothing.
 
 Before a change reaches a user, it also passes the pull request checks
 (the tests as the made-up test people in `examples/`, plus a Windows
