@@ -140,6 +140,8 @@ class Wizard(unittest.TestCase):
         self.assertTrue(row["Date Applied"])
         _, r = self.call("/api/tracker/add", {"title": "Senior PM", "company": "X", "text": "Hybrid: 4 days per week in our Boston office."})
         self.assertEqual((r["verdict"], r["hard_skip"]), ("Poor fit", True))
+        _, t = self.call("/api/tracker")
+        self.assertEqual(next(x for x in t["rows"] if x["id"] == r["id"])["Remote Status"], "Hybrid")   # Work column, not "Not stated"
         _, r = self.call("/api/tracker/add", {"title": "Senior PM", "company": "X", "text": "Location: Remote (US)\nOwn the roadmap. Base $150,000 to $170,000."})
         self.assertFalse(r["hard_skip"])
         _, t = self.call("/api/tracker")

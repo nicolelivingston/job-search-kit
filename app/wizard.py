@@ -379,8 +379,9 @@ def tracker_add(body, fetch=None):
         props["Job Posting"] = {"url": url}
     if salary:
         props["Base Salary"] = {"number": salary}
-    if remote:
-        props["Remote Status"] = {"select": {"name": "Fully Remote"}}
+    work = fs.work_status(text, remote_hint=remote)   # Fully Remote, Hybrid, Onsite, or not stated
+    if work:
+        props["Remote Status"] = {"select": {"name": work}}
     r = a["lt"].handle("post", "https://api.notion.com/v1/pages",
                        {"json": {"parent": {"database_id": jsa.NOTION_DATABASE_ID}, "properties": props}})
     try:
