@@ -15,8 +15,9 @@ A job-search system you install on your own computer. It watches the job boards 
 
 ## What it does
 - **Daily board checks.** A scheduled run reads the careers pages and job feeds you chose, scores each posting from 0 to 100 against your criteria (titles, level, pay, where and how you work, direct reports, travel, industries you won't work in, benefits), reads each posting's required section item by item against your own evidence, labels every posting Strong fit, Possible fit, or Poor fit with the reason in plain words, and never decides for you. Applying and Passed are yours to set.
-- **Tracker.** A local page (127.0.0.1 only) with your applications (a sortable table grouped by status, or a board), your companies and the research you or Claude add for each, your search profile, contacts, and a skills watch, in light or dark. Paste any link you find elsewhere and it gets scored like the daily finds. No Notion needed (it's optional).
+- **Tracker.** A local page (127.0.0.1 only) with your applications (a sortable table grouped by status, or a board), your companies and the research you or Claude add for each, your search profile, contacts, a skills watch, and a Health page, in light or dark. Paste any link you find elsewhere and it gets scored like the daily finds. No Notion needed (it's optional).
 - **Evidence bank and resumes.** The Claude plugin (`plugin/`) interviews you over four short sessions and builds your North Star, evidence bank, rules, and master resume in your words. For each posting it selects approved bullets into a tailored resume and cover letter, builds the Word files, and runs a pre-send gate that traces every bullet back to your bank. Nothing goes on a page that you didn't say.
+- **Health.** One page that shows how the search is going: applications in progress, interviews, sent in the last 30 days, what needs you today (interviews, follow-ups due, open drafts, no reply after a while), applications sent by week against your own weekly target, and whether drafts are taking fewer rounds over time. You set the targets on the page.
 - **Skills watch.** Once a week the kit counts which skills the postings in your search ask for and ranks them, with your own status on each (Skilled, Partial gap, or Gap) and the change since last week. A gap near the top is where to collect more examples or build more experience. It starts from your evidence bank's keyword groups, and you edit the list on the Skills page.
 - **Daily backups.** After each daily run, your tracker, contacts, evidence bank, and settings are zipped into the data folder's `backups/`, 14 days kept, on your computer only. `app/backup.py restore` puts them back (and backs up first, so a restore can be undone).
 - **Updates that never touch your data.** The app checks GitHub releases daily and installs signed updates quietly, 72 hours after each release comes out (the maintainer can pause every update with an `UPDATES_PAUSED` file in this repository); your folder, settings, bank, applications, and tracker are never changed by an update.
@@ -27,6 +28,13 @@ A job-search system you install on your own computer. It watches the job boards 
 </picture>
 
 *The skills watch for a made-up retail analyst. Machine learning is a gap that moved up a place this week.*
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/health-dark.png">
+  <img alt="The Health page with six headline numbers, a list of what needs attention today, applications sent by week against a target of three, and a note that drafts are taking fewer rounds" src="docs/images/health-light.png">
+</picture>
+
+*The Health page for a made-up senior software engineer, with every company made up too.*
 
 ## Layout
 - `app/` the code: `agent/` (job board agent, fit scoring, built-in tracker, tests), `resume/` (bank index, resume builder, pre-send gate, reviewer prompts), `kit_settings.py` (loads a user's settings), `first_run.py` (chooses and creates the user's folder), `wizard.py` and `wizard_page.html` (setup wizard and tracker page), `schedule.py` (daily runs), `tracker_cli.py` (tracker access for the plugin), `error_report.py` (scrubbed error reports), `updater.py` (auto-update), `platform_support.py` (notifications, LibreOffice lookup)

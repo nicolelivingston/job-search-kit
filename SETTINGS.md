@@ -123,6 +123,10 @@ These live in `preferences.json`. The Claude plugin reads them every session (th
 | `agent.REPOST_WINDOW_DAYS` | 90 | How far back reposts are detected |
 | `agent.GHOST_FLAG_IDS`, `agent.GHOST_FLAG_LOCATIONS`, `agent.GHOST_SKIP_IDS` | 2, 4, 4 | Thresholds for postings sprayed across many locations or reposted under new IDs |
 | `invariants.TRACKING_STARTS` | setup date | Revision and cycle-time tracking starts here |
+| `health.WEEKLY_TARGET` | 3 | Applications a week you're aiming for, drawn on the Health page (0 hides the line). Changed on the Health page under Your targets |
+| `health.CONTACTS_TARGET` | 2 | Contact touches a week you're aiming for, counted from the Last touch dates on the Contacts page (0 hides the tile) |
+| `health.NO_REPLY_DAYS` | 30 | Days with no reply before an application shows under Needs you today |
+| `health.GOAL_DATE` | blank | Optional end date for your search (YYYY-MM-DD); the Health page shows days left |
 | `presend_gate.REPEAT_SKIP_RE`, `presend_gate.REPEAT_STOPWORDS` | name, contact, section titles; common words | Left out of the repetition check |
 | `LINKEDIN_ALERT_DAYS` (environment) | 3 | Days of LinkedIn alert emails to read, when that optional reader is on |
 
