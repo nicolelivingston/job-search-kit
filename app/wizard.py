@@ -600,11 +600,25 @@ def _found_boards():
             if isinstance(b, dict) and b.get("name") and b.get("platform")]
 
 
+_CO_LEGAL = {"inc", "incorporated", "llc", "ltd", "limited", "corp", "corporation", "co", "company", "plc", "gmbh"}
+_CO_TAILS = {"holdings", "group", "technologies", "technology", "labs"}
+
+
 def _co_key(name):
-    """One company under small spelling differences ("Acme, Inc." and "Acme")."""
-    s = re.sub(r"\(.*?\)", " ", (name or "").lower())
-    s = re.sub(r"[,.]?\s*\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|gmbh)\b\.?", " ", s)
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]+", "", s)).strip()
+    """One company under small spelling differences ("Acme, Inc." and "Acme"),
+    the same way the daily check matches names (lead_resolver.norm_company).
+    Written without patterns: the name comes from the page."""
+    text, depth, kept = str(name or "")[:200].lower(), 0, []
+    for ch in text:                      # drop anything in parentheses
+        if ch == "(":
+            depth += 1
+            kept.append(" ")
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif depth == 0:
+            kept.append(ch if (ch.isascii() and ch.isalnum()) or ch == " " else (" " if ch in ",./&-" else ""))
+    words = [w for w in "".join(kept).split() if w not in _CO_LEGAL]
+    return " ".join([w for w in words if w not in _CO_TAILS] or words)
 
 
 def _board_for(name, boards, custom, found=()):

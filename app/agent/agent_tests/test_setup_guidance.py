@@ -60,7 +60,8 @@ class TitleCheck(unittest.TestCase):
         self.assertIn("Type a job title", self.lines("")[1])
         self.assertIn("Add at least one job title", self.lines("Data Analyst", {"work": {"titles": []}})[1])
         self.assertIn("Add at least one job title", self.lines("Data Analyst", {})[1])
-        self.assertFalse(self.lines("Data Analyst", {"work": {"titles": ["~("]}})[0]["kept"])   # a broken pattern never crashes
+        self.assertFalse(self.lines("Data Analyst", {"work": {"titles": ["~data"]}})[0]["kept"])   # advanced patterns aren't tried here
+        self.assertTrue(self.lines("Data Analyst [Team] Lead", {"work": {"titles": ["analyst [team"]}})[0]["kept"])   # symbols are plain text, not a pattern
 
 
 class Folder(unittest.TestCase):
@@ -114,6 +115,15 @@ class FollowSettings(Folder):
         setup_model.write_answers(self.settings, b)
         c = setup_model.read_answers(self.settings)
         self.assertEqual((c["fields"]["watched"], c["fields"]["auto_follow"]), (["Fernhollow Health", "Lumenfold"], False))
+
+    def test_company_names_match_the_way_the_daily_check_matches_them(self):
+        import wizard
+        import lead_resolver
+        for name in ("Lumenfold, Inc.", "Lumenfold", "LUMENFOLD (example)", "Quillco Labs", "Labs", "Harborline Holdings LLC",
+                     "Tessaway Technologies", "Fernhollow Health", "The Paylane Company", "", "((((", "a" * 5000 + " " * 5000):
+            self.assertEqual(wizard._co_key(name), lead_resolver.norm_company(name[:200]), name[:40])
+        self.assertEqual(wizard._co_key("Lumenfold, Inc."), wizard._co_key("lumenfold"))
+        self.assertNotEqual(wizard._co_key("Fernhollow Health"), wizard._co_key("Fernhollow Logistics"))
 
     def test_follow_closely_from_the_companies_page(self):
         import wizard

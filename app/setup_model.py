@@ -304,18 +304,15 @@ def _default_rule(code):
 
 def _phrase_hit(phrases, title):
     """The first phrase found in the title as whole words, any capitalization
-    (the same rule the daily check uses), or None. A phrase starting with ~ is
-    a regular expression."""
+    (the same rule the daily check uses), or None. Plain text only: a phrase
+    starting with ~ (an advanced pattern in the settings files) is left to the
+    daily check and not tried here."""
     for ph in phrases or []:
-        ph = str(ph).strip()
-        if not ph:
+        ph = " ".join(str(ph).split())
+        if not ph or ph.startswith("~"):
             continue
-        try:
-            pat = ph[1:] if ph.startswith("~") else r"\b" + re.escape(ph).replace(r"\ ", r"\s+") + r"\b"
-            if re.search(pat, title, re.I):
-                return ph
-        except re.error:
-            continue
+        if re.search(r"\b" + r"\s+".join(re.escape(w) for w in ph.split(" ")) + r"\b", title, re.I):
+            return ph
     return None
 
 
