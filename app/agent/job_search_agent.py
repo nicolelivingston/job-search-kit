@@ -668,8 +668,11 @@ REMOTE_STATUS_BY_REMOTE_SCORE = {2: "Fully Remote"}
 
 
 def remote_status_for(job):
-    """Remote Status select value for job, or None to leave it unset."""
-    return REMOTE_STATUS_BY_REMOTE_SCORE.get(score_remote(job))
+    """Remote Status select value for job (Fully Remote, Hybrid, or Onsite),
+    or None to leave it unset. Firm hybrid or onsite wording in the posting
+    wins; otherwise a remote location field means Fully Remote."""
+    remote = REMOTE_STATUS_BY_REMOTE_SCORE.get(score_remote(job)) == "Fully Remote"
+    return fit_scoring.work_status(job.get("description", ""), job.get("location", ""), remote_hint=remote)
 
 
 # Postings lead with long company blurbs; the qualifications section is what

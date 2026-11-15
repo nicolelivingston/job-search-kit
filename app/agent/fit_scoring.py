@@ -433,6 +433,48 @@ HYBRID_WORDS = _rx("hybrid", "in-office", "in office", "office days", "return to
 POSTING_REMOTE_RE = _S("fit_scoring.POSTING_REMOTE_RE", rx=_rx)
 
 
+# The tracker's Work column (Remote Status): Fully Remote, Hybrid, or Onsite,
+# read from what the posting says about this role. Before Nov 15, 2026 only
+# Fully Remote was ever set, so hybrid and onsite postings showed "Not stated".
+WORK_ONSITE_RE = re.compile(ONSITE_RE.pattern + "|" + "|".join([
+    r"\b(on[- ]?site|in[- ]person|in[- ]office)\s+(in|at)\s+(our|the)\b[^.•]{0,40}\boffice\b[^.•]{0,20}\b(5|five)\s*days",
+    r"\b(on[- ]?site|in[- ]person)\s+in\s+(our|the)\b[^.•]{0,40}\boffice\b(?![^.•]{0,40}\b([1-4]|one|two|three|four)\b)",
+    r"\b(5|five)\s*days\s*(a|per|/|each|every)\s*week\s*(in|at)\s+(the|our|an?)\b[^.•]{0,40}\boffice\b",
+    r"\bthis\s+is\s+an?\s+(on[- ]?site|in[- ]office|in[- ]person)\s+(role|position|job)\b",
+]), re.I)
+WORK_HYBRID_RE = re.compile("|".join([
+    r"\bhybrid\b(?!\s*[-/]?\s*(cloud|apps?|mobile|infrastructure|architecture|search|vehicles?|cars?|engines?|"
+    r"models?|approach|solutions?|systems?|data|integration|deployment|environments?)\b)",
+    r"\b([1-4]|one|two|three|four)\+?\s*days?\s*(a|per|/|each|every)\s*week\s*(in|at)\s+(the|our|an?|one\s+of\s+our)\b[^.•]{0,40}\b(office|hub|campus|studio)",
+    r"\b(in[- ]office|on[- ]?site|in[- ]person)\s*([1-4]|one|two|three|four)\+?\s*days?\s*(a|per|/|each|every)\s*week",
+    r"\b([1-4]|one|two|three|four)\+?\s*days?\s*(a|per|/|each|every)\s*week\s*(in[- ]office|on[- ]?site|in[- ]person)",
+    r"\boffice\b[^.•]{0,30}\b([1-4]|one|two|three|four)\+?\s*days?\s*(a|per|/|each|every)\s*week",
+]), re.I)
+# Wording that offers a choice ("remote or hybrid", "hybrid optional") or
+# talks about other teams says nothing firm about this role.
+_WORK_CHOICE_RE = re.compile(r"\b(or|optional|if you prefer|choose|flexib\w*)\b", re.I)
+_WORK_OTHER_TEAMS_RE = re.compile(r"\b(some roles|certain roles|other roles|roles in our|some teams|certain teams|"
+                                  r"depending on (the )?(role|team)|for (our|the) (gtm|sales) team)\b", re.I)
+
+
+def _firm(m, body):
+    win = body[max(0, m.start() - 80): m.end() + 80]
+    if _WORK_OTHER_TEAMS_RE.search(win):
+        return False
+    return not (_WORK_CHOICE_RE.search(win) and re.search(r"\bremote\b", win, re.I))
+
+
+def work_status(text, location="", remote_hint=False):
+    """Fully Remote, Hybrid, Onsite, or None (not stated), for the Work column.
+    Firm onsite or hybrid wording about this role wins over a remote location
+    field; wording that offers a choice or describes other teams is ignored."""
+    body = f"{location or ''} • {text or ''}"
+    for rx, status in ((WORK_ONSITE_RE, "Onsite"), (WORK_HYBRID_RE, "Hybrid")):
+        if any(_firm(m, body) for m in rx.finditer(body)):
+            return status
+    return "Fully Remote" if remote_hint else None
+
+
 def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, company_name="",
                 eeo_aware=True):
     """Returns (verdict, reasons). verdict is 'skip', 'ask', or None (clean).
