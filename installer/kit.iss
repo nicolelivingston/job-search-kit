@@ -22,7 +22,8 @@ DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=JobSearchKit-Setup-{#AppVersion}
+; the same file name every release, so the README's download link never changes
+OutputBaseFilename=JobSearchKit-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

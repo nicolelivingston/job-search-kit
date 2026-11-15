@@ -6,6 +6,24 @@ A job-search system you install on your own computer. It watches the job boards 
 
 **Beta.** Free, provided as is, and built for a friend first. You review and confirm everything before you send it; the kit never sends anything for you. Windows installer now, Mac later. MIT licensed.
 
+## Install on Windows
+
+**[Download the installer](https://github.com/nicolelivingston/job-search-kit/releases/download/v0.1.1/JobSearchKit-Setup-0.1.1.exe)** (one file, about 37 MB, for Windows 10 or 11). That link is the only thing you need from this page. The green Code button gives you the source code, which isn't the installer.
+
+1. Click **Download the installer** above. If your browser says the file isn't commonly downloaded, choose Keep (you may need to click Show more or the ... button first).
+2. Open the file. It's in your Downloads folder, and its name starts with JobSearchKit-Setup.
+3. A blue box may say Windows protected your PC. Click More info, then Run anyway. It shows up because the kit is a new, free program, so Windows doesn't know it yet.
+4. Read the short page on what stays on your computer, then click Next and Install. You won't need a password.
+5. Leave Set up the Job Search Kit now ticked and click Finish. A setup page opens in your browser and walks you through the rest, one step at a time.
+
+That's the whole install. To come back later, open the Start menu and look for Job Search Kit. To remove it, use Windows Settings, Apps; your Job Search folder stays.
+
+If Windows says it found a virus or a threat, stop there, leave your antivirus on, and report it (see [SUPPORT.md](SUPPORT.md)).
+
+**For resumes and cover letters** (not needed for the daily job checks or the tracker), you need the Claude desktop app on a paid plan, with the kit's plugin: **[download the plugin](https://github.com/nicolelivingston/job-search-kit/releases/latest/download/job-search-kit.plugin)**, then in Claude open Customize, Plugins, Add plugin, Upload plugin, and choose that file (the buttons may be named a little differently). Then open your Job Search folder in Claude and type `/start-here`.
+
+**Optional:** [LibreOffice](https://www.libreoffice.org/download/) (free) lets the kit count your resume's pages by itself. Having Word doesn't replace it for that, because the kit can't run Word in the background. Without LibreOffice, your resume and cover letter are still built and checked; open them in Word to see how many pages they run.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tracker-dark.png">
   <img alt="The tracker page with six postings, each with a fit score from 0 to 100, a Possible fit or Poor fit label, base pay, work arrangement, company verdict, and Glassdoor rating" src="docs/images/tracker-light.png">
@@ -59,7 +77,7 @@ Team roles (a one-person project):
 Privacy: see [Privacy](#privacy). This program sends no information to other networked systems except the job boards the user picks, the daily update check (which the user can turn off), and what the user chooses to share with Claude or in an error report they send themselves.
 
 ## Help
-`SUPPORT.md` says how to report a problem and how to go back to the previous version. `CONTRIBUTING.md` says how to suggest an idea or send a change, and `CODE_OF_CONDUCT.md` is how everyone taking part treats each other. `SECURITY.md` says how to report a security problem privately. `RELEASING.md` is the go or no-go checklist for every release. `SOURCES.md` lists the job sources and how the kit reads them. `THIRD_PARTY_NOTICES.md` lists the bundled software.
+`SUPPORT.md` says how to report a problem and how to go back to the previous version. `CONTRIBUTING.md` says how to suggest an idea or send a change, and `CODE_OF_CONDUCT.md` is how everyone taking part treats each other. `SECURITY.md` says how to report a security problem privately. `CHANGELOG.md` says what's new in each release, in plain words. `RELEASING.md` is the go or no-go checklist for every release. `SOURCES.md` lists the job sources and how the kit reads them. `THIRD_PARTY_NOTICES.md` lists the bundled software.
 
 ## Running the tests
     cd app/agent && KIT_SETTINGS_DIR=../../examples/priya-healthtech-pm/settings python3 agent_tests/run_all.py

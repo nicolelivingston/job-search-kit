@@ -20,6 +20,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: What's new is written down for this version (CHANGELOG.md)
+        run: |
+          v="${GITHUB_REF_NAME#v}"; v="${v%%-*}"     # v0.2.0-beta.1 and v0.2.0 share the 0.2.0 section
+          grep -qxF "## $v" CHANGELOG.md || { echo "CHANGELOG.md has no '## $v' section"; exit 1; }
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with: { python-version: "3.12" }
       - run: 'pip install --require-hashes --only-binary=:all: -r installer/requirements-ci.txt'
@@ -66,7 +70,8 @@ jobs:
           # The free API allows 4 requests a minute, so polls are 20 s apart.
           # Any missing answer fails the step: a scan that didn't happen
           # must never read as a clean scan.
-          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup.exe" | Select-Object -First 1
+          if (-not $exe) { throw "no installer in dist" }
           $hdr = @{ "x-apikey" = $env:VT_API_KEY }
           $upload = (Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Headers $hdr).data
           if (-not $upload) { throw "VirusTotal gave no upload URL (check the VT_API_KEY secret)" }
@@ -125,8 +130,17 @@ jobs:
       - name: Attach to the release
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
+          # Shown at the top of the release page, above the list of changes.
+          body: |
+            **To install on Windows:** download `JobSearchKit-Setup.exe` from Assets below and open it. [Step-by-step instructions](https://github.com/nicolelivingston/job-search-kit#install-on-windows).
+
+            Already have the kit? It updates itself to each full release (never to a beta), unless you turned that off.
+
+            What's new, in plain words: [CHANGELOG.md](https://github.com/nicolelivingston/job-search-kit/blob/main/CHANGELOG.md).
+
+            The other files: `job-search-kit.plugin` is the Claude plugin, and the rest are checks the kit's updater uses.
           files: |
-            dist/JobSearchKit-Setup-*.exe
+            dist/JobSearchKit-Setup.exe
             dist/job-search-kit.plugin
             dist/SHA256SUMS.txt
             dist/job-search-kit-sbom.cdx.json

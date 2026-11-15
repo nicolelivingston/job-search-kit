@@ -13,7 +13,9 @@ can't be moved or deleted).
 - [ ] No open bug report says the current release lost or damaged data.
 - [ ] `UPDATES_PAUSED` is not on `main` (unless this release is the fix and
       the pause stays until it has been checked).
-- [ ] What changed is written down for the release notes, in plain words.
+- [ ] What changed is written down in plain words, in `CHANGELOG.md` under a
+      heading for this version (`## X.Y.Z`). The Release workflow stops if
+      the heading is missing.
 
 ## Test before it reaches anyone
 Three places to catch a problem, each before the next:
@@ -40,7 +42,7 @@ Three places to catch a problem, each before the next:
       more engines do. Submit a false-positive report and wait.
 - [ ] The publish job waits for approval (the `release` environment). Approve
       it on GitHub only after every line above is checked.
-- [ ] The release has the installer, `job-search-kit.plugin`,
+- [ ] The release has `JobSearchKit-Setup.exe`, `job-search-kit.plugin`,
       `SHA256SUMS.txt`, and `job-search-kit-sbom.cdx.json`.
 
 ## Sign
@@ -57,6 +59,11 @@ Three places to catch a problem, each before the next:
       updates until it's removed.
 - [ ] Install it by hand on one Windows computer: the folder is kept, the
       tracker opens, a daily run finishes, Send an error report works.
+- [ ] Click **Download the installer** in the README: it downloads this
+      release. (Once, for the first release after v0.1.1: the installer is
+      now named `JobSearchKit-Setup.exe` every release, so change that link to
+      `https://github.com/nicolelivingston/job-search-kit/releases/latest/download/JobSearchKit-Setup.exe`
+      in a pull request. It never needs changing again.)
 
 ## Never
 - Never move, delete, or re-use a tag.
