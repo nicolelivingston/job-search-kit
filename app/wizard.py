@@ -409,6 +409,36 @@ def contacts_put(rows):
     return {"ok": True}
 
 
+# ---------------------------------------------------------------- health
+# The Health page: how the search is going, worked out from the tracker and
+# contacts each time the page opens (agent/health.py). Targets are the user's
+# own settings, saved from the page into criteria.json, section "health".
+HEALTH_FIELDS = ("Role", "Company", "Status", "Overall Verdict", "Role Fit Score", "Date Applied", "Outcome Type",
+                 "Follow-up Date", "Next Step", "Drafting Started", "Resume Versions", "Hours Spent")
+
+
+def health_get(today=None):
+    import health
+    rows = []
+    for p in _read_store("applications").values():
+        if p.get("archived"):
+            continue
+        pr = p.get("properties") or {}
+        rows.append({"id": p.get("id", ""), **{k: _plain(pr.get(k)) for k in HEALTH_FIELDS}})
+    cfg = health.targets()
+    try:
+        starts = kit_settings.setting("invariants.TRACKING_STARTS")
+    except KeyError:
+        starts = None
+    contacts = [c for c in contacts_get() if isinstance(c, dict)]
+    return health.summarize(rows, contacts, today or date.today(), cfg, starts if isinstance(starts, date) else None)
+
+
+def health_save(body):
+    import health
+    return health.save_targets(settings_dir(), body if isinstance(body, dict) else {})
+
+
 # ---------------------------------------------------------------- skills
 # The Skills page: what the postings in the user's search keep asking for,
 # ranked, with the user's own status on each skill (Skilled, Partial gap,
@@ -848,6 +878,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, contacts_get())
             if path == "/api/skills":
                 return self._send(200, skills_get())
+            if path == "/api/health":
+                return self._send(200, health_get())
             if path == "/api/companies":
                 return self._send(200, companies_rows())
             if path == "/api/ui":
@@ -923,6 +955,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, contacts_put(b))
             if path == "/api/skills":
                 return self._send(200, skills_save(b))
+            if path == "/api/health":
+                return self._send(200, health_save(b))
             if path == "/api/companies/save":
                 return self._send(200, company_save(b))
             if path == "/api/companies/add":

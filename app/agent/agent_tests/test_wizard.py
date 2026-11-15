@@ -253,6 +253,22 @@ class Wizard(unittest.TestCase):
         _, rows = self.call("/api/contacts")
         self.assertEqual(rows[0]["name"], "Sam Example")
 
+    def test_5b_health_page(self):
+        code, h = self.call("/api/health")
+        self.assertEqual(code, 200, h)
+        self.assertGreaterEqual(h["headline"]["in_progress"], 1)   # the application sent in test_4
+        self.assertEqual(len(h["weeks"]), 8)
+        self.assertEqual(h["contacts"]["people"], 1)
+        code, r = self.call("/api/health", {"WEEKLY_TARGET": "4", "CONTACTS_TARGET": "0", "NO_REPLY_DAYS": "21", "GOAL_DATE": ""})
+        self.assertTrue(r["ok"], r)
+        self.assertEqual(json.loads((self.settings / "criteria.json").read_text())["health"]["WEEKLY_TARGET"], 4)
+        _, h = self.call("/api/health")
+        self.assertEqual((h["targets"]["WEEKLY_TARGET"], h["targets"]["NO_REPLY_DAYS"]), (4, 21))
+        _, r = self.call("/api/health", {"WEEKLY_TARGET": "lots"})
+        self.assertFalse(r["ok"])
+        code, page = self.call("/?t=" + self.token, token="")
+        self.assertIn('id="n-health"', page)
+
     def test_6_detect_board_from_link(self):
         _, r = self.call("/api/detect", {"url": "https://job-boards.greenhouse.io/examplecorp", "name": "Example Corp"})
         self.assertEqual(r["board"], {"name": "Example Corp", "platform": "greenhouse", "slug": "examplecorp"})

@@ -112,6 +112,23 @@ th{font-size:12px;color:var(--text3);font-weight:600}.scroll{overflow-x:auto}
 .permrow .seg button{min-width:84px}.seg button.on{background:var(--accent);color:var(--on-accent);font-weight:600}
 .locked{background:var(--note);border-radius:10px;padding:10px 14px;margin-top:14px}.locked h4{margin:4px 0;font-size:14px}
 .locked .check{margin:0;padding:5px 0;color:var(--text3)}
+/* health */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.tile .lab{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3)}
+.tile .num{font-size:30px;font-weight:700;line-height:1.2;margin:4px 0 2px}
+.tile .num.good{color:var(--good)}.tile .num.warn{color:var(--warn)}.tile .num.bad{color:var(--bad)}
+.tile .sm{font-size:13px;color:var(--muted)}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.hgrid .card{margin-bottom:0}
+.att{list-style:none;margin:0;padding:0}.att li{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 12px;padding:10px 0;border-bottom:1px solid var(--line3)}
+.att li:last-child{border-bottom:0}.att .what{color:var(--muted);font-size:13px}
+.wk{display:grid;grid-template-columns:64px minmax(0,1fr) 28px;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.wk .track{position:relative;height:14px;background:var(--line3);border-radius:4px}
+.wk .fill{height:100%;border-radius:4px;background:var(--accent)}.wk .fill.met{background:var(--good)}
+.wk .goal{position:absolute;top:-3px;bottom:-3px;border-left:2px dashed var(--text3)}
+.wk .n{text-align:right;font-weight:600}
+@media (max-width:700px){.att li{grid-template-columns:1fr}}
 /* help */
 dl.defs{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px 18px;margin:0}dl.defs dt{font-weight:600}dl.defs dd{margin:0}
 .help ul{margin:0;padding-left:20px}
@@ -120,11 +137,12 @@ dl.defs{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px 18px;mar
 </head>
 <body>
 <header><p class="brand">Job Search Kit<span class="beta">Beta</span></p>
-<nav aria-label="Main"><a href="#tracker" id="n-tracker">Applications</a><a href="#companies" id="n-companies">Companies</a><a href="#skills" id="n-skills">Skills</a><a href="#profile" id="n-profile">My search profile</a><a href="#contacts" id="n-contacts">Contacts</a><a href="#privacy" id="n-privacy">Privacy</a><a href="#help" id="n-help">Help</a><a href="#suggest" id="n-suggest">Suggest an idea</a>
+<nav aria-label="Main"><a href="#tracker" id="n-tracker">Applications</a><a href="#health" id="n-health">Health</a><a href="#companies" id="n-companies">Companies</a><a href="#skills" id="n-skills">Skills</a><a href="#profile" id="n-profile">My search profile</a><a href="#contacts" id="n-contacts">Contacts</a><a href="#privacy" id="n-privacy">Privacy</a><a href="#help" id="n-help">Help</a><a href="#suggest" id="n-suggest">Suggest an idea</a>
 <label for="theme" class="sr">Color theme</label><select id="theme"><option value="auto">Theme: match system</option><option value="light">Theme: light</option><option value="dark">Theme: dark</option></select></nav></header>
 <main>
 <section id="setup" hidden></section>
 <section id="tracker" hidden></section>
+<section id="health" hidden></section>
 <section id="companies" hidden></section>
 <section id="skills" hidden></section>
 <section id="profile" hidden></section>
@@ -788,6 +806,57 @@ async function renderContacts() {
   el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const cur = read(); cur.splice(Number(b.dataset.del),1); api("/api/contacts", cur).then(renderContacts); });
 }
 
+// ---------------------------------------------------------------- health
+const H_LEVEL = {good:"p-green", warn:"p-orange", bad:"p-red", mute:"p-gray"};
+async function renderHealth() {
+  const v = await api("/api/health"); const el = $("#health");
+  if (v.error) { el.innerHTML = `<div class="card"><h2>Health</h2><p class="err">${esc(v.error)}</p></div>`; return; }
+  const H = v.headline, D = v.drafting, C = v.contacts, T = v.targets;
+  const tile = (lab, num, sm, cls) => `<div class="tile"><div class="lab">${lab}</div><div class="num ${cls||""}">${num ?? "&ndash;"}</div><div class="sm">${sm}</div></div>`;
+  const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString(undefined, {month:"short", day:"numeric"}) : "";
+  const weekCls = !H.weekly_target ? "" : H.sent_week >= H.weekly_target ? "good" : "";
+  const tiles = [
+    tile("In progress", H.in_progress, "applied or interviewing"),
+    tile("Interviews", H.interviews, "got to a real conversation", H.interviews ? "good" : ""),
+    tile("Sent, last 30 days", H.sent_30, `of ${H.sent_total} sent in all`, H.sent_30 === 0 && H.sent_total ? "warn" : ""),
+    tile("Interview rate", H.interview_rate === null ? null : H.interview_rate + "%", "of applications sent"),
+    tile("Sent this week", H.sent_week, H.weekly_target ? `target ${H.weekly_target}; ${H.weeks_hit} of the last ${H.weeks_finished} weeks on target` : "no weekly target set", weekCls),
+  ];
+  if (C.target) tiles.push(tile("Contacts this week", C.this_week, `target ${C.target}; ${C.last_4_weeks} in the last 4 weeks`, C.this_week >= C.target ? "good" : ""));
+  if (H.goal_date) tiles.push(tile("Days left", H.days_left, `to ${esc(fmt(H.goal_date))}`, H.days_left <= 14 ? "warn" : ""));
+  const att = v.attention.length ? `<ul class="att">${v.attention.map(a => `<li><span><span class="pill ${H_LEVEL[a.level]||"p-gray"}">${esc(a.kind)}</span></span>
+     <span><b>${esc(a.company)}</b>${a.role ? " · " + esc(a.role) : ""}<br><span class="what">${esc(a.what)}</span></span></li>`).join("")}</ul>
+     ${v.attention_more ? `<p class="sub" style="margin-top:8px">${v.attention_more} more on the <a href="#tracker">Applications</a> page.</p>` : ""}`
+    : `<p class="muted">Nothing waiting on you right now.</p>`;
+  const max = Math.max(1, T.WEEKLY_TARGET, ...v.weeks.map(w => w.sent));
+  const weeks = v.weeks.map(w => `<div class="wk"><span>${esc(fmt(w.week))}</span><span class="track" title="${w.sent} sent">
+     <span class="fill ${w.target && w.sent >= w.target ? "met" : ""}" style="display:block;width:${Math.round(100*w.sent/max)}%"></span>
+     ${w.target ? `<span class="goal" style="left:${Math.round(100*w.target/max)}%"></span>` : ""}</span><span class="n">${w.sent}</span></div>`).join("");
+  const trend = D.versions_recent === null ? "Once you send a few applications with Resume Versions filled in, this shows whether drafts are taking fewer rounds."
+    : D.versions_earlier === null ? `Median of ${D.versions_recent} resume versions over your first ${D.sends} sends. The comparison starts after 6 sends.`
+    : `Median of <b>${D.versions_recent}</b> resume versions over your last 5 sends, against <b>${D.versions_earlier}</b> for the ${D.sends - 5} before them. ${D.versions_recent < D.versions_earlier ? "Drafts are taking fewer rounds." : D.versions_recent > D.versions_earlier ? "Drafts are taking more rounds lately." : "About the same as before."}`;
+  el.innerHTML = `<h1>Health</h1><p class="sub">${esc(v.takeaway)} ${H.open_postings} posting${H.open_postings === 1 ? "" : "s"} still open. Worked out from your tracker each time you open this page.</p>
+   <div class="tiles">${tiles.join("")}</div>
+   <div class="hgrid">
+    <div class="card"><h2>Needs you today</h2><p class="sub">Interviews, follow-ups due, open drafts, Strong fit rows waiting on your call, and applications with no reply after ${T.NO_REPLY_DAYS} days.</p>${att}</div>
+    <div class="card"><h2>Applications sent by week</h2><p class="sub">Last 8 weeks, by Date Applied${H.weekly_target ? `. The dashed line is your target of ${H.weekly_target}; green weeks met it` : ""}.</p>${weeks}
+     <h3>Is drafting getting easier?</h3><p>${trend}</p>
+     <p class="sub">${D.days_median === null ? "" : `Median ${D.days_median} days from first draft to sending. `}${D.hours_median === null ? "" : `Median ${D.hours_median} hours per application (${D.hours_kept} with time kept). `}${D.drafts_open} draft${D.drafts_open === 1 ? "" : "s"} open now.${D.since ? ` Counts sends since ${esc(fmt(D.since))}.` : ""}</p></div>
+   </div>
+   <details class="card" style="margin-top:16px"><summary><b>Your targets</b> <span class="hint">change what this page measures against</span></summary>
+    <div class="row">
+     <div><label for="ht-w">Applications a week <span class="hint">0 hides the line</span></label><input id="ht-w" type="number" min="0" max="50" value="${esc(T.WEEKLY_TARGET)}"></div>
+     <div><label for="ht-c">Contact touches a week <span class="hint">0 hides the tile</span></label><input id="ht-c" type="number" min="0" max="50" value="${esc(T.CONTACTS_TARGET)}"></div>
+     <div><label for="ht-n">Days with no reply before it shows</label><input id="ht-n" type="number" min="1" max="365" value="${esc(T.NO_REPLY_DAYS)}"></div>
+     <div><label for="ht-g">Goal date <span class="hint">optional</span></label><input id="ht-g" type="date" value="${esc(T.GOAL_DATE)}"></div>
+    </div>
+    <p><button class="primary" id="ht-save">Save targets</button> <span id="ht-msg"></span></p>
+    <p class="hint">Contact touches count the Last touch dates on the Contacts page.</p></details>`;
+  $("#ht-save").onclick = async () => {
+    const r = await api("/api/health", {WEEKLY_TARGET: $("#ht-w").value, CONTACTS_TARGET: $("#ht-c").value, NO_REPLY_DAYS: $("#ht-n").value, GOAL_DATE: $("#ht-g").value});
+    const m = $("#ht-msg"); if (r.ok) { await renderHealth(); $("#ht-msg").className = "ok"; $("#ht-msg").textContent = "Saved."; } else { m.className = "err"; m.textContent = r.error; } };
+}
+
 const SKILL_PILL = {"Skilled":"p-green","Partial gap":"p-yellow","Gap":"p-red"};
 let SKILLS_GAPS_ONLY = false;
 function chg(v, pts) { if (v === null || v === undefined) return '<span class="muted">new</span>'; const n = pts ? Math.round(v*100) : v;
@@ -905,7 +974,7 @@ async function route() {
   let page = (location.hash || "#tracker").slice(1);
   const anchor = page === "suggest" ? "suggest" : "";
   if (anchor) page = "help";
-  const PAGES = ["setup","tracker","companies","skills","profile","contacts","advanced","privacy","help"];
+  const PAGES = ["setup","tracker","health","companies","skills","profile","contacts","advanced","privacy","help"];
   if (!PAGES.includes(page)) page = "tracker";
   closeDrawer();
   ST = await api("/api/status");
@@ -914,11 +983,12 @@ async function route() {
   if (page !== "setup" && page !== "privacy" && page !== "help" && (ST.needs_folder || ST.needs_ack || !ST.configured)) page = "setup";
   PAGES.forEach(p => { $("#"+p).hidden = p !== page; const n = $("#n-"+p); if (n) n.classList.toggle("on", p === page && !anchor); });
   $("#n-suggest").classList.toggle("on", !!anchor);
-  $("main").classList.toggle("narrow", !["tracker","companies","skills"].includes(page));
+  $("main").classList.toggle("narrow", !["tracker","health","companies","skills"].includes(page));
   if (page==="setup") { if (ST.needs_folder) { if (!privacyRead()) { renderPrivacy(route); return; } renderFolder(); return; }
     if (ST.needs_ack) { renderPrivacy(route); return; } if (!A) A = await api("/api/answers"); renderSetup(); }
   if (page==="privacy") renderPrivacy();
   if (page==="tracker") renderTracker();
+  if (page==="health") renderHealth();
   if (page==="companies") renderCompanies();
   if (page==="profile") renderProfile();
   if (page==="skills") renderSkills();

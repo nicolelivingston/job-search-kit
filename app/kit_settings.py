@@ -26,7 +26,7 @@ from pathlib import Path
 
 KIT_ROOT = Path(__file__).resolve().parent.parent
 FILES = {"agent": "criteria.json", "fit_scoring": "criteria.json", "board_feeds": "criteria.json",
-         "invariants": "criteria.json", "market_report": "criteria.json", "ats_tools": "companies.json",
+         "invariants": "criteria.json", "market_report": "criteria.json", "health": "criteria.json", "ats_tools": "companies.json",
          "presend_gate": "resume.json", "build_resume": "resume.json"}
 EVIDENCE_NAMES = {"WORK_FAMILIES", "GAP_FAMILIES", "MINIMUM_FAMILIES", "REQUIRED_BLOCK_FAMILIES", "VOUCH_WORDS"}
 _cache = {}
