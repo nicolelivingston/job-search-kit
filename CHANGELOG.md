@@ -2,8 +2,7 @@
 
 Plain-words notes for each release, newest first. A kit that's already installed updates itself; your Job Search folder, settings, evidence bank, and tracker are never changed by an update, except where a note below says a setting is updated (after a backup).
 
-## Next release
-(Rename this heading to the version number when you tag the release.)
+## 0.3.0
 
 **New**
 - **Start from the resume you have.** Setup step 6 keeps a copy of your current resume in your Job Search folder. In Start Here, Claude reads it, checks every bullet against the kit's guidelines (what you did, what it caused, why it mattered), suggests a tighter wording where everything is already there, and asks you a question where a result or a reason is missing. Your stories and fixed facts (jobs, dates, education) start from it instead of a blank page. Nothing is added to your evidence bank until you approve it.
