@@ -1,6 +1,7 @@
 {
   "ats_tools": {
     "CONFIRMED_COMPANIES": [],
-    "CUSTOM_SITE_COMPANIES": []
+    "CUSTOM_SITE_COMPANIES": [],
+    "WATCHED_COMPANIES": []
   }
 }

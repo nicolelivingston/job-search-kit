@@ -28,6 +28,7 @@ Ask which, or pick from what's pending:
 3. **An open question on a card** (each card's "To find out" line). Pick the cards with the most use in recent applications.
 4. **A bank issue** logged during drafting (`Review/bank-issues.md`): a bullet that read weak, a missing consequence, a wording the user corrected after delivery.
 5. **An interview debrief.** What an interviewer asked that the user answered well, or badly, is new evidence either way.
+6. **A bullet from the user's old resume that isn't in the bank yet.** `Evidence Bank/resume-intake.md` (when Start Here ran the resume intake) lists every resume bullet with its check and its question; the ones with an empty "Carded" field are stories still to capture. Read the bullet aloud, ask its question, then the usual ones. Write the proposal's ID on the "Carded" field once the approval session files it.
 
 ## The questions
 

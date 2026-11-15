@@ -495,7 +495,7 @@ def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, c
         worst("skip"); reasons.append(f"{TITLE_SKIP_LABEL}: '{m.group(0)}'")
     m = TITLE_ASK.search(t)
     if m:
-        worst("ask"); reasons.append(f"Title needs your call (dev tooling / head-of): '{m.group(0)}'")
+        worst("ask"); reasons.append(f"Title needs your call (on your ask-me-first list): '{m.group(0)}'")
 
     # v4.1: rule words inside equal-opportunity text don't count. eeo_aware=False
     # reproduces the old reading, used once by the agent's repair pass.

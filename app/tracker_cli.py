@@ -16,6 +16,7 @@ updates Notion directly.
     python tracker_cli.py contacts list
     python tracker_cli.py contacts add --name N [--company C] [--role R] [--last YYYY-MM-DD] [--notes N]
     python tracker_cli.py company --name "Acme" [--set "glassdoor=4.1" --set "verdict=Watch list" ...]
+    python tracker_cli.py research-queue [--limit 5]
     python tracker_cli.py check-groups
 
 `check-groups` loads keyword-groups.json the way the daily run does, checks
@@ -36,8 +37,14 @@ Hours Spent, Posting Age At Send, and Contact Before Applying.
 `company` shows one company's research, or with `--set` fills it in (the
 company is added if it isn't there). Fields: posture, verdict, risk, field,
 health, dni, glassdoor (1 to 5), match (percent), bonus, perks, pto,
-pto_weak (yes or no), growth, career, values, green, red, careers (a link).
+pto_weak (yes or no), growth, career, values, green, red, careers (a link),
+sources (where the research came from), researched (YYYY-MM-DD).
 Choices are the Companies page's own words (the Help page lists them).
+
+`research-queue` lists the companies worth researching next, most important
+first: the ones the user follows closely, then the ones with a top-fit
+posting still open, that nobody has researched yet. The company-research
+skill works from it.
 """
 import argparse
 import json
@@ -209,6 +216,26 @@ def cmd_company(args):
     return wizard.company_save(body)
 
 
+def research_queue(rows, limit=5):
+    """Companies to research next, from the Companies page's rows: followed
+    closely first, then top-fit, then by open roles. Only what the research
+    needs is returned (no application notes)."""
+    todo = [c for c in rows if c.get("needs_research")]
+    todo.sort(key=lambda c: (not c.get("watched"), not c.get("top_fit"), -c.get("open_roles", 0), c["name"].lower()))
+    out = []
+    for c in todo[:max(1, limit)]:
+        why = [w for w, on in (("you follow it closely", c.get("watched")), ("it has a top-fit posting open", c.get("top_fit"))) if on]
+        out.append({"name": c["name"], "why": " and ".join(why), "open_roles": c.get("open_roles", 0),
+                    "roles": [a["role"] for a in c.get("apps", []) if a.get("status") not in ("Closed", "Rejected")][:5],
+                    "careers": c.get("careers") or "", "job_board": (c.get("board") or {}).get("url") or "",
+                    "field": c.get("field") or ""})
+    return {"ok": True, "waiting": len(todo), "companies": out}
+
+
+def cmd_research_queue(args):
+    return research_queue(wizard.companies_rows()["rows"], args.limit)
+
+
 def cmd_check_groups(args):
     """Load keyword-groups.json as the daily run does, check each group's shape,
     and score a sample posting. Session 3 runs this before it closes."""
@@ -268,6 +295,8 @@ def main(argv=None):
     p.set_defaults(fn=cmd_contacts)
     p = sub.add_parser("company"); p.add_argument("--name", required=True); p.add_argument("--set", action="append")
     p.set_defaults(fn=cmd_company)
+    p = sub.add_parser("research-queue"); p.add_argument("--limit", type=int, default=5)
+    p.set_defaults(fn=cmd_research_queue)
     p = sub.add_parser("check-groups"); p.set_defaults(fn=cmd_check_groups)
     p = sub.add_parser("add"); p.add_argument("--url"); p.add_argument("--text-file")
     p.add_argument("--title"); p.add_argument("--company"); p.set_defaults(fn=cmd_add)

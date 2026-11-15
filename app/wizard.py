@@ -43,7 +43,8 @@ _AGENT = {}
 TOKEN = secrets.token_urlsafe(24)   # new on every launch; the page URL carries it
 
 
-ACK_TERMS = "beta-as-is-1"   # bump when the beta terms on the privacy page change, so users confirm again
+ACK_TERMS = "beta-as-is-2"   # bump when the beta terms or what goes out on the privacy page change, so users confirm again
+#   2: the kit follows company job boards it finds, and Claude may search the web to research a company
 
 
 def acknowledged():
@@ -530,7 +531,8 @@ RESEARCH = {"field": ("Field", "text"), "bonus": ("Bonus and Equity", "text"), "
             "red": ("Red Flags", "text"), "health": ("Health Rating", "rating"), "dni": ("D&I Rating", "rating"),
             "glassdoor": ("Glassdoor Rating", "rating"), "match": ("401k Match", "percent"),
             "growth": ("Company Growth", GROWTH), "career": ("Career Growth", CAREER),
-            "careers": ("Careers Page", "url")}
+            "careers": ("Careers Page", "url"), "sources": ("Research Sources", "text"),
+            "researched": ("Last Researched", "date")}
 
 
 def _ui(table, stored, default):
@@ -563,29 +565,77 @@ def board_link(platform, slug):
         return f"https://jobs.lever.co/{slug}"
     if platform == "ashby":
         return f"https://jobs.ashbyhq.com/{slug}"
+    if platform == "smartrecruiters":
+        return f"https://jobs.smartrecruiters.com/{slug}"
     if platform == "workday" and isinstance(slug, dict):
         return f"https://{slug.get('tenant')}.{slug.get('instance')}.myworkdayjobs.com/{slug.get('board')}"
     return ""
 
 
-def _board_settings():
+PLATFORM_LABEL = {"greenhouse": "Greenhouse", "lever": "Lever", "ashby": "Ashby", "workday": "Workday",
+                  "smartrecruiters": "SmartRecruiters"}
+
+
+def _companies_settings():
     f = settings_dir() / "companies.json"
     try:
-        at = json.loads(f.read_text(encoding="utf-8")).get("ats_tools", {}) if f.exists() else {}
+        return json.loads(f.read_text(encoding="utf-8")).get("ats_tools", {}) if f.exists() else {}
     except ValueError:
-        at = {}
+        return {}
+
+
+def _board_settings():
+    at = _companies_settings()
     return at.get("CONFIRMED_COMPANIES") or [], at.get("CUSTOM_SITE_COMPANIES") or []
 
 
-def _board_for(name, boards, custom):
+def _found_boards():
+    """Boards the daily check found on its own (data folder; see agent/company_follow.py)."""
+    f = kit_settings.data_dir() / "found_boards.json"
+    try:
+        data = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+    except (OSError, ValueError):
+        data = {}
+    return [b for b in (data.get("boards") or [] if isinstance(data, dict) else [])
+            if isinstance(b, dict) and b.get("name") and b.get("platform")]
+
+
+_CO_LEGAL = {"inc", "incorporated", "llc", "ltd", "limited", "corp", "corporation", "co", "company", "plc", "gmbh"}
+_CO_TAILS = {"holdings", "group", "technologies", "technology", "labs"}
+
+
+def _co_key(name):
+    """One company under small spelling differences ("Acme, Inc." and "Acme"),
+    the same way the daily check matches names (lead_resolver.norm_company).
+    Written without patterns: the name comes from the page."""
+    text, depth, kept = str(name or "")[:200].lower(), 0, []
+    for ch in text:                      # drop anything in parentheses
+        if ch == "(":
+            depth += 1
+            kept.append(" ")
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif depth == 0:
+            kept.append(ch if (ch.isascii() and ch.isalnum()) or ch == " " else (" " if ch in ",./&-" else ""))
+    words = [w for w in "".join(kept).split() if w not in _CO_LEGAL]
+    return " ".join([w for w in words if w not in _CO_TAILS] or words)
+
+
+def _board_for(name, boards, custom, found=()):
     key = (name or "").strip().lower()
     for i, b in enumerate(boards):
         if (b.get("name") or "").strip().lower() == key:
             wd = b.get("platform") == "workday"
-            return {"label": "Workday" if wd else str(b.get("platform", "")).title(), "platform": b.get("platform"),
+            return {"label": PLATFORM_LABEL.get(b.get("platform"), str(b.get("platform", "")).title()), "platform": b.get("platform"),
                     "url": safe_url(board_link(b.get("platform"), b.get("slug"))), "index": i,
                     "note": ("Read daily" if b.get("workday_ok") is True else "Not read daily (your choice)") if wd else "Read daily",
                     "workday_ok": b.get("workday_ok") is True}
+    for b in found:
+        if _co_key(b.get("name")) == _co_key(name):
+            on = b.get("status", "on") == "on"
+            return {"label": PLATFORM_LABEL.get(b.get("platform"), str(b.get("platform", "")).title()), "platform": b.get("platform"),
+                    "url": safe_url(board_link(b.get("platform"), b.get("slug"))), "found": True, "following": on,
+                    "note": "Read daily (the daily check found it)" if on else "Not read (you stopped following it)"}
     for c in custom:
         if (c.get("name") or "").strip().lower() == key:
             return {"label": "Careers page", "platform": "custom", "url": safe_url(c.get("careers_url")),
@@ -595,13 +645,17 @@ def _board_for(name, boards, custom):
 
 def companies_rows():
     boards, custom = _board_settings()
+    found = _found_boards()
+    watched = {_co_key(n) for n in _companies_settings().get("WATCHED_COMPANIES") or []}
     apps = tracker_rows()["rows"]
     out, names = [], set()
 
     def row(cid, name, pr):
         mine = [a for a in apps if (a["company_id"] and a["company_id"] == cid)
                 or (not a["company_id"] and (a["Company"] or "").strip().lower() == name.strip().lower())]
-        r = {"id": cid, "name": name, "board": _board_for(name, boards, custom),
+        r = {"id": cid, "name": name, "board": _board_for(name, boards, custom, found),
+             "watched": _co_key(name) in watched,
+             "top_fit": (_plain(pr.get("Research Tier")) or "").startswith("A"),
              "posture": _ui(POSTURE_UI, _plain(pr.get("Remote Posture")), "Unknown"),
              "verdict": _ui(VERDICT_UI, _plain(pr.get("Verdict")), "Not reviewed yet"),
              "risk": _ui(RISK_UI, _plain(pr.get("Risk Level")), "Needs research"),
@@ -619,6 +673,10 @@ def companies_rows():
         jb = safe_url(_plain(pr.get("Job Board URL")) or "") if pr.get("Job Board URL") else ""
         if not r["board"]["label"] and jb:
             r["board"] = {"label": "Job board", "platform": "", "url": jb, "note": "Not read daily; add it in Setup to read it"}
+        # Research comes first for the companies that matter most: ones followed
+        # closely and ones with a top-fit posting, while they still have open roles.
+        r["needs_research"] = (r["risk"] == "Needs research" and r["verdict"] == "Not reviewed yet"
+                               and (r["watched"] or (r["top_fit"] and r["open_roles"] > 0)))
         return r
 
     for p in _read_store("companies").values():
@@ -630,7 +688,8 @@ def companies_rows():
             continue
         names.add(name.strip().lower())
         out.append(row(p["id"], name, pr))
-    for b in [*boards, *custom]:   # boards picked in setup that the daily check hasn't met yet
+    listed = [*boards, *custom, *({"name": n} for n in _companies_settings().get("WATCHED_COMPANIES") or [])]
+    for b in listed:   # companies picked in setup that the daily check hasn't met yet
         name = (b.get("name") or "").strip()
         if name and name.lower() not in names:
             names.add(name.lower())
@@ -656,6 +715,11 @@ def _company_props(body):
         v = body[k]
         if kind == "text":
             props[prop] = {"rich_text": [{"text": {"content": str(v or "").strip()[:1900]}}]}
+        elif kind == "date":
+            d = str(v or "").strip()
+            if d and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+                raise ValueError(f"{prop} must be a date like 2026-01-31")
+            props[prop] = {"date": {"start": d} if d else None}
         elif kind == "url":
             u = str(v or "").strip()
             if u and not safe_url(u):
@@ -741,6 +805,99 @@ def company_workday(body):
     return {"ok": True}
 
 
+def company_follow_set(body):
+    """Stop or resume reading a board the daily check found on its own."""
+    import company_follow
+    name = (body.get("name") or "").strip()
+    if not name or not company_follow.set_status(name, body.get("on") is True):
+        return {"ok": False, "error": "no board the daily check found for that company"}
+    return {"ok": True}
+
+
+def company_watch(body):
+    """Follow a company closely, or stop: any new posting there that passes
+    your filters is called out, and it comes first for research."""
+    name = (body.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "a company needs a name"}
+    a = setup_model.read_answers(settings_dir())
+    names = [n for n in a["fields"].get("watched") or [] if _co_key(n) != _co_key(name)]
+    if body.get("on") is True:
+        names.append(name)
+    a["fields"]["watched"] = names
+    setup_model.write_answers(settings_dir(), a)
+    kit_settings._cache.clear()
+    return {"ok": True, "watched": body.get("on") is True}
+
+
+def find_board_by_name(body, probe=None, guesses=None):
+    """Setup, "Companies to follow closely": look for a company's job board from
+    its name alone. Nothing is saved here. A guessed address can be another
+    company's board, so the page shows the sample titles and the user confirms."""
+    name = (body.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "Type the company's name first."}
+    import ats_tools
+    import lead_resolver
+    probe = probe or ats_tools.probe_slug
+    for slug in (guesses or lead_resolver.company_slug_guesses)(name):
+        for platform in ("greenhouse", "ashby", "lever", "smartrecruiters"):
+            hit = probe(platform, slug)
+            if hit:
+                count, sample = hit
+                return {"ok": True, "board": {"name": name, "platform": platform, "slug": slug},
+                        "label": PLATFORM_LABEL[platform], "count": count,
+                        "sample": [str(t)[:120] for t in sample if t][:3],
+                        "link": safe_url(board_link(platform, slug))}
+    return {"ok": True, "board": None}
+
+
+RESUME_TYPES = (".docx", ".pdf", ".txt", ".md")   # the types app/resume/read_resume.py reads
+RESUME_MAX = 8_000_000   # bytes; a resume is far smaller
+
+
+def _bank_folder():
+    """The user's Evidence Bank folder (where app/resume/read_resume.py looks for the saved copy)."""
+    return kit_settings.bank_dir() or (settings_dir().parent / "Evidence Bank")
+
+
+def resume_status():
+    """The resume copy saved for Start Here, if there is one."""
+    folder = _bank_folder()
+    for f in sorted(folder.glob("My current resume.*")) if folder.exists() else []:
+        if f.suffix.lower() in RESUME_TYPES:
+            return {"saved": True, "name": f.name}
+    return {"saved": False, "name": ""}
+
+
+def resume_save(body):
+    """Setup, "Your resume": keep a copy of the resume the user already has in
+    their Job Search folder (Evidence Bank/My current resume.<type>), so Start
+    Here builds from it instead of a blank page. The file never leaves this
+    computer, and the kit reads nothing from it; Claude reads it with the user."""
+    import base64
+    import binascii
+    # The saved name is fixed; only the file type comes from the upload, and it is
+    # taken from the kit's own list, never from the uploaded name itself.
+    ext = {t: t for t in RESUME_TYPES}.get(Path(str(body.get("name") or "")).suffix.lower())
+    if not ext:
+        return {"ok": False, "error": "Choose a Word (.docx), PDF, or text file."}
+    try:
+        data = base64.b64decode(str(body.get("data") or ""), validate=True)
+    except (binascii.Error, ValueError):
+        return {"ok": False, "error": "That file couldn't be read. Try choosing it again."}
+    if not data or len(data) > RESUME_MAX:
+        return {"ok": False, "error": "That file is empty or too large for a resume."}
+    folder = _bank_folder()
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.glob("My current resume.*"):   # one copy, the newest
+        if old.suffix.lower() in RESUME_TYPES:
+            old.unlink()
+    dest = folder / f"My current resume{ext}"
+    dest.write_bytes(data)
+    return {"ok": True, "name": dest.name}
+
+
 # ---------------------------------------------------------------- page settings
 THEMES = ("auto", "light", "dark")
 PILL_COLORS = ("gray", "blue", "teal", "green", "yellow", "orange", "red", "purple", "pink")
@@ -795,6 +952,7 @@ def detect_board(body):
     url = body.get("url", "").strip()
     name = body.get("name", "").strip()
     import lead_resolver
+    guessed = []
     found = lead_resolver.board_from_url(url)
     if not found:
         import ats_tools
@@ -805,15 +963,20 @@ def detect_board(body):
         m = (d or {}).get("matches") or {}
         if m:
             found = next(iter(m.items()))
+            guessed = [str(t)[:120] for t in (d.get("sample_titles") or []) if t][:3]
     if found:
         platform, slug = found
-        return {"ok": True, "board": {"name": name or str(slug).replace("-", " ").title(), "platform": platform, "slug": slug}}
+        out = {"ok": True, "board": {"name": name or str(slug).replace("-", " ").title(), "platform": platform, "slug": slug}}
+        if guessed:   # found by a guessed address: the page shows these so the user can confirm it's the right company
+            out["sample"] = guessed
+        return out
     return {"ok": True, "custom": {"name": name or url, "careers_url": url,
                                    "note": "No standard job board found; check this page by hand or ask Claude to watch it."}}
 
 
 # ---------------------------------------------------------------- server
 MAX_BODY = 1_000_000          # a pasted posting is well under this; anything bigger is refused
+RESUME_BODY = 12_000_000      # the resume upload only: an 8 MB file is about 11 MB once encoded for sending
 DRAIN_LIMIT = 16_000_000      # a refused body up to this size is read and discarded so the 413 reaches the page
 IDLE_MINUTES = 30             # the page server stops after this long with no requests
 
@@ -883,6 +1046,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, health_get())
             if path == "/api/companies":
                 return self._send(200, companies_rows())
+            if path == "/api/resume":
+                return self._send(200, resume_status())
             if path == "/api/ui":
                 return self._send(200, ui_settings())
             if path == "/api/status":
@@ -911,7 +1076,7 @@ class Handler(BaseHTTPRequestHandler):
             n = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             n = -1
-        if n < 0 or n > MAX_BODY:
+        if n < 0 or n > (RESUME_BODY if path == "/api/resume" else MAX_BODY):
             self.close_connection = True
             if 0 < n <= DRAIN_LIMIT:
                 # read and discard the body in small pieces so the browser gets
@@ -922,7 +1087,8 @@ class Handler(BaseHTTPRequestHandler):
                     if not got:
                         break
                     left -= len(got)
-            return self._send(413, {"ok": False, "error": "That's too much to send at once. Paste a shorter posting text."})
+            return self._send(413, {"ok": False, "error": "That file is too large for a resume." if path == "/api/resume"
+                                    else "That's too much to send at once. Paste a shorter posting text."})
         try:
             b = self._body()
             if path == "/api/folder":
@@ -964,6 +1130,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, company_add(b))
             if path == "/api/companies/workday":
                 return self._send(200, company_workday(b))
+            if path == "/api/companies/follow":
+                return self._send(200, company_follow_set(b))
+            if path == "/api/companies/watch":
+                return self._send(200, company_watch(b))
+            if path == "/api/find_board":
+                return self._send(200, find_board_by_name(b))
+            if path == "/api/title_check":
+                return self._send(200, setup_model.check_title(b.get("answers"), b.get("title")))
+            if path == "/api/resume":
+                return self._send(200, resume_save(b))
             if path == "/api/ui":
                 return self._send(200, ui_save(b))
             if path == "/api/suggest":

@@ -57,8 +57,9 @@ listed here.
 | Industries outside your field (a posting that requires years or experience in one counts it as a missed requirement) | `fit_scoring.OUT_OF_DOMAIN_INDUSTRIES`, `fit_scoring.OUT_OF_DOMAIN_LABEL` | Empty list turns the rule off |
 | Staffing agencies or reposters to ignore as the hiring company | `agent.REJECT_POSTERS` | Names, added as they turn up |
 | Which of your fields is your current or most recent job in? | `fit_scoring.SAME_DOMAINS` | One field name from `DOMAIN_SCORES`, or blank. A company tagged with it gets the most careful tailoring (Tier 1: numbers, dates, and inside details kept general). A company with no field set is never Tier 1 on a guess from posting words; Claude checks the tier when drafting |
-| Companies you'd love to work for (paste careers page links) | `ats_tools.CONFIRMED_COMPANIES`, `ats_tools.CUSTOM_SITE_COMPANIES` | The kit checks these job boards every day. The wizard detects the job board. A Workday board is read only when its entry has `"workday_ok": true` (a box in the wizard; see SOURCES.md) |
-| Remote job feed for your field | `board_feeds.WWR_FEEDS`, `agent.REMOTIVE_SEARCH` | One We Work Remotely category feed, picked from a list. Remotive is read in full unless `REMOTIVE_SEARCH` names search words; your title filter keeps the ones on your list |
+| Companies to follow closely (type a name, or paste a careers page link) | `ats_tools.CONFIRMED_COMPANIES`, `ats_tools.CUSTOM_SITE_COMPANIES`, `ats_tools.WATCHED_COMPANIES` | The kit checks these job boards every day. The wizard finds the job board from the name (it shows sample openings so you can confirm it's the right company) or from the careers page. Boards are Greenhouse, Lever, Ashby, SmartRecruiters, or Workday; a Workday board is read only when its entry has `"workday_ok": true` (a box in the wizard; see SOURCES.md). `WATCHED_COMPANIES` is the list of names followed closely: every new posting there that passes your filters is called out in the daily digest and the fresh alert, whatever its fit, and the company comes first for research. Each company's details on the Companies page has the same box |
+| Follow new companies for me | `agent.AUTO_FOLLOW` | On by default. When a job site turns up a posting that fits (anything but Poor fit), the daily check looks for that company's own Greenhouse, Lever, Ashby, or SmartRecruiters board and reads it every day from then on. It follows a board only when the posting's own link is on it or the same role is listed there; never Workday. Found boards are kept in the data folder (`found_boards.json`), not in your settings, and each can be stopped on the Companies page |
+| We Work Remotely category for your field | `board_feeds.WWR_FEEDS`, `agent.REMOTIVE_SEARCH` | One We Work Remotely category feed, picked from a list. Remotive is read in full unless `REMOTIVE_SEARCH` names search words; your title filter keeps the ones on your list |
 
 ### 6. Your evidence and your resume
 | Question | Settings | Notes |
@@ -118,6 +119,9 @@ These live in `preferences.json`. The Claude plugin reads them every session (th
 | `fit_scoring.DRAG_DOMAINS` | empty | Field names that pull a mixed company's field points down by 6 when it also carries a better field |
 | `agent.NETCHECK_URLS` | three public job-board hosts | Probed before a run; when none answers, the run is skipped and the next scheduled run retries |
 | `agent.FRESH_ALERT_DAYS` | 2 | How new a top-tier posting must be to send an alert |
+| `agent.AUTO_FOLLOW_MAX` | 60 | The most company boards the daily check follows on its own (your own picks don't count) |
+| `agent.AUTO_FOLLOW_PER_RUN` | 8 | How many companies the full daily run looks up a board for; the rest wait for the next day |
+| `agent.AUTO_FOLLOW_STALE_DAYS` | 90 | A board the kit found is dropped after this many days with no opening on your title list (it can be found again later) |
 | `agent.EVERGREEN_AGE_DAYS` | 150 | Postings open this long are flagged as likely evergreen |
 | `agent.AGE_NOTE_DAYS` | 60 | Postings open this long get an age note |
 | `agent.REPOST_WINDOW_DAYS` | 90 | How far back reposts are detected |

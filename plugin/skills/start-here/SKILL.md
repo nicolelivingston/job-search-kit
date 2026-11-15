@@ -4,22 +4,27 @@ description: >
   This skill should be used when a new Job Search Kit user says "start here",
   "/start-here", "set up my evidence bank", "build my master resume", "let's do
   the first session", "continue my setup", or asks where to begin after
-  installing the kit. It runs four short interview sessions that build the
-  user's North Star, evidence bank, Rules File, keyword groups, and master
-  resume from the kit's templates, in the user's own words.
+  installing the kit, or says "start from my resume", "I already have a
+  resume", or "review my resume bullets". It starts from the resume the user
+  already has when there is one (reads it, checks every bullet against the
+  kit's guidelines, and suggests improvements or asks questions), then runs
+  four short interview sessions that build the user's North Star, evidence
+  bank, Rules File, keyword groups, and master resume from the kit's
+  templates, in the user's own words.
 metadata:
   version: "0.1.0"
 ---
 
 # Start Here
 
-Four short sessions, about 45 minutes each, that turn a new user's experience into the files the kit runs on. The user talks; Claude asks one question at a time, writes down what they said in their words, reads it back, and only then files it. Nothing goes into the evidence bank that the user didn't say and didn't confirm.
+A short resume intake (when the user has a resume) and four sessions of about 45 minutes each, which turn a new user's experience into the files the kit runs on. The user talks; Claude asks one question at a time, writes down what they said in their words, reads it back, and only then files it. Nothing goes into the evidence bank that the user didn't say and didn't confirm.
 
 Load `kit-basics` first (folder map, how to run scripts). Read `${CLAUDE_PLUGIN_ROOT}/skills/kit-basics/references/bullet-format.md` and `confidentiality.md` before session 2.
 
 ## Which session is next
 
 Check the Job Search folder and say in one line where the user is:
+0. No `Evidence Bank/resume-intake.md`, and session 2 hasn't happened yet (no story card past the template's): **resume intake** first (`references/resume-intake.md`). It asks once whether the user has a resume, reads it, checks each bullet, and writes the intake file; with no resume it writes a one-line file so the question isn't asked again. A user who has finished sessions 1 or 2 without it can still ask for it ("review my resume bullets"); offer it once, don't insist.
 1. `Evidence Bank/North Star.md` still has a line containing `<fill in`: **session 1**.
 2. `Evidence Bank/Evidence Bank.md` has no story card past the template's `E01 <Short name>`: **session 2**.
 3. `Rules File.md` still has a line containing `<fill in`, or `keyword-groups.json` has empty `WORK_FAMILIES`: **session 3**.
@@ -42,9 +47,10 @@ A session can stop early. Save what's done, add a line to the North Star's "Deci
 - When the user says "not sure", don't fill the gap with a guess. Write the Open line (above) and move on.
 - Until session 4, evidence mode is lighter: rebuild the index after a bank edit, but there is no master to rebuild or review yet.
 
-## The four sessions
+## The intake and the four sessions
 
-Each session's questions, outputs, and file edits are in `references/`:
+Each one's questions, outputs, and file edits are in `references/`:
+- `references/resume-intake.md`: the resume the user already has. Reads it with the kit's reader, lists the fixed facts, checks every bullet against the three-part bullet rule (strong as written, tighten, missing the result, missing why it mattered, a duty, or unclear), suggests a rewrite only from what the bullet already says, asks a question where a part is missing, and groups the bullets into story candidates. Writes `Evidence Bank/resume-intake.md`. Nothing goes into the bank.
 - `references/session-1-north-star.md`: what they want and why, how they write, confirmed gaps. Writes `North Star.md`, Rules File sections 2, 9, and 11.
 - `references/session-2-stories.md`: four to six story cards with bullets, figures, and prep detail. Writes the bank's Part B, Part C, and Part D, and the Prep File.
 - `references/session-3-rules-and-keywords.md`: employer specifics, outsider wording, retired wording, keyword groups. Writes Rules File sections 4 to 6, 10, and 12, the Retired Claims Log, `keyword-groups.json`, four lists in `settings/resume.json`, and pending edits in `approval-queue.md`.

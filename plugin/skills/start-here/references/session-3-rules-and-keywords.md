@@ -22,7 +22,7 @@ Rules File section 5 has three `<fill in>` spots. Ask:
 
 ## Part 4. Retired wording (3 minutes)
 
-8. "Any phrase or figure you've used on a resume before that you never want to use again?" Append each to `Retired Claims Log.md` with the date, the reason, and what to say instead; the first row replaces the template's example row. Phrases of 18 characters or more go in double quotes in the "Retired wording" column so the gate reads them. The gate reads quotes only from that column, so quotes in "Say instead" are safe. Shorter ones also go in `settings/resume.json` under `presend_gate.RETIRED_PHRASES`.
+8. "Any phrase or figure you've used on a resume before that you never want to use again?" With a resume intake, read back the bullets the user dropped or reworded in session 2 and ask whether any of that old wording should be retired. Append each to `Retired Claims Log.md` with the date, the reason, and what to say instead; the first row replaces the template's example row. Phrases of 18 characters or more go in double quotes in the "Retired wording" column so the gate reads them. The gate reads quotes only from that column, so quotes in "Say instead" are safe. Shorter ones also go in `settings/resume.json` under `presend_gate.RETIRED_PHRASES`.
 9. Search the bank (every bullet, every Cleared line, and Part C) for each retired phrase or figure. Each hit goes in `approval-queue.md` as a pending edit with the replacement wording; session 4 fixes it before the build. The gate flags retired wording even inside approved bullets, so a hit left in the bank will stop the master.
 
 ## Part 5. Keyword groups (10 minutes)

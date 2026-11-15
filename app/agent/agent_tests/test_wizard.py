@@ -275,6 +275,35 @@ class Wizard(unittest.TestCase):
         _, r = self.call("/api/detect", {"url": "https://job-boards.greenhouse.io/examplecorp", "name": "Example Corp"})
         self.assertEqual(r["board"], {"name": "Example Corp", "platform": "greenhouse", "slug": "examplecorp"})
 
+    def test_6b_setup_guidance_routes(self):
+        # Try a title: what the daily check would do with it, from the answers on the page
+        _, a = self.call("/api/answers")
+        title = a["work"]["titles"][0].title()
+        code, r = self.call("/api/title_check", {"answers": a, "title": "Senior " + title})
+        self.assertEqual(code, 200)
+        self.assertTrue(r["kept"], r)
+        self.assertIn("Picked up", r["lines"][0])
+        code, r = self.call("/api/title_check", {"answers": a, "title": "Forklift Operator"})
+        self.assertFalse(r["kept"])
+        # follow closely, from a company's details
+        code, r = self.call("/api/companies/watch", {"name": "Lumenfold (example)", "on": True})
+        self.assertEqual((code, r["ok"]), (200, True), r)
+        _, cos = self.call("/api/companies")
+        row = next(c for c in cos["rows"] if c["name"] == "Lumenfold (example)")
+        self.assertTrue(row["watched"] and row["needs_research"], row)      # listed, and first in line for research
+        self.assertTrue(self.call("/api/companies/watch", {"name": "Lumenfold (example)", "on": False})[1]["ok"])
+        self.assertNotIn("Lumenfold (example)", [c["name"] for c in self.call("/api/companies")[1]["rows"]])
+        # stopping a board the daily check never found says so
+        self.assertFalse(self.call("/api/companies/follow", {"name": "Nobody Co", "on": False})[1]["ok"])
+        # the resume you have: nothing saved yet, a file type the reader can't read is refused,
+        # and the route takes a file bigger than a pasted posting may be
+        self.assertEqual(self.call("/api/resume")[1], {"saved": False, "name": ""})
+        code, r = self.call("/api/resume", {"name": "resume.exe", "data": "QQ=="})
+        self.assertEqual((code, r["ok"]), (200, False))
+        code, r = self.call("/api/resume", {"name": "resume.exe", "data": "A" * 1_200_000})
+        self.assertEqual((code, r["ok"]), (200, False))
+        self.assertEqual(self.call("/api/title_check", {"title": "x" * 1_200_000})[0], 413)
+
     def test_7_other_websites_refused(self):
         code, _ = self.call("/api/answers", {"x": 1}, origin="https://evil.example")
         self.assertEqual(code, 403)
@@ -319,7 +348,7 @@ class Wizard(unittest.TestCase):
         _, st = self.call("/api/status")
         self.assertEqual(Path(st["settings"]), (dest / "settings").resolve())
         self.assertFalse(st["needs_ack"])   # confirmed on the privacy page before the folder existed
-        self.assertEqual(json.loads((dest / "settings" / "app.json").read_text())["acknowledged"]["terms"], "beta-as-is-1")
+        self.assertEqual(json.loads((dest / "settings" / "app.json").read_text())["acknowledged"]["terms"], "beta-as-is-2")
 
     def test_11_last_run_and_stale_banner(self):
         from datetime import datetime, timedelta
@@ -370,7 +399,7 @@ class Wizard(unittest.TestCase):
         _, st = self.call("/api/status")
         self.assertFalse(st["needs_ack"])
         app = json.loads((self.settings / "app.json").read_text())
-        self.assertEqual(app["acknowledged"]["terms"], "beta-as-is-1")
+        self.assertEqual(app["acknowledged"]["terms"], "beta-as-is-2")
         _, page = self.call("/?t=" + self.token, token="")
         self.assertIn(">Beta<", page)
         self.assertIn("provided as is", page)

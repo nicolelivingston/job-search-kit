@@ -80,17 +80,20 @@ def options(platform=None, home=None, env=None):
 
 # Claude's permissions inside the Job Search folder (.claude/settings.json).
 # Posting text is untrusted and the folder holds private data, so Claude gets
-# no way to send data out on its own: its web fetch and web search tools are
-# off here, download commands are refused, every shell command asks the user
-# first, and the modes that skip those prompts are turned off. Postings come
-# in through the kit's own fetch (tracker_cli.py fetch), which refuses private
-# addresses. The kit's folder is readable so the plugin can read its prompts.
+# no way to send data out on its own: its web fetch tool is off here, download
+# commands are refused, every shell command asks the user first, and the modes
+# that skip those prompts are turned off. Postings come in through the kit's
+# own fetch (tracker_cli.py fetch), which refuses private addresses. The kit's
+# folder is readable so the plugin can read its prompts.
+# Web search asks the user each time (it was refused outright before): the
+# company-research skill uses it to look up a company by name when the user
+# asks, and the user sees every search before it runs. Opening pages stays off.
 # Only sessions that load the folder's settings apply this (Claude Code opened
 # on the folder). A desktop-app task session on a folder with this file
 # (Nov 1, 2026) did not apply it, so the plugin's own rules (kit-basics)
 # repeat every limit.
 CLAUDE_DENY = [
-    "WebFetch", "WebSearch",
+    "WebFetch",
     "Bash(curl *)", "Bash(wget *)", "Bash(scp *)", "Bash(sftp *)", "Bash(ssh *)", "Bash(ftp *)",
     "Bash(nc *)", "Bash(ncat *)", "Bash(telnet *)", "Bash(rsync *)", "Bash(git push *)", "Bash(git remote *)",
     "Bash(pip install *)", "Bash(pip3 install *)", "Bash(npm *)", "Bash(npx *)", "Bash(certutil *)", "Bash(bitsadmin *)",
@@ -99,19 +102,36 @@ CLAUDE_DENY = [
     "PowerShell(certutil *)", "PowerShell(bitsadmin *)",
     "Read(~/.ssh/**)", "Read(~/.aws/**)", "Read(~/.config/**)", "Read(~/AppData/**)",
 ]
+CLAUDE_ASK = ["Bash", "PowerShell", "WebSearch"]
 
 
 def claude_settings(kit_dir=KIT):
     return {"permissions": {"defaultMode": "default", "disableBypassPermissionsMode": "disable",
-                            "disableAutoMode": "disable", "ask": ["Bash", "PowerShell"],
+                            "disableAutoMode": "disable", "ask": list(CLAUDE_ASK),
                             "deny": list(CLAUDE_DENY), "additionalDirectories": [str(kit_dir)]}}
 
 
+def _claude_settings_v1(kit_dir=KIT):
+    """The file as the kit wrote it before web search became ask-first: web
+    search refused outright. Only used to recognize an untouched old file."""
+    old = claude_settings(kit_dir)
+    old["permissions"]["ask"] = ["Bash", "PowerShell"]
+    old["permissions"]["deny"] = ["WebFetch", "WebSearch"] + [r for r in CLAUDE_DENY if r != "WebFetch"]
+    return old
+
+
 def write_claude_settings(dest, kit_dir=KIT):
-    """Add .claude/settings.json to a Job Search folder; never replaces one the user has."""
+    """Add .claude/settings.json to a Job Search folder. A file the user has
+    changed is never replaced; one the kit wrote and nobody touched is brought
+    up to date."""
     f = Path(dest) / ".claude" / "settings.json"
     if f.exists():
-        return False
+        try:
+            have = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return False
+        if have != _claude_settings_v1(kit_dir):
+            return False
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(claude_settings(kit_dir), indent=2) + "\n", encoding="utf-8")
     return True
