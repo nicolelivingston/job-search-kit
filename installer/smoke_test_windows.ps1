@@ -13,7 +13,7 @@ param([string]$Dist = "dist")
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
 
-$exe = Get-ChildItem $Dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
+$exe = Get-ChildItem $Dist -Filter "JobSearchKit-Setup.exe" | Select-Object -First 1
 if (-not $exe) { throw "no installer in $Dist" }
 $want = (Get-Content (Join-Path $Dist "SHA256SUMS.txt") | Where-Object { $_ -like "*$($exe.Name)" }).Split(" ")[0]
 if ((Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower() -ne $want) { throw "checksum mismatch" }

@@ -66,7 +66,8 @@ jobs:
           # The free API allows 4 requests a minute, so polls are 20 s apart.
           # Any missing answer fails the step: a scan that didn't happen
           # must never read as a clean scan.
-          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem dist -Filter "JobSearchKit-Setup.exe" | Select-Object -First 1
+          if (-not $exe) { throw "no installer in dist" }
           $hdr = @{ "x-apikey" = $env:VT_API_KEY }
           $upload = (Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Headers $hdr).data
           if (-not $upload) { throw "VirusTotal gave no upload URL (check the VT_API_KEY secret)" }
@@ -125,8 +126,15 @@ jobs:
       - name: Attach to the release
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
+          # Shown at the top of the release page, above the list of changes.
+          body: |
+            **To install on Windows:** download `JobSearchKit-Setup.exe` from Assets below and open it. [Step-by-step instructions](https://github.com/nicolelivingston/job-search-kit#install-on-windows).
+
+            Already have the kit? It updates itself to each full release (never to a beta), unless you turned that off.
+
+            The other files: `job-search-kit.plugin` is the Claude plugin, and the rest are checks the kit's updater uses.
           files: |
-            dist/JobSearchKit-Setup-*.exe
+            dist/JobSearchKit-Setup.exe
             dist/job-search-kit.plugin
             dist/SHA256SUMS.txt
             dist/job-search-kit-sbom.cdx.json

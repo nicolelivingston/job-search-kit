@@ -19,7 +19,7 @@ Use **Suggest an idea** in the kit (or the repository's "Suggest an idea" issue 
 ## Going back to the previous version
 Updates install quietly from the kit's GitHub releases page and never touch your Job Search folder. A new version waits 72 hours after it comes out before it installs, and the maintainer can pause all updates at once. If an update breaks something:
 1. Open https://github.com/nicolelivingston/job-search-kit/releases in a browser.
-2. Pick the previous version and download its `JobSearchKit-Setup-<version>.exe`.
+2. Pick the previous version and, under Assets, download its installer (the file that starts with `JobSearchKit-Setup` and ends in `.exe`).
 3. Run it. It replaces the app's code and bundled Python only. Your folder, settings, bank, applications, and tracker stay exactly as they were.
 4. Tell the maintainer which version broke, so the next release fixes it before the kit updates you again. (The daily update check will offer the newest version again; if you want to stay on the older one for a while, turn off automatic updates in the setup wizard under How it runs, or just say so in the email and a release that fixes it will follow.)
 

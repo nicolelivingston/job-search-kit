@@ -1,4 +1,5 @@
-# Builds dist/JobSearchKit-Setup-<version>.exe on a Windows machine, plus
+# Builds dist/JobSearchKit-Setup.exe on a Windows machine (the same file name
+# every release, so the README's download link never changes), plus
 # dist/job-search-kit.plugin and dist/SHA256SUMS.txt.
 #
 # Every download is pinned: the Python build by exact version and SHA-256
