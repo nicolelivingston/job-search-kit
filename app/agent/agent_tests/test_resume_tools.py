@@ -176,6 +176,63 @@ class TailoredTrace(unittest.TestCase):
         self.assertIn("3 sourced paragraph", g, g[-2500:])
         self.assertNotIn("no 20 pt", g)
 
+    def test_letter_that_repeats_the_resume_flags(self):
+        """Gate item 15: the letter says why, the resume says what."""
+        import copy as _c
+        sel = _c.deepcopy(self.base)
+        sel["letter_sources"] = {"_rule": "one per paragraph", "p1": "E01", "p2": "E02"}
+        self.assertIn("No mechanical flags", self.gate(sel).stdout)        # builds the resume beside the letter
+        bullet = max((e["text"] for i, e in self.index.items() if i in
+                      {b for r in sel["roles"] for g in r.get("groups", []) for b in g["bullets"]}), key=len)
+        own = "This paragraph is written fresh for the hiring team and says why the role is a good match for me."
+
+        def letter(*body):
+            (self.folder / "letter.md").write_text("Dear Hiring Team,\n\n" + "\n\n".join(body) + "\n\nThank you,\nTest Person\n")
+            r = self.run_py(APP / "resume" / "build_letter.py", self.folder / "selection-2026-11-01.json",
+                            self.folder / "letter.md", "--no-render")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            return self.folder / "Test_Person_CoverLetter_Acme_PM_2026-11-01_v1.docx"
+        out = letter(own, "At my last job this happened: " + bullet)
+        g = self.run_py(APP / "resume" / "presend_gate.py", out).stdout
+        self.assertIn("[15 letter] paragraph 2 repeats the resume word for word", g, g[-2500:])
+        self.assertNotIn("[15 letter] paragraph 1", g)
+        self.assertIn("[15 letter] body is", g)
+        out = letter(own, own.replace("fresh", "again").replace("good", "close"))
+        g = self.run_py(APP / "resume" / "presend_gate.py", out).stdout
+        self.assertNotIn("repeats the resume", g, g[-2500:])
+        self.assertIn("words shared with Test_Person_Resume_Acme_PM_2026-11-01_v1.docx", g)
+        # the check can be pointed at another resume, and turned off in settings
+        other = self.folder / "elsewhere.docx"
+        import shutil
+        shutil.copy(self.folder / "Test_Person_Resume_Acme_PM_2026-11-01_v1.docx", other)
+        self.assertIn("words shared with elsewhere.docx", self.run_py(APP / "resume" / "presend_gate.py", out, "--resume", other).stdout)
+        rj = self.work / "settings" / "resume.json"
+        saved = rj.read_text()
+        try:
+            d = json.loads(saved); d["presend_gate"]["LETTER_OVERLAP_WORDS"] = 0; rj.write_text(json.dumps(d))
+            out = letter(own, "At my last job this happened: " + bullet)
+            self.assertNotIn("[15 letter]", self.run_py(APP / "resume" / "presend_gate.py", out).stdout)
+        finally:
+            rj.write_text(saved)
+
+    def test_abbreviation_the_posting_uses_is_kept(self):
+        abbrs = [a.strip() for a in json.loads((self.work / "settings" / "resume.json").read_text())["presend_gate"]["ABBREVIATIONS"] if a.strip()]
+        if not abbrs:
+            self.skipTest("this person has no abbreviations to spell out")
+        ab = abbrs[0]
+        folder = self.work / "Applications" / "Made-Up Supply (drafting)"
+        folder.mkdir(parents=True, exist_ok=True)
+        doc = folder / "answers.md"
+        doc.write_text(f"Reported each {ab} to the team every month.\n")
+        g = self.run_py(APP / "resume" / "presend_gate.py", doc).stdout
+        self.assertIn(f"[2 abbreviation] line 1: '{ab}' (spell out on paper)", g, g[-1500:])
+        (folder / "posting.md").write_text(f"Source: https://jobs.example.com/9100004\n\nYou will own every {ab}s review.\n")
+        g = self.run_py(APP / "resume" / "presend_gate.py", doc).stdout
+        self.assertIn(f"[2 abbreviation] line 1: '{ab}' kept, the posting uses it", g, g[-1500:])
+        self.assertNotIn("(spell out on paper)", g)
+        (folder / "posting.md").write_text(f"A posting that never uses it, only x{ab}y inside another word.\n")
+        self.assertIn("(spell out on paper)", self.run_py(APP / "resume" / "presend_gate.py", doc).stdout)
+
     def test_dry_run_holes_closed(self):
         """Nov 1, 2026 dry run: each of these gated clean before."""
         import copy as _c

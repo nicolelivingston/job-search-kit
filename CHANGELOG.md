@@ -11,11 +11,19 @@ Plain-words notes for each release, newest first. A kit that's already installed
 - **Companies to follow closely.** In setup, type the names of the companies you'd most like to work for. The kit finds each one's job board (no careers link needed), and every new opening there on your title list is called out, whatever its fit score.
 - **Company research.** Say "research my companies" to Claude. It looks up the companies you follow closely and the ones with a top-fit posting, shows you what it found with links, and saves only what you approve. It never opens Glassdoor or other review sites.
 - **SmartRecruiters boards** are read alongside Greenhouse, Lever, Ashby, and Workday.
+- **A board that goes quiet is called out.** If a company you follow stops listing jobs on its board for three days after listing five or more (it has usually moved to another job site), or its board fails on every check, you get one notification and a banner on your tracker.
+- **Workday postings come with their details.** For a Workday board you turned on, each posting on your title list is read in full: the description, the pay range in it, and the real posted date. A Workday careers link now gives the kit the board's full address, so the board can be read once you turn it on.
+- **A cover letter that repeats the resume is flagged.** The checker compares a letter with the resume beside it and flags any run of four or more words they share. The letter says why; the resume says what.
 
 **Changed**
 - **Setup explains itself.** Step 1 says how job titles are matched, with examples, and has a Try a title box that shows what the daily check would do with any title. Step 3 explains what "industries you won't work in" means, with examples, and says it's optional. Step 5 lists every place the kit looks.
 - The privacy page says what's new in what goes out (boards the kit finds, and company research), so setup asks you to confirm it once more.
 - In Claude Code, a web search in your Job Search folder now asks you first instead of being refused, so company research can run. Opening web pages there is still off.
+- **Old postings sink.** A posting open more than 60 days loses 10 points, and one open more than 90 days loses 15, even when its score is capped. Its fit label doesn't change because of age. Your settings are backed up, then updated on the next run, and open postings are rescored on the first full run (fit scoring 4.3).
+- **An abbreviation the posting uses is fine.** The checker keeps an abbreviation on your spell-out list when the saved posting uses it too.
+
+**Fixed**
+- **Reposters are not employers.** More reposter sites are on the kit's list, a posting from a job site that never names the employer ("for our client, we are seeking") is left out, and copies like that already open in your tracker are closed unless you marked them Applying or Passed.
 
 ## 0.2.0
 

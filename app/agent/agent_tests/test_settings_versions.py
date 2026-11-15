@@ -75,8 +75,8 @@ class OldSettings(unittest.TestCase):
     def test_update_brings_a_v0_folder_forward(self):
         """v0.1.0 folders reach the current version: the v2 step removes the two
         retired 48-hour-rule settings, the v3 step the unused remote.co feed,
-        and the v4 step adds the new remote-with-a-catch phrases (after one
-        backup), and nothing else changes."""
+        the v4 step adds the new remote-with-a-catch phrases, and the v5 step
+        adds the 90-day age band (after one backup), and nothing else changes."""
         for which in ("template", "priya"):
             s = self.folder(which)
             before = {f.name: f.read_bytes() for f in s.iterdir()}
@@ -85,9 +85,9 @@ class OldSettings(unittest.TestCase):
             with self.subTest(settings=which):
                 self.assertIsNone(warning)
                 self.assertEqual(calls, [1])
-                self.assertEqual(len(changes), 4, changes)
+                self.assertEqual(len(changes), 5, changes)
                 self.assertTrue(all(any(k in c for k in ("ASK_EXPIRY_DAYS", "NO_DECISION_VERDICT", "REMOTE_CO_FEEDS",
-                                                         "remote-with-a-catch")) for c in changes))
+                                                         "remote-with-a-catch", "more than 90 days")) for c in changes))
                 after = {f.name: f.read_bytes() for f in s.iterdir()}
                 self.assertEqual({n for n in before if before[n] != after.get(n)}, {"criteria.json", "app.json"})
                 agent = json.loads((s / "criteria.json").read_text())["agent"]
@@ -98,6 +98,9 @@ class OldSettings(unittest.TestCase):
                 rule = lambda folder: next(h["$tuple"] for h in json.loads((Path(folder) / "criteria.json").read_text())
                                            ["fit_scoring"]["HARD_RULES"] if h["$tuple"][0] == "remote-catch")
                 self.assertEqual(rule(s), rule(KIT / "templates" / "settings"))
+                # ...and so do the age bands
+                bands = lambda folder: json.loads((Path(folder) / "criteria.json").read_text())["fit_scoring"]["FRESHNESS_BANDS"]
+                self.assertEqual(bands(s), bands(KIT / "templates" / "settings"))
                 self.assertEqual(kit_settings.folder_settings_version(s), kit_settings.SETTINGS_VERSION)
                 # a second run changes nothing
                 changes, warning = kit_settings.migrate(s, backup=lambda: self.fail("no backup expected"))
@@ -138,6 +141,24 @@ class Versions(unittest.TestCase):
         for p in kit_settings.REMOTE_CATCH_V4:
             re.compile(p[1:] if p.startswith("~") else re.escape(p))
 
+    def test_v5_adds_the_90_day_age_band(self):
+        band = lambda *t: {"$tuple": list(t)}
+        kit = [band(7, 5, "posted this week"), band(60, -5, "open 1 to 2 months"), band(None, -10, "open over 2 months")]
+        files = {"criteria.json": {"fit_scoring": {"FRESHNESS_BANDS": list(kit)}}}
+        changes = kit_settings.MIGRATIONS[4](files)
+        self.assertEqual(len(changes), 1)
+        self.assertIn("more than 90 days", changes[0])
+        self.assertEqual(files["criteria.json"]["fit_scoring"]["FRESHNESS_BANDS"],
+                         kit[:-1] + [band(90, -10, "open over 2 months"), band(None, -15, "open over 3 months")])
+        self.assertEqual(kit_settings.MIGRATIONS[4](files), [])   # a second run changes nothing
+        # bands the user changed, or a folder without them, are left alone
+        mine = [band(7, 5, "posted this week"), band(None, -20, "open over a week")]
+        for other in ({"criteria.json": {"fit_scoring": {"FRESHNESS_BANDS": list(mine)}}},
+                      {"criteria.json": {"fit_scoring": {"FRESHNESS_BANDS": []}}}, {"criteria.json": {"fit_scoring": {}}}, {}):
+            before = json.dumps(other, sort_keys=True)
+            self.assertEqual(kit_settings.MIGRATIONS[4](other), [])
+            self.assertEqual(json.dumps(other, sort_keys=True), before)
+
     def test_template_carries_the_current_version(self):
         self.assertEqual(kit_settings.folder_settings_version(KIT / "templates" / "settings"),
                          kit_settings.SETTINGS_VERSION)
@@ -149,7 +170,7 @@ class Versions(unittest.TestCase):
         # Renaming or removing a setting breaks older folders unless a migration
         # moves it. Bump SETTINGS_VERSION, add the step, then update this baseline.
         gone = keys(OLD / "template") - keys(KIT / "templates" / "settings")
-        if kit_settings.SETTINGS_VERSION == 4:
+        if kit_settings.SETTINGS_VERSION == 5:
             self.assertEqual(gone, {f"criteria.json:agent.{k}" for k in kit_settings.RETIRED_V2}
                              | {"criteria.json:board_feeds.REMOTE_CO_FEEDS"},
                              "settings removed or renamed since v0.1.0 without a migration")

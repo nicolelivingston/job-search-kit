@@ -284,6 +284,12 @@ def get_rejection_reason(job):
         return reason
     if lead_resolver.is_aggregator(job.get("company", "")):
         return f"aggregator repost ({job.get('company', '')}); the employer's own posting is the target"
+    if not job.get("ats_platform"):
+        # A reposter new to the list still gives itself away in the text (the
+        # employer is never named). Postings from a company's own board are exempt.
+        phrase = lead_resolver.repost_phrase(job.get("description", ""))
+        if phrase:
+            return f"third-party repost, employer not named ({phrase!r}); the employer's own posting is the target"
     reason = location_rejection_reason(job["location"])
     if reason:
         return reason
@@ -2096,6 +2102,49 @@ def close_skipped_rows(today):
     return closed
 
 
+def close_aggregator_rows(today):
+    """Open rows that are a reposter's copy of someone else's posting are
+    closed: the employer's own posting is the target, and when its board is
+    followed it already has a row of its own. A row counts when its Company is
+    a known reposter (lead_resolver.AGGREGATORS, or the user's own
+    agent.REJECT_POSTERS), or when it did not come from a company board and its
+    saved text never names the employer (lead_resolver.repost_phrase). New
+    postings like these are rejected before they are written
+    (get_rejection_reason); this pass clears the rows written before a name
+    joined the list. Rows the user decided (Applying, Passed) are left alone,
+    and a reason the user wrote is kept. Returns the number closed."""
+    closed = 0
+    for page in query_open_rows():
+        p = page.get("properties", {})
+        verdict = _sel(p, "Overall Verdict")
+        if verdict in fit_scoring.HUMAN_VERDICTS:
+            continue
+        company = _rt(p, "Company")
+        why = None
+        if lead_resolver.is_aggregator(company):
+            why = f"{company} reposts other companies' jobs and hides the employer"
+        else:
+            scope = _board_scope(p.get("Job Posting", {}).get("url") or "")
+            if not (scope and scope[1]):   # not a posting on a company's own board
+                phrase = lead_resolver.repost_phrase(clean_posting_text(_rt(p, "Posting Snapshot")))
+                if phrase:
+                    why = f"third-party repost, employer not named (\"{phrase}\")"
+        if not why:
+            continue
+        props = {"Status": {"status": {"name": "Closed"}},
+                 "Overall Verdict": {"select": {"name": "Poor fit"}}}
+        label = _rt(p, "Label Reason")
+        own_reason = (verdict and label and not MACHINE_LABEL.search(label)
+                      and not is_legacy_machine_label(label, _rt(p, "Notes")))
+        if not own_reason:
+            props["Label Reason"] = {"rich_text": [{"text": {"content": (
+                f"Poor fit: {why}; the employer's own posting is the target. "
+                f"Closed {today.isoformat()} by agent {fit_scoring.RUBRIC_VERSION}.")[:1900]}}]}
+        if patch_page(page["id"], props):
+            closed += 1
+    return closed
+
+
 def migrate_verdict_names(today):
     """One-time carry-over (fit scoring v3.6):
     every row, open or closed, whose Overall Verdict still has an old name
@@ -2447,9 +2496,11 @@ def rescore_board_matched(today, limit=40):
 
 def _job_id_from_url(url):
     """The trailing posting id in a board URL (Greenhouse numeric id, Ashby or
-    Lever uuid), lowercased; '' when there isn't one."""
-    m = re.search(r"/jobs/(\d+)|/([0-9a-f]{8}-[0-9a-f-]{8,})|smartrecruiters\.com/[^/]+/(\d{6,})", url or "", re.I)
-    return (m.group(1) or m.group(2) or m.group(3) or "").lower() if m else ""
+    Lever uuid, SmartRecruiters numeric id, Workday requisition suffix such as
+    _R9100001), lowercased; '' when there isn't one."""
+    m = re.search(r"/jobs/(\d+)|/([0-9a-f]{8}-[0-9a-f-]{8,})|smartrecruiters\.com/[^/]+/(\d{6,})|(_[A-Z]*R?\d{4,}(?:-\d+)?)(?:[/?#]|$)",
+                  url or "", re.I)
+    return next((g for g in m.groups() if g), "").lower() if m else ""
 
 
 def find_board_posting(url, title):
@@ -2772,6 +2823,11 @@ def main(quick=False):
         rescored = rescore_tracker(today)                                # then score on them
     with STATS.stage("close_skips"):
         closed_skips = close_skipped_rows(today)                         # Skip rows leave the open views
+    with STATS.stage("close_reposts"):
+        closed_reposts = close_aggregator_rows(today)                    # reposters' copies of someone else's posting
+    if closed_reposts:
+        print(f"{closed_reposts} reposter copy row(s) closed (the employer's own posting is the target).")
+    STATS.extra["closed_reposts"] = closed_reposts
     with STATS.stage("repair_eeo"):
         eeo_reopened = repair_eeo_closed_rows(today)                     # one-time (v4.1), then no-op
     if eeo_reopened:

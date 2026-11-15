@@ -39,11 +39,14 @@ import sys as _ks_sys, os as _ks_os
 _ks_sys.path.insert(0, _ks_os.path.dirname(_ks_os.path.dirname(_ks_os.path.abspath(__file__))))
 from kit_settings import data_dir as _ks_data_dir  # agent state lives in the data folder
 
-from ats_tools import CONFIRMED_COMPANIES, FETCHERS, STATIC_PATTERNS
+from ats_tools import CONFIRMED_COMPANIES, FETCHERS, STATIC_PATTERNS, workday_params_from_url
 
 CANDIDATE_RESULTS_FILE = _ks_data_dir() / "candidate_results.json"
 BOARD_CACHE_FILE = _ks_data_dir() / "board_lookup_cache.json"
 MISS_RETRY_DAYS = 14
+# Platforms whose board is found by guessing the company's address (one cheap
+# call each). Workday can't be guessed (its instance and board name vary), so a
+# Workday board comes only from a link the kit already holds.
 PROBE_PLATFORMS = ("greenhouse", "ashby", "lever", "smartrecruiters")
 
 BOARD_STAMP = "Board lookup"          # Notes stamp prefix the agent and the refresh filter on
@@ -95,7 +98,13 @@ AGGREGATORS = {"jobgether", "himalayas", "lensa", "ziprecruiter", "built in", "b
                "glassdoor", "wellfound", "remotive", "remoteok", "remote ok", "we work remotely",
                "working nomads", "jobright", "adzuna", "talent", "dice", "monster", "careerbuilder",
                "simplyhired", "jobot", "cybercoders", "get on board", "getonboard", "jobleads",
-               "remote rocketship", "remoterocketship", "jobs via dice", "jobs via efinancialcareers"}
+               "remote rocketship", "remoterocketship", "jobs via dice", "jobs via efinancialcareers",
+               # Reposters that hide the employer: their pages open "For our
+               # client, we are seeking..." or say "X is a recruitment partner
+               # of this role", and their copy of an old posting shows up dated
+               # this week.
+               "ladders", "theladders", "the ladders", "remotehunter", "remote hunter",
+               "talenthop", "haystack"}
 # Staffing agencies that post client roles under their own name arrive the
 # same way (v3.7: a three-person agency arrived as a Strong fit with no client
 # named). The user adds them in settings as they turn up.
@@ -108,6 +117,25 @@ def is_aggregator(company):
     key = norm_company(company or "")
     raw = (company or "").strip().lower()
     return key in AGGREGATORS or raw in AGGREGATORS or raw.startswith("jobs via ")
+
+
+# A reposter's page gives it away even when its name is new to the list: the
+# employer is never named. A posting from a job site or an alert whose text
+# uses one of these phrases is rejected on its first sighting, so the next
+# reposter is caught without anyone spotting the duplicate by hand. The
+# phrases are a setting (agent.REPOST_PHRASES); an empty list turns the rule off.
+REPOST_PHRASES = _ks_setting("agent.REPOST_PHRASES", default=[
+    "for our client, we are seeking", "for our client we are seeking", "about our client:",
+    "is a recruitment partner of this role", "is a recruitment partner for this role",
+    "our client is an equal opportunity employer"])
+REPOST_TEXT_RE = re.compile("|".join(r"\s+".join(re.escape(w) for w in str(ph).split())
+                                     for ph in (REPOST_PHRASES or []) if str(ph).strip()) or r"(?!x)x", re.I)
+
+
+def repost_phrase(text):
+    """The phrase that marks a third-party repost (employer not named), or None."""
+    m = REPOST_TEXT_RE.search(text or "")
+    return " ".join(m.group(0).split()) if m else None
 
 
 def title_tokens(title):
@@ -162,11 +190,17 @@ def company_slug_guesses(name, website=None):
 
 
 def board_from_url(url):
-    """(platform, slug) from a greenhouse / lever / ashby / smartrecruiters board URL, else None."""
+    """(platform, slug) from a board or posting URL on greenhouse / lever /
+    ashby / smartrecruiters, or ('workday', params dict) for a Workday URL;
+    None for anything else. A Workday board is still read only when the user
+    turned it on for that company (fetch_board checks)."""
     for platform in PROBE_PLATFORMS:
         m = re.search(STATIC_PATTERNS[platform], url or "")
         if m:
             return platform, m.group(1)
+    params = workday_params_from_url(url)
+    if params:
+        return "workday", params
     return None
 
 

@@ -140,13 +140,23 @@ Version notes
         The stored posting text also keeps any sentence a remote rule would
         quote from the part of the intro it cuts
         (job_search_agent.make_snapshot), so a rescore still sees it.
+  v4.3  Old postings sink. The age deduction was applied before the caps, so
+        a posting open for five months and capped at 69 showed the same
+        score as a fresh one with the same cap. Now a freshness bonus still
+        counts before the caps, and an age deduction is taken after them, so
+        capped rows drop too: 5 off at 31 to 60 days, 10 past 60, 15 past 90
+        (FRESHNESS_BANDS; older settings folders get the 90-day band on the
+        next run). The fit label is decided before the deduction, so age
+        alone never turns a Possible fit into a Poor fit; the Label Reason
+        says how long the posting has been open. Age is the Posted Date: the
+        board's own publish date, or the day the kit first saw it.
 """
 
 import html
 import re
 from datetime import date, datetime, timedelta
 
-RUBRIC_VERSION = "v4.2"
+RUBRIC_VERSION = "v4.3"
 
 # Verdicts (v3.3). The agent writes AGENT_VERDICTS on every row;
 # HUMAN_VERDICTS are the user's alone and are never overwritten.
@@ -1174,7 +1184,10 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
 
     score = work_pts - gap_pts + dom_pts + lvl_pts + pay_pts + co_pts - evergreen_pen
     fresh_pts, fresh_note = freshness_points(age_days)
-    score = max(0, min(100, score + fresh_pts))
+    # v4.3: a freshness bonus counts before the caps; an age deduction is taken
+    # after them (below), so an old posting can't sit under a cap at a fresh one's score.
+    stale_pts = fresh_pts if fresh_pts < 0 else 0
+    score = max(0, min(100, score + (fresh_pts - stale_pts)))
     score_uncapped = score   # v4.0: kept for ranking capped rows and near-miss alerts
 
     # Countable minimums: required items the user can't claim (confirmed gaps stated
@@ -1240,6 +1253,11 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
         else:
             verdict = "Possible fit"
 
+    # v4.3: the age deduction, after the caps and after the fit label is decided
+    score_before_stale = score
+    if stale_pts:
+        score = max(0, score + stale_pts)
+
     schedule = None
     if any(r.startswith("On-call") for r in reasons):
         schedule = "Heavy / on-call"
@@ -1250,8 +1268,9 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
                  f"- gaps {gap_pts} + domain {dom_pts}/20 ({dom_label}) + level {lvl_pts}/15 "
                  f"+ pay {pay_pts}/15 ({pay_note}) + company {co_pts}/20 ({co_note})"
                  + (f" - evergreen {evergreen_pen}" if evergreen_pen else "")
-                 + (f" {'+' if fresh_pts > 0 else '-'} freshness {abs(fresh_pts)} ({fresh_note})" if fresh_pts else "")
-                 + (f" (uncapped {score_uncapped})" if score_uncapped != score else "")
+                 + (f" + freshness {fresh_pts} ({fresh_note})" if fresh_pts > 0 else "")
+                 + (f" - stale {abs(stale_pts)} after caps ({fresh_note})" if stale_pts else "")
+                 + (f" (uncapped {score_uncapped})" if score_uncapped != score_before_stale else "")
                  + f". Tier {tier}.")
     if min_note:
         breakdown += " " + min_note
@@ -1270,6 +1289,7 @@ def score_posting(title, text, salary_min=None, company=None, company_name="",
         "domain_tier": domain_tier(company_name, company.get("domains"), title, text),
         "schedule": schedule, "missing_minimums": missing, "caps": caps_hit,
         "score_uncapped": score_uncapped, "unvouched": cov["unvouched"],
+        "stale_pts": stale_pts, "age_days": age_days,
         "one_miss_strong": one_miss_strong and verdict == "Strong fit",
         "parts": {"work": work_pts, "gaps": gap_pts, "domain": dom_pts, "level": lvl_pts,
                   "pay": pay_pts, "company": co_pts},
@@ -1288,6 +1308,8 @@ def label_reason(result, today=None):
     miss_note = (f" Missing {len(missing)} required: " + "; ".join(m.split(" ('")[0] for m in missing) + ".") if missing else ""
     ask_note = (" Needs your call: " + "; ".join(result["reasons"]) + ".") if result.get("ask") else ""
     head = f"Tier {result['tier']}, {result['score']}/100."
+    if result.get("stale_pts"):
+        head += f" Open {result.get('age_days')} days ({result['stale_pts']} for age, after the caps)."
     if verdict == "Poor fit":
         lead = f"Poor fit ({result.get('skip_why') or 'low fit'}), left open. "
     elif verdict == "Strong fit" and missing:

@@ -37,7 +37,7 @@ sys.path.insert(0, str(HERE))
 import job_search_agent as jsa   # noqa: E402
 import fit_scoring               # noqa: E402
 import run_stats                 # noqa: E402
-from ats_tools import request_with_retry   # noqa: E402
+from ats_tools import request_with_retry, followed_companies   # noqa: E402
 
 LAST_FILE = _ks_data_dir() / "invariants_last.md"
 STATE_FILE = _ks_data_dir() / "invariants_state.json"
@@ -196,6 +196,142 @@ def check_rows(open_rows, applied_rows, closed_today, today, fetched_keys=None, 
     return out
 
 
+# ---------------------------------------------------------------------------
+# Board health
+# ---------------------------------------------------------------------------
+# A company can move its jobs to another job site. The old board keeps
+# answering, with no postings, so nothing fails and the kit reads an empty
+# board for weeks. The check in check_runs for a board that went to zero since
+# the previous run fires once, on the day, and never again. board_health reads
+# every run in agent.log and reports a board that stays dark.
+BOARD_DARK_DAYS = int(_S("invariants.BOARD_DARK_DAYS", default=3))     # no postings for this many days...
+BOARD_DARK_MIN = int(_S("invariants.BOARD_DARK_MIN", default=5))       # ...on a board that once listed at least this many: FAIL (a small board can just be empty)
+BOARD_NEVER_DAYS = int(_S("invariants.BOARD_NEVER_DAYS", default=7))   # never a posting in this many days of runs: WARN (a wrong address, or a board to check by hand)
+ZERO_OK_DAYS = int(_S("invariants.ZERO_OK_DAYS", default=30))          # how long a hand check stands ("zero_ok": "YYYY-MM-DD" on the board's entry)
+
+_RUN_HEADER_RE = re.compile(r"^=== (?:Quick run|Run) started (\d{4}-\d{2}-\d{2})T", re.M)
+_BOARD_COUNT_RE = re.compile(r"^  ([^:\n\[]+): (\d+) postings$", re.M)
+_BOARD_FAIL_RE = re.compile(r"^\s*\[warn\] ([^:\n]+?) failed: ", re.M)
+
+
+def board_timelines(log_text, names):
+    """{board name: [(day, postings, or None for a failed fetch), ...]} in log
+    order, one entry per run that fetched the board. Lines written before the
+    first run header count as one run dated the first header's day and carrying
+    the most postings the board showed in them, so a board's early postings
+    are not forgotten."""
+    names = set(names)
+    headers = list(_RUN_HEADER_RE.finditer(log_text))
+    blocks = []
+    if headers:
+        try:
+            blocks.append((date.fromisoformat(headers[0].group(1)), log_text[:headers[0].start()], True))
+        except ValueError:
+            pass
+    for i, h in enumerate(headers):
+        try:
+            day = date.fromisoformat(h.group(1))
+        except ValueError:
+            continue
+        end = headers[i + 1].start() if i + 1 < len(headers) else len(log_text)
+        blocks.append((day, log_text[h.end():end], False))
+    out = {}
+    for day, block, many_runs in blocks:
+        seen = {}
+        for m in _BOARD_FAIL_RE.finditer(block):
+            n = m.group(1).strip()
+            if n in names:
+                seen[n] = None
+        for m in _BOARD_COUNT_RE.finditer(block):
+            n = m.group(1).strip()
+            if n in names:
+                count = int(m.group(2))
+                seen[n] = max(count, seen.get(n) or 0) if many_runs else count
+        for n, state in seen.items():
+            out.setdefault(n, []).append((day, state))
+    return out
+
+
+def board_health(log_text, today, boards):
+    """Findings for boards that have stayed dark. `boards` is the list the
+    daily check reads (ats_tools.followed_companies()): dicts with "name" and,
+    once a board has been checked by hand and really is empty, "zero_ok":
+    "YYYY-MM-DD" (in settings/companies.json)."""
+    F, W = "FAIL", "WARN"
+    out = []
+    timelines = board_timelines(log_text, [b["name"] for b in boards])
+    for b in boards:
+        name = b["name"]
+        obs = timelines.get(name)
+        if not obs:
+            continue
+        last_day, last_state = obs[-1]
+        if (today - last_day).days > 2:       # not fetched lately (off the list)
+            continue
+        if last_state:                         # listing postings now
+            continue
+        ok = b.get("zero_ok")
+        if ok:
+            try:
+                if (today - date.fromisoformat(str(ok))).days < ZERO_OK_DAYS:
+                    continue
+            except ValueError:
+                pass
+        positives = [(d, s) for d, s in obs if s]
+        answered = [d for d, s in obs if s is not None]
+        first_day = obs[0][0]
+        recent = [s for d, s in obs if (today - d).days < BOARD_DARK_DAYS]
+        last_answer = answered[-1] if answered else first_day
+        if recent and all(s is None for s in recent) and (today - last_answer).days >= BOARD_DARK_DAYS:
+            out.append((F, f"board has failed on every run for {(today - last_answer).days} days: {name}"))
+            continue
+        if positives:
+            last_pos = positives[-1][0]
+            top = max(s for _, s in positives)
+            dark = (today - last_pos).days
+            if top >= BOARD_DARK_MIN and dark >= BOARD_DARK_DAYS:
+                out.append((F, f"board has shown no postings for {dark} days (it listed up to {top}, last on "
+                               f"{last_pos.isoformat()}); it has likely moved to another job site: {name}"))
+            continue
+        if (today - first_day).days >= BOARD_NEVER_DAYS:
+            out.append((W, f"board has never returned a posting in {(today - first_day).days} days of runs: {name} "
+                           f"(check the company's careers page; if the board really is empty, add \"zero_ok\" with the date to its entry)"))
+    return out
+
+
+DARK_BOARD_RE = re.compile(r"^board has (?:shown no postings|failed on every run) for (\d+) days.*: (.+)$")
+
+
+def notify_dark_boards(findings, state_file=None, notify=None):
+    """Tell the user, once per board, that a company's job board has gone
+    quiet (a desktop notification and a banner on the tracker page), since
+    most users never open the report file. A board that recovers and goes
+    dark again is announced again. Returns the names announced."""
+    state_file = state_file or STATE_FILE
+    try:
+        state = json.loads(state_file.read_text())
+    except (OSError, json.JSONDecodeError):
+        state = {}
+    dark = {}
+    for level, msg in findings:
+        m = DARK_BOARD_RE.match(msg) if level == "FAIL" else None
+        if m:
+            dark[m.group(2).strip()] = int(m.group(1))
+    told = set(state.get("dark_boards") or [])
+    new = [n for n in dark if n not in told]
+    for name in new:
+        (notify or jsa.notify)("A company's job board has gone quiet",
+                               f"{name}'s job board has shown no openings for {dark[name]} days. The company may have "
+                               f"moved its jobs to another site. Open its careers page, then add it again on the Companies page.")
+    if new or told - set(dark):
+        state["dark_boards"] = sorted(dark)
+        try:
+            state_file.write_text(json.dumps(state, indent=1))
+        except OSError:
+            pass
+    return new
+
+
 def check_runs(today, stats_today=None):
     """Run-level health from run_stats.jsonl and agent.log."""
     out = []
@@ -229,6 +365,8 @@ def check_runs(today, stats_today=None):
         for name, n in cur.items():
             if n == 0 and prev.get(name, 0) > 0:
                 out.append((W, f"board returned 0 postings (was {prev[name]} last run): {name}"))
+    # ...and boards that have stayed dark, which the check above reports only once
+    out += board_health(text, today, followed_companies())
     return out
 
 
@@ -288,7 +426,8 @@ def email_if_new(fails, today, no_email=False):
         print(f"[warn] invariants email failed: {e}", file=sys.stderr)
         return False
     try:
-        STATE_FILE.write_text(json.dumps({"sent_on": today.isoformat(), "fails": fails}, indent=1))
+        state.update({"sent_on": today.isoformat(), "fails": fails})   # keeps the other notes in the file (dark boards announced)
+        STATE_FILE.write_text(json.dumps(state, indent=1))
     except OSError:
         pass
     return True
@@ -321,6 +460,11 @@ def run(today=None, all_jobs=None, no_email=False, stats_today=None):
                f"{len(closed_today)} closed today" + ("" if all_jobs is None else f", {len(all_jobs)} postings fetched"))
     report = write_report(findings, today, context)
     fails = [t for lv, t in findings if lv == "FAIL"]
+    if not no_email and not run_stats.DRY_RUN:
+        try:
+            notify_dark_boards(findings)
+        except Exception as e:   # noqa: BLE001  (a notice never breaks the checks)
+            print(f"[warn] invariants: dark-board notice failed: {e}", file=sys.stderr)
     emailed = email_if_new(fails, today, no_email)
     print(f"Invariants: {len(fails)} FAIL, {len(findings) - len(fails)} WARN"
           + (" (emailed)" if emailed else "") + "; see invariants_last.md")
