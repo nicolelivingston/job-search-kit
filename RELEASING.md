@@ -39,7 +39,12 @@ Three places to catch a problem, each before the next:
       the Defender scan, VirusTotal, clean install on a fresh Windows runner,
       publish.
 - [ ] **Stop** if Microsoft flags the installer on VirusTotal, or three or
-      more engines do. Submit a false-positive report and wait.
+      more engines do. Submit a false-positive report and wait. The run's
+      page keeps that installer for 14 days as `stopped-installer`, and the
+      VirusTotal step's log names what each engine called it and links the
+      report. The flags so far have been machine-learning guesses that change
+      from build to build, so re-running the failed job (it builds and scans
+      again) is a fair first try; a second flag means report it and wait.
 - [ ] The publish job waits for approval (the `release` environment). Approve
       it on GitHub only after every line above is checked. If publish fails
       at once with "Tag is not allowed to deploy", the environment's settings
