@@ -62,6 +62,22 @@ def _alt_re(words):
     return {"$re": r"\b(" + "|".join(re.escape(w) for w in words) + r")\b", "flags": ["I"]}
 
 
+def _caps_word(w):
+    """A short word typed in capitals ("IT", "QA"): kept as typed on the never
+    list and matched in capitals only (NIC-49). Same rule as
+    job_search_agent.is_caps_word."""
+    return bool(re.fullmatch(r"[A-Z]{2,4}", (w or "").strip()))
+
+
+def _never_re(words):
+    """Like _alt_re, with each short capital word matched in capitals only."""
+    words = [w for w in words if w]
+    if not words:
+        return {"$re": "^$", "flags": ["I"]}
+    parts = [f"(?-i:{re.escape(w)})" if _caps_word(w) else re.escape(w) for w in words]
+    return {"$re": r"\b(" + "|".join(parts) + r")\b", "flags": ["I"]}
+
+
 def _alt_words(v):
     m = re.match(r"^\\b\((.*)\)\\b$", (v or {}).get("$re", ""))
     return [re.sub(r"\\(.)", r"\1", w) for w in m.group(1).split("|")] if m else []
@@ -195,9 +211,9 @@ def apply_answers(settings, a):
     ag["TITLE_KEYWORDS"] = titles
     ag["ROLE_TITLE_RE"] = _alt_re(titles)
     ag["ROLE_FAMILY_LABEL"] = (w.get("field", "").strip() + " ") if w.get("field", "").strip() else ""
-    never = [t.strip().lower() for t in w["never_titles"] if t.strip()]
+    never = [t.strip() if _caps_word(t) else t.strip().lower() for t in w["never_titles"] if t.strip()]
     ag["ROLE_REJECT_KEYWORDS"] = never
-    ag["ROLE_BAD_RE"] = _alt_re(never)
+    ag["ROLE_BAD_RE"] = _never_re(never)
     fs["TITLE_SKIP"] = _rx([t.lower() for t in w["skip_title_words"]])
     fs["TITLE_ASK"] = _rx([t.lower() for t in w["ask_title_words"]])
     at, below, junior = (list(map(str.lower, w[k])) for k in ("level_at", "level_below", "level_junior"))
@@ -302,16 +318,19 @@ def _default_rule(code):
     return {"$tuple": [code, {"$rx": ["~^$"]}, "skip", code]}
 
 
-def _phrase_hit(phrases, title):
+def _phrase_hit(phrases, title, caps_rule=False):
     """The first phrase found in the title as whole words, any capitalization
-    (the same rule the daily check uses), or None. Plain text only: a phrase
-    starting with ~ (an advanced pattern in the settings files) is left to the
-    daily check and not tried here."""
+    (the same rule the daily check uses), or None. With caps_rule (the never
+    list), a short word typed in capitals such as "IT" matches in capitals
+    only, as the daily check does. Plain text only: a phrase starting with ~
+    (an advanced pattern in the settings files) is left to the daily check and
+    not tried here."""
     for ph in phrases or []:
         ph = " ".join(str(ph).split())
         if not ph or ph.startswith("~"):
             continue
-        if re.search(r"\b" + r"\s+".join(re.escape(w) for w in ph.split(" ")) + r"\b", title, re.I):
+        flags = 0 if (caps_rule and _caps_word(ph)) else re.I
+        if re.search(r"\b" + r"\s+".join(re.escape(w) for w in ph.split(" ")) + r"\b", title, flags):
             return ph
     return None
 
@@ -328,7 +347,7 @@ def check_title(answers, title):
     if not titles:
         return {"kept": False, "level": "", "lines": ["Add at least one job title above first."]}
     hit = _phrase_hit(titles, title)
-    never = _phrase_hit(w.get("never_titles"), title)
+    never = _phrase_hit(w.get("never_titles"), title, caps_rule=True)
     if never:
         return {"kept": False, "level": "", "lines": [f'Left out: the title has "{never}", which is on your never list. It won\'t be added to your tracker.']}
     if not hit:

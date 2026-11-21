@@ -360,6 +360,36 @@ def search_outside_eeo(rx, body, spans=None):
     return None
 
 
+# "military" followed by a hiring or benefit word is about who the employer
+# hires or what it offers, not the work: "including military members and their
+# spouses", "military leave", "military service". Such a line never counts as
+# a word from the user's excluded-industries list. One list for the hard rules
+# here and the first industry check in job_search_agent. Ported from the
+# personal system's fit scoring v4.9, Nov 17, 2026 (NIC-43).
+MILITARY_BENIGN_RE = re.compile(
+    r"military\s+(?:or\s+veteran\s+)?(?:status|service|leave|spouses?|members?|famil(?:y|ies)|"
+    r"veterans?|experience|backgrounds?|discharge|duty|obligations?|connected|community|friendly)", re.I)
+
+
+def is_benign_line(text, start):
+    """True when the match starting at text[start] is a hiring or benefit line
+    about military service, not a description of the work."""
+    return bool(MILITARY_BENIGN_RE.match(text or "", start))
+
+
+def search_work_words(rx, body, spans=None):
+    """Like search_outside_eeo, also passing over hiring and benefit lines
+    about military service: the first match that describes the work, or None."""
+    if not rx or not body:
+        return None
+    spans = _eeo_spans(body) if spans is None else spans
+    for m in rx.finditer(body):
+        if any(a <= m.start() < b for a, b in spans) or is_benign_line(body, m.start()):
+            continue
+        return m
+    return None
+
+
 def strip_eeo(text):
     """text with its equal-opportunity sentences removed (for keyword checks)."""
     spans = _eeo_spans(text)
@@ -545,7 +575,8 @@ def hard_screen(title, text, salary_min=None, company=None, remote_hint=False, c
         reasons.append(f"{label}: \"{_snippet(body, m, 60)}\"")
 
     gm = (EXCLUDED_COMPANIES.search(company_name or "") or EXCLUDED_INDUSTRY_RE.search(t)
-          or search_outside_eeo(EXCLUDED_INDUSTRY_RE, body, eeo))
+          or (search_work_words if eeo_aware else search_outside_eeo)(EXCLUDED_INDUSTRY_RE, body, eeo))
+    # eeo_aware=False is the old reading, used only by the one-time v4.1 repair.
     if gm:
         worst("skip"); reasons.append(f"{EXCLUDED_INDUSTRY_LABEL}: '{gm.group(0)}' (hard no)")
 

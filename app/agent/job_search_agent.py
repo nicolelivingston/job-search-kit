@@ -206,8 +206,23 @@ def _phrase_pattern(phrase):
     return re.compile(rf"\b{escaped}\b", re.I)
 
 
+def is_caps_word(phrase):
+    """True for a short word typed in capitals, such as "IT", "QA", or "HR"
+    (two to four letters). On the never list these match in capitals only,
+    so the ordinary word "it" in a title doesn't drop it (NIC-49)."""
+    return bool(re.fullmatch(r"[A-Z]{2,4}", (phrase or "").strip()))
+
+
+def _title_word_pattern(phrase):
+    """Whole-word pattern for a never-list entry: capitals only for a short
+    capital word, any capitalization for everything else."""
+    if is_caps_word(phrase):
+        return re.compile(rf"\b{re.escape(phrase.strip())}\b")
+    return _phrase_pattern(phrase)
+
+
 TITLE_PATTERNS = [_phrase_pattern(p) for p in TITLE_KEYWORDS]
-ROLE_REJECT_PATTERNS = [(kw, _phrase_pattern(kw)) for kw in ROLE_REJECT_KEYWORDS]
+ROLE_REJECT_PATTERNS = [(kw, _title_word_pattern(kw)) for kw in ROLE_REJECT_KEYWORDS]
 LOCATION_REJECT_PATTERNS = [(kw, _phrase_pattern(kw)) for kw in LOCATION_REJECT_KEYWORDS]
 US_LOCATION_PATTERNS = [_phrase_pattern(kw) for kw in US_LOCATION_KEYWORDS]
 NON_US_REGION_PATTERNS = [(kw, _phrase_pattern(kw)) for kw in NON_US_REGION_KEYWORDS]
@@ -299,9 +314,26 @@ def get_rejection_reason(job):
     return None
 
 
+def excluded_industry_word(text):
+    """The first word from the user's excluded-industries list that describes
+    the work, or None. Equal-opportunity sentences don't count, and neither do
+    hiring and benefit lines about military service ("military members and
+    their spouses", "military leave"); before Nov 21, 2026 those dropped a
+    posting here before it was scored, with nothing in the log (ported from
+    the personal system, NIC-43)."""
+    t = fit_scoring.strip_eeo(text or "").lower()
+    for kw in EXCLUDE_KEYWORDS:
+        i = t.find(kw)
+        while i != -1:
+            if not fit_scoring.is_benign_line(t, i):
+                return kw
+            i = t.find(kw, i + 1)
+    return None
+
+
 def industry_flag(text):
     t = fit_scoring.strip_eeo(text).lower()   # EEO wording is not the industry
-    has_exclude = any(kw in t for kw in EXCLUDE_KEYWORDS)
+    has_exclude = excluded_industry_word(text) is not None
     has_exception = any(kw in t for kw in INDUSTRY_EXCEPTION_KEYWORDS)
     if has_exclude and not has_exception:
         return "Excluded"
@@ -395,7 +427,7 @@ def score_level(title):
 def score_domain(text):
     """0-3: industry fit, reusing the same exclude/exception keyword logic as industry_flag."""
     t = fit_scoring.strip_eeo(text).lower()
-    has_exclude = any(kw in t for kw in EXCLUDE_KEYWORDS)
+    has_exclude = excluded_industry_word(text) is not None
     has_exception = any(kw in t for kw in INDUSTRY_EXCEPTION_KEYWORDS)
     if has_exclude and not has_exception:
         return 0
@@ -2706,17 +2738,27 @@ def main(quick=False):
             continue
         reason = get_rejection_reason(job)
         if reason:
-            logger.debug("Rejected %r @ %r: %s", job["title"], job["company"], reason)
+            # A posting with a title on the user's list that is dropped says
+            # why in the log, including the never-list word that dropped it
+            # (first sighting only, so a handful of lines a day). Ported from
+            # the personal system, Nov 16, 2026; NIC-43 and NIC-49.
+            (logger.info if key else logger.debug)(
+                "Not written: %r @ %r: %s", job["title"], job["company"], reason)
             seen.add(job["id"])
             continue
         _legacy_score, flag, salary_min = score_job(job)
         if flag == "Excluded":
+            word = excluded_industry_word(f"{job['title']} {job['company']} {job['description']}")
+            logger.info("Not written: %r @ %r: excluded industry (%r is on your list)",
+                        job["title"], job["company"], word)
             seen.add(job["id"])
             continue  # never surface hard-excluded postings at all
 
         dedupe_key = (job["company"].strip().lower(),
                       re.sub(r"\s+", " ", job["title"].strip().lower()))
         if dedupe_key in seen_company_title:
+            logger.info("Not written: %r @ %r: same role already handled from another source this run",
+                        job["title"], job["company"])
             seen.add(job["id"])
             continue  # same role from a different source -- one Notion row, not two
         seen_company_title.add(dedupe_key)

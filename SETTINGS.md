@@ -18,7 +18,7 @@ listed here.
 | Question | Settings | Notes |
 |---|---|---|
 | What job titles are you looking for? | `agent.TITLE_KEYWORDS`, `agent.ROLE_TITLE_RE`, `agent.ROLE_FAMILY_LABEL` | Whole-word, case-insensitive |
-| Which titles are never right? | `agent.ROLE_REJECT_KEYWORDS`, `agent.ROLE_BAD_RE`, `fit_scoring.TITLE_SKIP`, `fit_scoring.TITLE_SKIP_LABEL` | |
+| Which titles are never right? | `agent.ROLE_REJECT_KEYWORDS`, `agent.ROLE_BAD_RE`, `fit_scoring.TITLE_SKIP`, `fit_scoring.TITLE_SKIP_LABEL` | A never-list word of two to four capital letters ("IT", "QA") matches in capitals only. |
 | Which titles should ask you first? | `fit_scoring.TITLE_ASK` | |
 | What level are you aiming for? | `agent.LEVEL_TIERS`, `fit_scoring.LEVEL_RULES` | |
 | How many years of experience in your field can you claim, and what's the field called in postings? | `fit_scoring.YEARS_CLAIMABLE`, `fit_scoring.YEARS_RE`, `fit_scoring.YEARS_LABEL` | Postings asking for more than your years plus `fit_scoring.YEARS_GRACE` (default 1) count as a missed requirement |
