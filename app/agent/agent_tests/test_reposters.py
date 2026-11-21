@@ -53,6 +53,10 @@ class Reposters(unittest.TestCase):
         self.assertEqual(lr.repost_phrase("About our client:\nA leader in its field."), "About our client:")
         self.assertEqual(lr.repost_phrase(PARTNER), "is a recruitment partner of this role")
         self.assertEqual(lr.repost_phrase("FOR   OUR CLIENT we are seeking a lead"), "FOR OUR CLIENT we are seeking")
+        # A reposter that names the employer as its client (made-up names; Nov 21, 2026)
+        named = "Hirepath is collaborating with Lumenfold to connect them with exceptional professionals for the opening."
+        self.assertEqual(lr.repost_phrase(named), "to connect them with exceptional professionals")
+        self.assertIsNone(lr.repost_phrase("You will connect them with the right tools and professionals."))
         for clean in (OWN, "We put our clients first. Our client list is long.", "", None):
             self.assertIsNone(lr.repost_phrase(clean), clean)
 
@@ -60,7 +64,7 @@ class Reposters(unittest.TestCase):
         base = person.sample_job(company="Staffwell", url="https://jobsite.example.com/listing/9100012")
         self.assertIsNone(agent.get_rejection_reason(dict(base, description=base["description"])))          # a normal posting passes
         reason = agent.get_rejection_reason(dict(base, description=REPOST + " " + base["description"]))
-        self.assertIn("third-party repost, employer not named", reason or "")
+        self.assertIn("third-party repost (", reason or "")
         # the same words on a company's own board describe its business, not a repost
         own = dict(base, company="Lumenfold", ats_platform="greenhouse", description=REPOST + " " + base["description"])
         self.assertIsNone(agent.get_rejection_reason(own))
@@ -85,7 +89,7 @@ class Reposters(unittest.TestCase):
         why = patched["p-name"]["Label Reason"]["rich_text"][0]["text"]["content"]
         self.assertIn("Ladders reposts other companies' jobs and hides the employer", why)
         self.assertIn("Closed 2026-11-02", why)
-        self.assertIn("employer not named", patched["p-text"]["Label Reason"]["rich_text"][0]["text"]["content"])
+        self.assertIn("third-party repost", patched["p-text"]["Label Reason"]["rich_text"][0]["text"]["content"])
         self.assertNotIn("Label Reason", patched["p-mine"])                                        # the user's words stay
 
     def test_a_failed_write_is_not_counted_and_the_full_run_includes_the_pass(self):

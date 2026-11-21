@@ -24,12 +24,12 @@ class StaleCloseTests(unittest.TestCase):
                                   side_effect=lambda pid, s: closed.append(pid) or True):
             for _ in range(runs):
                 agent.close_stale_postings([{"url": fetched_url}] if fetched_url else
-                                           [{"url": "https://job-boards.greenhouse.io/ridgeline/jobs/1111111111"}])
+                                           [{"url": "https://job-boards.greenhouse.io/ferncastle/jobs/1111111111"}])
         return closed
 
     def test_live_posting_with_query_string_stays_open(self):
-        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/9100011004"
-        fetched = "https://job-boards.greenhouse.io/ridgeline/jobs/9100011004?gh_jid=9100011004"
+        stored = "https://job-boards.greenhouse.io/ferncastle/jobs/9100011004"
+        fetched = "https://job-boards.greenhouse.io/ferncastle/jobs/9100011004?gh_jid=9100011004"
         self.assertEqual(self.run_close(stored, fetched), [])
 
     def test_live_posting_with_trailing_slash_stays_open(self):
@@ -38,7 +38,7 @@ class StaleCloseTests(unittest.TestCase):
         self.assertEqual(self.run_close(stored, fetched), [])
 
     def test_gone_posting_still_closes_after_two_runs(self):
-        stored = "https://job-boards.greenhouse.io/ridgeline/jobs/9100012004"
+        stored = "https://job-boards.greenhouse.io/ferncastle/jobs/9100012004"
         self.assertEqual(self.run_close(stored, None, runs=2), ["page-1"])
 
 

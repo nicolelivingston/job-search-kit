@@ -48,7 +48,7 @@ class EqualOpportunityText(unittest.TestCase):
 
     def test_one_marker_word_is_not_enough_to_hide_a_sentence(self):
         # "veterans" alone doesn't make a sentence equal-opportunity text.
-        text = "Fully remote. Ridgeline builds benefits tools for veterans and the military."
+        text = "Fully remote. Ferncastle builds benefits tools for veterans and the military."
         verdict, reasons = fs.hard_screen("Senior Product Manager", text, salary_min=180000, remote_hint=True)
         self.assertEqual(verdict, "skip", reasons)
 

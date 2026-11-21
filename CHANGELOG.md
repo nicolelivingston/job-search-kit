@@ -5,7 +5,15 @@ Plain-words notes for each release, newest first. A kit that's already installed
 ## Next release
 (Rename this heading to the version number when you tag the release.)
 
+**Changed**
+- **Capital words on your never list count only in capitals.** In setup, "Never show me titles with these words" now treats a short word typed in capitals, such as IT or QA, as that word only. "IT Data Analyst" is left out; "Data Analyst, Make It Count" isn't. Every other word on the list matches in any capitalization, as before. The Try a title box follows the same rule.
+
+**Fixed**
+- **A hiring or benefits line about military service no longer hides a posting.** If your list of industries you won't work in has "military" or "defense", lines such as "including military members and their spouses", "military leave", or "military service" no longer drop a posting or close it. Postings about defense work still do.
+- **One more kind of repost is left out.** A job-site copy that opens "(a staffing firm) is collaborating with (the employer) to connect them with exceptional professionals" is a reposter's copy, so it's left out like the others, and an open copy in your tracker is closed unless you marked it Applying or Passed.
+
 **Behind the scenes**
+- When the daily check leaves out a posting with one of your job titles, its log says why, including the word that left it out.
 - Company names are tidied up in a way that can't stall on a very long, odd name typed into setup. Which names match each other is unchanged.
 
 ## 0.3.0
