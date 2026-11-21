@@ -1,5 +1,5 @@
-# Dependabot keeps the pinned GitHub Actions and the Windows wheel pins current
-# with pull requests; nothing updates on its own.
+# Dependabot keeps the pinned GitHub Actions and the pinned Python packages in
+# installer/ current with pull requests; nothing updates on its own.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -8,3 +8,12 @@ updates:
   - package-ecosystem: "pip"
     directory: "/installer"
     schedule: { interval: "weekly" }
+    # One pull request a week for all the small updates (minor and patch
+    # versions) instead of one per package. A major version still gets its own
+    # pull request, and so does a fix for a known vulnerability, so neither
+    # hides in a batch.
+    groups:
+      pip-minor-and-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
