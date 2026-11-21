@@ -304,7 +304,7 @@ def get_rejection_reason(job):
         # employer is never named). Postings from a company's own board are exempt.
         phrase = lead_resolver.repost_phrase(job.get("description", ""))
         if phrase:
-            return f"third-party repost, employer not named ({phrase!r}); the employer's own posting is the target"
+            return f"third-party repost ({phrase!r}); the employer's own posting is the target"
     reason = location_rejection_reason(job["location"])
     if reason:
         return reason
@@ -2160,7 +2160,7 @@ def close_aggregator_rows(today):
             if not (scope and scope[1]):   # not a posting on a company's own board
                 phrase = lead_resolver.repost_phrase(clean_posting_text(_rt(p, "Posting Snapshot")))
                 if phrase:
-                    why = f"third-party repost, employer not named (\"{phrase}\")"
+                    why = f"third-party repost (\"{phrase}\")"
         if not why:
             continue
         props = {"Status": {"status": {"name": "Closed"}},

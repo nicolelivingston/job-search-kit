@@ -10,6 +10,7 @@ Plain-words notes for each release, newest first. A kit that's already installed
 
 **Fixed**
 - **A hiring or benefits line about military service no longer hides a posting.** If your list of industries you won't work in has "military" or "defense", lines such as "including military members and their spouses", "military leave", or "military service" no longer drop a posting or close it. Postings about defense work still do.
+- **One more kind of repost is left out.** A job-site copy that opens "(a staffing firm) is collaborating with (the employer) to connect them with exceptional professionals" is a reposter's copy, so it's left out like the others, and an open copy in your tracker is closed unless you marked it Applying or Passed.
 
 **Behind the scenes**
 - When the daily check leaves out a posting with one of your job titles, its log says why, including the word that left it out.

@@ -184,20 +184,22 @@ def is_aggregator(company):
 
 
 # A reposter's page gives it away even when its name is new to the list: the
-# employer is never named. A posting from a job site or an alert whose text
+# employer is never named, or is named only as the reposter's client ("X is
+# collaborating with <employer> to connect them with exceptional
+# professionals ...", added Nov 21, 2026). A posting from a job site or an alert whose text
 # uses one of these phrases is rejected on its first sighting, so the next
 # reposter is caught without anyone spotting the duplicate by hand. The
 # phrases are a setting (agent.REPOST_PHRASES); an empty list turns the rule off.
 REPOST_PHRASES = _ks_setting("agent.REPOST_PHRASES", default=[
     "for our client, we are seeking", "for our client we are seeking", "about our client:",
     "is a recruitment partner of this role", "is a recruitment partner for this role",
-    "our client is an equal opportunity employer"])
+    "our client is an equal opportunity employer", "to connect them with exceptional professionals"])
 REPOST_TEXT_RE = re.compile("|".join(r"\s+".join(re.escape(w) for w in str(ph).split())
                                      for ph in (REPOST_PHRASES or []) if str(ph).strip()) or r"(?!x)x", re.I)
 
 
 def repost_phrase(text):
-    """The phrase that marks a third-party repost (employer not named), or None."""
+    """The phrase that marks a third-party repost, or None."""
     m = REPOST_TEXT_RE.search(text or "")
     return " ".join(m.group(0).split()) if m else None
 
